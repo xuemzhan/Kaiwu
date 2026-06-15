@@ -236,7 +236,7 @@ This is a known false positive from `7zsd.sfx` self-extracting archives on Windo
 
 ## License
 
-[MIT](LICENSE) — Copyright © 2026 Sisyphus.
+[MIT](LICENSE) — Copyright © 2026 xuemzhan.
 
 ## Credits
 
