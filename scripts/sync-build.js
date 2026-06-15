@@ -19,8 +19,10 @@ const mirrorFiles = [
   'index.html'
 ];
 
-// 跳过同步的子目录 (vendor 由 copy-assets 维护; node_modules; 临时构建产物)
-const skipDirs = new Set(['node_modules', 'vendor', '.git']);
+// 跳过同步的子目录
+// 注意: 不要把 'vendor' 加到这里! taskpane/vendor/ 由 copy-assets 生成,
+// sync-build 把它从 taskpane/ 镜像到 wps-addon-build/taskpane/, 不应被跳过.
+const skipDirs = new Set(['node_modules', '.git']);
 
 function walkSync(srcDir, destDir, rel) {
   if (!fs.existsSync(srcDir)) return;

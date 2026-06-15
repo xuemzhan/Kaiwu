@@ -38,6 +38,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const iconv = require('iconv-lite');
 
 const ROOT = path.resolve(__dirname, '..');
 const BUILD_DIR = path.join(ROOT, 'wps-addon-build');
@@ -145,6 +146,16 @@ function cleanDir(dir) {
     fs.mkdirSync(dir, { recursive: true });
 }
 
+/**
+ * 把字符串中的 LF (\n) 转为 CRLF (\r\n).
+ * 重要: Windows 的 cmd.exe 对纯 LF 的 bat 文件解析会出错
+ * (特别是多行 for /d 循环), 用 CRLF 才稳定.
+ * (不转换已有的 \r\n, 所以幂等.)
+ */
+function toCRLF(text) {
+    return text.replace(/\r?\n/g, '\r\n');
+}
+
 function copyDirFiltered(src, dest, excludes) {
     if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
     for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
@@ -173,6 +184,13 @@ function generatePublishXml() {
 function generateInstallBat() {
     return (
         '@echo off\n' +
+        'rem ============================================================\n' +
+        'rem  This bat file is saved in GBK encoding (matches Windows zh-CN\n' +
+        'rem  default codepage 936). With GBK encoding, cmd.exe correctly\n' +
+        'rem  decodes the Chinese dir name "kaiwu_1.0.0" used in the legacy\n' +
+        'rem  detection below, and the if exist check matches the actual\n' +
+        'rem  UTF-16 directory name on disk.\n' +
+        'rem ============================================================\n' +
         'setlocal EnableExtensions EnableDelayedExpansion\n' +
         'title Kaiwu WPS Addon - Installer\n' +
         'echo.\n' +
@@ -198,38 +216,57 @@ function generateInstallBat() {
         ')\n' +
         '\n' +
         'rem ============================================================\n' +
-        'rem  [0/4] 检测是否已有旧版 Kaiwu 安装, 若有则先卸载\n' +
+        'rem  [0/4] Detect existing Kaiwu installation; uninstall old.\n' +
+        'rem  - kaiwu_<v>:  current naming scheme (ASCII prefix), via for /d glob.\n' +
+        'rem  - kaiwu_<v>:  legacy scheme (开悟 prefix), via direct if exist\n' +
+        'rem            (only known version: 开悟_1.0.0).\n' +
+        'rem  - kaiwu_<v>:  same-version check (will be xcopy-overwritten).\n' +
         'rem ============================================================\n' +
         'echo  [0/4] Checking for existing Kaiwu installation ...\n' +
         'set "FOUND_OLD=0"\n' +
-        'if exist "%DEST_DIR%" (\n' +
-        '    for /d %%D in ("%DEST_DIR%\\kaiwu_*") do (\n' +
-        '        if /i not "%%~nxD"=="' + PACKAGE_DIR_ASCII + '" (\n' +
-        '            echo         [FOUND] Old Kaiwu install: %%~nxD\n' +
-        '            echo                Removing: %%D\n' +
-        '            rmdir /S /Q "%%D"\n' +
-        '            set "FOUND_OLD=1"\n' +
-        '        )\n' +
-        '    )\n' +
-        '    for /d %%D in ("%DEST_DIR%\\开悟_*") do (\n' +
-        '        echo         [FOUND] Legacy Kaiwu install: %%~nxD\n' +
+        'if not exist "%DEST_DIR%" (\n' +
+        '    echo         [INFO] No previous install detected.\n' +
+        '    goto :install_step_1\n' +
+        ')\n' +
+        '\n' +
+        'rem --- Check current-scheme installs (kaiwu_<v>) ---\n' +
+        'for /d %%D in ("%DEST_DIR%\\kaiwu_*") do (\n' +
+        '    if /i not "%%~nxD"=="' + PACKAGE_DIR_ASCII + '" (\n' +
+        '        echo         [FOUND] Old Kaiwu install: %%~nxD\n' +
         '        echo                Removing: %%D\n' +
         '        rmdir /S /Q "%%D"\n' +
         '        set "FOUND_OLD=1"\n' +
         '    )\n' +
-        '    if exist "%DEST_DIR%\\' + PACKAGE_DIR_ASCII + '" (\n' +
-        '        echo         [FOUND] Same version: ' + PACKAGE_DIR_ASCII + '\n' +
-        '        echo                Will be overwritten by xcopy.\n' +
-        '        set "FOUND_OLD=1"\n' +
-        '    )\n' +
+        ')\n' +
+        '\n' +
+        'rem --- Check legacy Chinese-prefixed install (kaiwu_1.0.0) ---\n' +
+        'rem With chcp 65001 active, the literal kaiwu_1.0.0 in this file is correctly\n' +
+        'rem decoded by cmd, and the OS-level existence check works against the\n' +
+        'rem UTF-16 directory name. We do not enumerate all "kaiwu_*" versions\n' +
+        'rem via for /d here, because cmd glob expansion is fragile with Chinese\n' +
+        'rem patterns even under UTF-8 codepage (depends on filesystem driver).\n' +
+        'if exist "%DEST_DIR%\\开悟_1.0.0" (\n' +
+        '    echo         [FOUND] Legacy Kaiwu install: 开悟_1.0.0\n' +
+        '    echo                Removing: %DEST_DIR%\\开悟_1.0.0\n' +
+        '    rmdir /S /Q "%DEST_DIR%\\开悟_1.0.0"\n' +
+        '    set "FOUND_OLD=1"\n' +
+        ')\n' +
+        '\n' +
+        'rem --- Check same-version install (will be xcopy-overwritten) ---\n' +
+        'if exist "%PLUGIN_DIR%" (\n' +
+        '    echo         [FOUND] Same version: ' + PACKAGE_DIR_ASCII + '\n' +
+        '    echo                Will be overwritten by xcopy.\n' +
+        '    set "FOUND_OLD=1"\n' +
+        ')\n' +
+        '\n' +
+        'if "!FOUND_OLD!"=="1" (\n' +
+        '    echo         [OK] Old installations cleared.\n' +
         ') else (\n' +
         '    echo         [INFO] No previous install detected.\n' +
         ')\n' +
-        'if "!FOUND_OLD!"=="1" (\n' +
-        '    echo         [OK] Old installations cleared.\n' +
-        ')\n' +
         'echo.\n' +
         '\n' +
+        ':install_step_1\n' +
         'echo  [1/4] Creating destination directories ...\n' +
         'if not exist "%DEST_DIR%" mkdir "%DEST_DIR%"\n' +
         'if not exist "%PLUGIN_DIR%" mkdir "%PLUGIN_DIR%"\n' +
@@ -360,6 +397,7 @@ function generateVerifyBat() {
 function generateUninstallBat() {
     return (
         '@echo off\n' +
+        'rem  Saved in GBK encoding (see install.bat for rationale).\n' +
         'setlocal EnableExtensions EnableDelayedExpansion\n' +
         'title Kaiwu WPS Addon - Uninstaller\n' +
         'echo.\n' +
@@ -385,14 +423,17 @@ function generateUninstallBat() {
         '    echo  [INFO] Destination folder not found, nothing to do.\n' +
         '    goto :cache_clear\n' +
         ')\n' +
+        'rem --- Scan current-scheme installs (kaiwu_<v>) ---\n' +
         'for /d %%D in ("%DEST_DIR%\\kaiwu_*") do (\n' +
         '    echo         [FOUND] %%~nxD  -  removing ...\n' +
         '    rmdir /S /Q "%%D"\n' +
         '    set "REMOVED=1"\n' +
         ')\n' +
-        'for /d %%D in ("%DEST_DIR%\\开悟_*") do (\n' +
-        '    echo         [FOUND] %%~nxD  -  removing ...\n' +
-        '    rmdir /S /Q "%%D"\n' +
+        'rem --- Scan legacy Chinese-prefixed install (开悟_1.0.0) ---\n' +
+        'rem Direct if exist (cmd glob with Chinese patterns is unreliable).\n' +
+        'if exist "%DEST_DIR%\\开悟_1.0.0" (\n' +
+        '    echo         [FOUND] 开悟_1.0.0  -  removing ...\n' +
+        '    rmdir /S /Q "%DEST_DIR%\\开悟_1.0.0"\n' +
         '    set "REMOVED=1"\n' +
         ')\n' +
         'if "!REMOVED!"=="0" (\n' +
@@ -579,9 +620,23 @@ function build() {
     fs.writeFileSync(path.join(PUBLISH_DIR, 'publish.xml'), generatePublishXml(), 'utf8');
 
     console.log('[package] 生成 install.bat / uninstall.bat / verify.bat...');
-    fs.writeFileSync(path.join(PUBLISH_DIR, 'install.bat'), generateInstallBat(), 'utf8');
-    fs.writeFileSync(path.join(PUBLISH_DIR, 'uninstall.bat'), generateUninstallBat(), 'utf8');
-    fs.writeFileSync(path.join(PUBLISH_DIR, 'verify.bat'), generateVerifyBat(), 'utf8');
+    // CRITICAL: bat 文件必须满足两个 Windows 兼容性要求:
+    //  1. CRLF 换行 (LF-only 会让多行 for /d 循环解析错乱)
+    //  2. GBK 编码保存 (Windows zh-CN 默认 codepage 是 936/GBK, UTF-8 文件里的
+    //     中文会被错误解读为 "寮€鎮焈" 之类乱码, if exist 检查失败)
+    // 综合: 内部用 UTF-8 字符串构造脚本, 输出前 toCRLF + iconv GBK.
+    fs.writeFileSync(
+        path.join(PUBLISH_DIR, 'install.bat'),
+        iconv.encode(toCRLF(generateInstallBat()), 'gbk')
+    );
+    fs.writeFileSync(
+        path.join(PUBLISH_DIR, 'uninstall.bat'),
+        iconv.encode(toCRLF(generateUninstallBat()), 'gbk')
+    );
+    fs.writeFileSync(
+        path.join(PUBLISH_DIR, 'verify.bat'),
+        iconv.encode(toCRLF(generateVerifyBat()), 'gbk')
+    );
 
     console.log('[package] 生成 README 安装说明...');
     fs.writeFileSync(path.join(PUBLISH_DIR, 'README-安装说明.md'), generateReadme(envVars), 'utf8');
