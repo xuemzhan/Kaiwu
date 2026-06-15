@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="党政风">
+  <title>党政风</title>
+  <path d="M16 4l11 4v9c0 6-5 9-11 11-6-2-11-5-11-11V8l11-4z" stroke="#2f3437" stroke-width="2" stroke-linejoin="round" fill="#fff"/>
+  <path d="M11 15l1.2 1.2L15 13" stroke="#2f3437" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M16 15h5M16 18h5M12 21h9" stroke="#2f3437" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="16" cy="8" r="1.5" fill="#f26b30"/>
+</svg>

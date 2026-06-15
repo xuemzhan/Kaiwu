@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>开悟 - AI 助手</title>
+    <script type="text/javascript" src="component.js"></script>
+    <script type="text/javascript" src="taskpane/services/wakeword.js"></script>
+    <script type="text/javascript" src="ribbon.js"></script>
+</head>
+<body>
+    <!-- WPS加载项的默认主页，主要用于注册Ribbon事件处理函数 -->
+    <!-- 实际的UI界面在 taskpane/index.html 中 -->
+    <script>
+        // 检测并显示当前组件
+        (function () {
+            try {
+                if (typeof ComponentDetector !== 'undefined') {
+                    var type = ComponentDetector.detect();
+                    var label = ComponentDetector.getLabel(type);
+                    console.log('[开悟] 当前组件: ' + label + ' (' + type + ')');
+                    // 存储到PluginStorage供TaskPane跨窗口使用
+                    if (window.Application && window.Application.PluginStorage) {
+                        window.Application.PluginStorage.setItem('component_type', type);
+                    }
+                    document.title = '开悟 - ' + label + ' AI 助手';
+                }
+            } catch (e) { console.warn('[开悟] 组件检测异常:', e); }
+        })();
+    </script>
+</body>
+</html>

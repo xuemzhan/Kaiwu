@@ -1,0 +1,197 @@
+/**
+ * settings.js — 设置面板组件
+ * API 配置表单：BaseURL、Key、Model、SystemPrompt 等
+ */
+
+var PRESET_MODELS = [
+    { label: 'MiniMax-M3', value: 'MiniMax-M3' },
+    { label: 'MiniMax-M1', value: 'MiniMax-M1' },
+    { label: 'abab6.5s',  value: 'abab6.5s' },
+    { label: 'abab5.5s',  value: 'abab5.5s' },
+    { label: '──── 第三方 ────', value: '', disabled: true },
+    { label: 'GPT-4o',           value: 'gpt-4o' },
+    { label: 'GPT-4o-mini',      value: 'gpt-4o-mini' },
+    { label: 'DeepSeek-Chat',    value: 'deepseek-chat' },
+    { label: 'DeepSeek-Reasoner',value: 'deepseek-reasoner' },
+    { label: '自定义...',         value: '__custom__' }
+];
+
+var SettingsUI = {
+    show: function () {
+        var overlay = document.getElementById('settingsOverlay');
+        if (!overlay) return;
+        this._renderForm();
+        overlay.style.display = 'flex';
+    },
+
+    hide: function () {
+        var overlay = document.getElementById('settingsOverlay');
+        if (overlay) overlay.style.display = 'none';
+    },
+
+    _isPresetModel: function (model) {
+        for (var i = 0; i < PRESET_MODELS.length; i++) {
+            if (!PRESET_MODELS[i].disabled && PRESET_MODELS[i].value && PRESET_MODELS[i].value === model) return true;
+        }
+        return false;
+    },
+
+    _renderForm: function () {
+        var body = document.getElementById('settingsBody');
+        if (!body) return;
+
+        var config = Config.getAll();
+        var currentModel = config.model || 'MiniMax-M3';
+        var isPreset = this._isPresetModel(currentModel);
+
+        // 构建下拉选项
+        var optionsHtml = '';
+        for (var i = 0; i < PRESET_MODELS.length; i++) {
+            var p = PRESET_MODELS[i];
+            var selected = (!p.disabled && p.value && p.value === currentModel) ? ' selected' : '';
+            var disabled = p.disabled ? ' disabled' : '';
+            optionsHtml += '<option value="' + this._escapeAttr(p.value) + '"' + selected + disabled + '>' + this._escapeHtml(p.label) + '</option>';
+        }
+
+        body.innerHTML = '' +
+            '<div class="form-group">' +
+            '  <label class="form-label">API 地址 (Base URL)</label>' +
+            '  <input id="settingBaseUrl" class="form-input" type="text" value="' + this._escapeAttr(config.apiBaseUrl) + '" placeholder="https://api.minimaxi.com/v1">' +
+            '</div>' +
+            '<div class="form-group">' +
+            '  <label class="form-label">API Key</label>' +
+            '  <input id="settingApiKey" class="form-input" type="password" value="' + this._escapeAttr(config.apiKey) + '" placeholder="输入你的 API Key">' +
+            '  <button id="btnToggleKey" class="btn btn-sm form-btn" style="margin-top:4px;">👁️ 显示</button>' +
+            '</div>' +
+            '<div class="form-group">' +
+            '  <label class="form-label">模型 (Model)</label>' +
+            '  <select id="settingModelSelect" class="form-input">' + optionsHtml + '</select>' +
+            '  <input id="settingModelCustom" class="form-input" type="text" placeholder="输入自定义模型名称" style="margin-top:6px;' + (isPreset ? ' display:none;' : '') + '" value="' + (isPreset ? '' : this._escapeAttr(currentModel)) + '">' +
+            '</div>' +
+            '<div class="form-group">' +
+            '  <label class="form-label">系统提示词 (System Prompt)</label>' +
+            '  <textarea id="settingPrompt" class="form-input form-textarea" rows="4" placeholder="你是一个AI写作助手（开悟）...">' + this._escapeHtml(config.systemPrompt) + '</textarea>' +
+            '</div>' +
+            '<div class="form-group">' +
+            '  <label class="form-label">温度 (Temperature): <span id="tempValue">' + config.temperature + '</span></label>' +
+            '  <input id="settingTemp" class="form-range" type="range" min="0" max="2" step="0.1" value="' + config.temperature + '">' +
+            '</div>' +
+            '<div class="form-group">' +
+            '  <label class="form-label">最大 Token 数</label>' +
+            '  <input id="settingMaxTokens" class="form-input" type="number" value="' + config.maxTokens + '" min="256" max="32768" step="256">' +
+            '</div>' +
+            '<div class="form-actions">' +
+            '  <button id="btnSaveSettings" class="btn btn-primary">💾 保存</button>' +
+            '  <button id="btnResetConfig" class="btn btn-sm" style="margin-left:8px;">↺ 重置默认</button>' +
+            '</div>' +
+            '<div class="form-status" id="formStatus"></div>';
+
+        this._bindFormEvents();
+    },
+
+    _getModelValue: function () {
+        var select = document.getElementById('settingModelSelect');
+        var customInput = document.getElementById('settingModelCustom');
+        if (select.value === '__custom__') {
+            return customInput.value.trim();
+        }
+        return select.value;
+    },
+
+    _bindFormEvents: function () {
+        var self = this;
+
+        // 模型下拉切换（显示/隐藏自定义输入框）
+        document.getElementById('settingModelSelect').addEventListener('change', function () {
+            var customInput = document.getElementById('settingModelCustom');
+            if (this.value === '__custom__') {
+                customInput.style.display = '';
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+            }
+        });
+
+        // 保存设置
+        document.getElementById('btnSaveSettings').addEventListener('click', function () {
+            var model = self._getModelValue();
+            var config = {
+                apiBaseUrl: document.getElementById('settingBaseUrl').value.trim(),
+                apiKey: document.getElementById('settingApiKey').value.trim(),
+                model: model,
+                systemPrompt: document.getElementById('settingPrompt').value.trim(),
+                temperature: parseFloat(document.getElementById('settingTemp').value),
+                maxTokens: parseInt(document.getElementById('settingMaxTokens').value) || 4096
+            };
+
+            // 验证
+            if (!config.apiKey) {
+                self._showStatus('请输入 API Key', 'error');
+                return;
+            }
+            if (!config.apiBaseUrl) {
+                self._showStatus('请输入 API 地址', 'error');
+                return;
+            }
+            if (!config.model) {
+                self._showStatus('请选择或输入模型名称', 'error');
+                return;
+            }
+
+            Config.set(config);
+            self._showStatus('✅ 设置已保存', 'success');
+            ChatUI._updateModelIndicator();
+
+            // 延迟关闭
+            setTimeout(function () { self.hide(); }, 1000);
+        });
+
+        // 重置默认
+        document.getElementById('btnResetConfig').addEventListener('click', function () {
+            Config.reset();
+            self._renderForm();
+            self._showStatus('✅ 已恢复默认设置', 'success');
+            ChatUI._updateModelIndicator();
+        });
+
+        // 显示/隐藏 API Key
+        document.getElementById('btnToggleKey').addEventListener('click', function () {
+            var input = document.getElementById('settingApiKey');
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.textContent = '🙈 隐藏';
+            } else {
+                input.type = 'password';
+                this.textContent = '👁️ 显示';
+            }
+        });
+
+        // 温度滑块
+        document.getElementById('settingTemp').addEventListener('input', function () {
+            document.getElementById('tempValue').textContent = this.value;
+        });
+    },
+
+    _showStatus: function (msg, type) {
+        var el = document.getElementById('formStatus');
+        if (el) {
+            el.textContent = msg;
+            el.className = 'form-status ' + (type === 'error' ? 'form-error' : 'form-success');
+            clearTimeout(el._hideTimer);
+            el._hideTimer = setTimeout(function () {
+                el.className = 'form-status';
+                el.textContent = '';
+            }, 3000);
+        }
+    },
+
+    _escapeAttr: function (str) {
+        return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    },
+
+    _escapeHtml: function (str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+};

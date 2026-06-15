@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="公文排版">
+  <title>公文排版</title>
+  <path d="M9 4h14v24H9V4z" stroke="#2f3437" stroke-width="2" fill="#fff"/>
+  <path d="M13 10h6M13 14h6M13 18h4" stroke="#2f3437" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M16 4v24" stroke="#2f3437" stroke-width="2" stroke-dasharray="2 2" stroke-linecap="round"/>
+  <circle cx="22" cy="23" r="4" fill="#f26b30"/>
+  <path d="M20 23l1.5 1.5L24 21.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

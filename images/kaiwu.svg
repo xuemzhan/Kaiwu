@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="开悟 Logo">
+  <title>开悟 Kaiwu · 写作启发的瞬间</title>
+  <desc>打开的书页 + 中央升起的智慧之光: 寓意「开悟」</desc>
+
+  <!--
+    设计概念:
+      ① 开 = 打开的书 (左右两页, 中间书脊)
+      ② 悟 = 升起的太阳 / 智慧之光 (中央 4 角星 + 光芒)
+    整体保持 32×32 标准尺寸, 兼容单色与彩色
+  -->
+
+  <!-- 左侧书页: 弧线表示翻开的弧度 -->
+  <path d="M4 7.5c0-.8.7-1.5 1.5-1.5H14c.8 0 1.5.7 1.5 1.5v18c0-.8-.7-1.5-1.5-1.5H5.5c-.8 0-1.5.7-1.5 1.5v-18z"
+        fill="#ffffff" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+  <!-- 左侧书页内容纹理 (3 行) -->
+  <path d="M7.5 11h5.5M7.5 14.5h5.5M7.5 18h4" stroke="#2f3437" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- 右侧书页 -->
+  <path d="M28 7.5c0-.8-.7-1.5-1.5-1.5H18c-.8 0-1.5.7-1.5 1.5v18c0-.8.7-1.5 1.5-1.5h8.5c.8 0 1.5.7 1.5 1.5v-18z"
+        fill="#ffffff" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+  <!-- 右侧书页内容纹理 -->
+  <path d="M19 11h5.5M19 14.5h5.5M19 18h4.5" stroke="#2f3437" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- 中央: 4 角星 (智慧之光 / 悟) -->
+  <path d="M16 9.2l1.7 4.6 4.7 1.4-4.7 1.4L16 21.2l-1.7-4.6L9.6 15.2l4.7-1.4L16 9.2z" fill="#f26b30"/>
+
+  <!-- 光芒: 8 个方向的简短光线 (主光 4 方向更明显) -->
+  <path d="M16 3.5v2.4M16 24.5v2.4M3.5 14.2h2.4M26.1 14.2h2.4"
+        stroke="#f26b30" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+  <path d="M6.7 6.7l1.7 1.7M23.6 21.6l1.7 1.7M6.7 23.6l1.7-1.7M23.6 8.4l1.7-1.7"
+        stroke="#f26b30" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.85"/>
+</svg>

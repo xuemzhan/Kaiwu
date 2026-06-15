@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui" onLoad="OnAddinLoad">
+    <ribbon startFromScratch="false">
+        <tabs>
+            <tab id="aiWriterTab" label="开悟" getVisible="GetTabVisible">
+                <group id="kwCreateGroup" label="创作">
+                    <button id="btnWrite" label="帮我写" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnContinue" label="续写" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnCoWrite" label="伴写" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <menu id="menuImitate" label="仿写" size="large" getImage="GetImage">
+                        <button id="btnImitate" label="仿写" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuContinue" label="续写" onAction="OnAction" getImage="GetImage"/>
+                    </menu>
+                </group>
+
+                <group id="kwReviseGroup" label="修改">
+                    <menu id="menuHelpMeChange" label="帮我改" size="large" getImage="GetImage">
+                        <button id="btnMenuPolish" label="快速润色" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuCorrect" label="纠错" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuRewrite" label="重写" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuExpand" label="扩写" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuShrink" label="缩写" onAction="OnAction" getImage="GetImage"/>
+                    </menu>
+                    <button id="btnCorrect" label="纠错" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnRewrite" label="重写" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnExpand" label="扩写" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnShrink" label="缩写" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <menu id="menuPolish" label="润色" size="large" getImage="GetImage">
+                        <button id="btnMenuPolishQuick" label="快速润色" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuPolishFormal" label="更正式" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuPolishGovernment" label="党政风" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuPolishOral" label="口语化" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuPolishAcademic" label="更学术" onAction="OnAction" getImage="GetImage"/>
+                    </menu>
+                    <button id="btnPolishFormal" label="更正式" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnPolishGovernment" label="党政风" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnFullPolish" label="全文润色" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                </group>
+
+                <group id="kwDocGroup" label="文档">
+                    <button id="btnDocQA" label="文档问答" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnDocSummary" label="全文总结" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnDocMind" label="文档脑图" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnTalkDoc" label="AI 讲文档" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                </group>
+
+                <group id="kwLayoutGroup" label="生成排版">
+                    <menu id="menuAiLayout" label="AI 排版" size="large" getImage="GetImage">
+                        <button id="btnMenuAiLayout" label="AI 排版" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuPaperLayout" label="论文排版" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuGovLayout" label="公文排版" onAction="OnAction" getImage="GetImage"/>
+                    </menu>
+                    <button id="btnPaperLayout" label="论文排版" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnGovLayout" label="公文排版" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnDocToPpt" label="文档生成 PPT" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnGenImage" label="AI 生成图片" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnSummaryImage" label="AI 总结生图" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                </group>
+
+                <group id="kwAssistGroup" label="专业助手">
+                    <button id="btnLegal" label="法律助手" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnDeepThink" label="深度思考" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                </group>
+
+                <group id="kwMoreGroup" label="更多">
+                    <menu id="menuMore" label="发现更多" size="large" getImage="GetImage">
+                        <button id="btnMenuHistory" label="历史会话" onAction="OnAction" getImage="GetImage"/>
+                        <button id="btnMenuDeepThink" label="深度思考" onAction="OnAction" getImage="GetImage"/>
+                    </menu>
+                    <button id="btnHistory" label="历史会话" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                    <button id="btnSettings" label="设置" size="large" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage"/>
+                </group>
+            </tab>
+        </tabs>
+    </ribbon>
+</customUI>

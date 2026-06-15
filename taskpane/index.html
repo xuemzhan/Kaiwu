@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>开悟 - AI 写作助手</title>
+    <link rel="stylesheet" href="styles/main.css">
+
+    <!-- Markdown 渲染 -->
+    <script src="vendor/marked.min.js"></script>
+    <link rel="stylesheet" href="vendor/highlight-github.min.css">
+    <!-- Mermaid 图表 -->
+    <script src="vendor/mermaid.min.js"></script>
+    <!-- html2canvas 图片导出 -->
+    <script src="vendor/html2canvas.min.js"></script>
+
+    <!-- 服务层 -->
+    <script src="services/security.js"></script>
+    <script src="services/config.js"></script>
+    <script src="services/chat.js"></script>
+    <script src="services/ai.js"></script>
+    <script src="services/wakeword.js"></script>
+    <script src="adapters/writer-adapter.js"></script>
+    <script src="actions/action-registry.js"></script>
+    <script src="actions/prompt-templates.js"></script>
+
+    <!-- 组件层 -->
+    <script src="components/message.js"></script>
+    <script src="components/result-card.js"></script>
+    <script src="components/result-panel.js"></script>
+    <script src="components/history-drawer.js"></script>
+    <script src="components/settings.js"></script>
+    <script src="actions/action-runner.js"></script>
+    <script src="components/chat.js"></script>
+
+    <!-- 环境变量注入（由 init-env.ps1 生成，gitignored） -->
+    <script src="env.js"></script>
+
+    <!-- 应用入口 -->
+    <script src="app.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 头部 -->
+        <header id="appHeader">
+            <div class="header-left">
+                <span class="header-title">🤖 开悟</span>
+            </div>
+            <div class="header-right">
+                <button id="btnHistory" class="header-btn" title="历史记录" aria-label="历史记录">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button id="btnNewChat" class="header-btn" title="新对话" aria-label="新对话">✏️</button>
+                <button id="btnSettings" class="header-btn" title="设置" aria-label="设置">⚙️</button>
+            </div>
+        </header>
+
+        <!-- 快捷操作提示（Phase 2） -->
+        <div id="quickActionBar" class="quick-action-bar" style="display:none;">
+            <span id="quickActionLabel"></span>
+            <div class="quick-action-buttons">
+                <button id="btnExecuteAction" class="btn btn-primary btn-sm">✅ 插入文档</button>
+                <button id="btnCancelAction" class="btn btn-sm">✕ 取消</button>
+            </div>
+        </div>
+
+        <div id="contextBar" class="context-bar">
+            <div class="context-title">文字助手</div>
+            <div class="context-meta" id="contextMeta">正在读取文档状态...</div>
+        </div>
+
+        <!--
+          顶部场景栏: 分类标签 + 场景芯片
+          - 空间充足 (>= 560px) 时: 一行展示分类标签 + 所有芯片 (水平滚动)
+          - 空间变窄 (< 560px) 时: 分类标签变成 Tabs, 一次只展示当前分类的芯片
+        -->
+        <nav id="quickActions" class="scenario-strip" role="tablist" aria-label="写作场景">
+            <div class="scenario-tabs" role="presentation">
+                <button class="scenario-tab is-active" data-category="writing" role="tab" aria-selected="true">创作</button>
+                <button class="scenario-tab" data-category="modify" role="tab" aria-selected="false">修改</button>
+                <button class="scenario-tab" data-category="document" role="tab" aria-selected="false">文档</button>
+            </div>
+            <div class="scenario-chips" data-category="writing">
+                <button class="scenario-chip" data-action-id="write">帮我写</button>
+                <button class="scenario-chip" data-action-id="imitate" data-require-selection="1">仿写</button>
+                <button class="scenario-chip" data-action-id="cowrite">伴写</button>
+            </div>
+            <div class="scenario-chips" data-category="modify" hidden>
+                <button class="scenario-chip" data-action-id="polish_quick">快速润色</button>
+                <button class="scenario-chip" data-action-id="polish_formal">更正式</button>
+                <button class="scenario-chip" data-action-id="polish_government">党政风</button>
+                <button class="scenario-chip" data-action-id="correct">纠错</button>
+                <button class="scenario-chip" data-action-id="expand">扩写</button>
+                <button class="scenario-chip" data-action-id="shrink">缩写</button>
+                <button class="scenario-chip" data-action-id="rewrite">重写</button>
+                <button class="scenario-chip" data-action-id="translate">翻译</button>
+                <button class="scenario-chip" data-action-id="summarize">摘要</button>
+            </div>
+            <div class="scenario-chips" data-category="document" hidden>
+                <button class="scenario-chip" data-action-id="doc_summary">全文总结</button>
+            </div>
+        </nav>
+
+        <!--
+          统一结果区: TaskPane 与 Floating 共享同一个 ResultPanel 渲染区
+          - 默认: 显示最近一次生成结果 (含替换/插入/复制按钮)
+          - 多条结果: 在历史抽屉中查看
+        -->
+        <div id="resultContainer" class="result-container"></div>
+
+        <!-- 对话列表 -->
+        <div id="chatContainer" class="chat-container">
+            <div class="welcome-message">
+                <h3>👋 欢迎使用开悟</h3>
+                <p>选中文档中的文字，或直接输入问题开始对话。</p>
+                <p class="welcome-tip">💡 提示：在文档中选中文字后，点击功能区按钮可进行润色、续写、翻译等操作。</p>
+                <p class="welcome-model" id="welcomeModel"></p>
+            </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="input-container">
+            <div class="input-wrapper">
+                <textarea id="inputBox" class="input-box" rows="3" placeholder="输入消息，Ctrl+Enter 发送..."></textarea>
+            </div>
+            <div class="input-toolbar">
+                <div class="toolbar-left">
+                    <button id="btnClear" class="btn btn-sm" title="清空当前对话">🗑️ 清空</button>
+                </div>
+                <div class="toolbar-right">
+                    <span id="modelIndicator" class="model-indicator"></span>
+                    <button id="btnSend" class="btn btn-primary">发送</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设置弹窗 -->
+        <div id="settingsOverlay" class="overlay" style="display:none;">
+            <div class="overlay-content settings-panel">
+                <div class="settings-header">
+                    <h3>⚙️ 设置</h3>
+                    <button id="btnCloseSettings" class="btn btn-sm">✕</button>
+                </div>
+                <div class="settings-body" id="settingsBody">
+                    <!-- 由 settings.js 动态渲染 -->
+                </div>
+            </div>
+        </div>
+
+        <!--
+          历史抽屉: 滑出式 (从右侧), 按稿子/时间分组, 每条含源文+结果
+          - 同一文档/同一选区的处理记录归到同一组
+          - 支持单条重新插入/复制/删除
+        -->
+        <aside id="historyDrawer" class="history-drawer" aria-hidden="true">
+            <div class="history-header">
+                <div class="history-title">历史记录</div>
+                <div class="history-actions">
+                    <button id="btnHistoryClear" class="btn btn-sm" title="清空全部">清空</button>
+                    <button id="btnCloseHistory" class="btn btn-sm" title="关闭">✕</button>
+                </div>
+            </div>
+            <div class="history-meta" id="historyMeta">共 0 条</div>
+            <div id="historyList" class="history-list">
+                <!-- 由 history-drawer.js 动态渲染 -->
+            </div>
+        </aside>
+        <div id="historyBackdrop" class="history-backdrop" hidden></div>
+    </div>
+
+    <script>
+        // 应用初始化 - 在 app.js 中完成
+        // marked 配置
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof marked !== 'undefined') {
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true,
+                    headerIds: false
+                });
+            }
+            if (typeof hljs !== 'undefined') {
+                hljs.configure({ ignoreUnescapedHTML: true });
+            }
+        });
+    </script>
+</body>
+</html>

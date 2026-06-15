@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="缩写">
+  <title>缩写</title>
+  <path d="M6 9h20M6 15h16M6 21h10" stroke="#2f3437" stroke-width="2" stroke-linecap="round"/>
+  <path d="M22 8l-4 4 4 4" stroke="#2f3437" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M26 18h-9" stroke="#2f3437" stroke-width="2" stroke-linecap="round"/>
+  <path d="M14 25l.6-1.6.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z" fill="#f26b30"/>
+</svg>

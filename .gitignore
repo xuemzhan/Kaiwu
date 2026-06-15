@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Build output (wpsjs build + our custom packaging)
+wps-addon-build/
+wps-addon-publish/
+dist/
+
+# Local config (contains API keys)
+.env
+*.local
+
+# Generated files
+taskpane/env.js
+scripts/init-env-output.js
+
+# Logs
+*.log
+logs/
+*.klog
+*.klogz
+
+# Screenshots / debug artifacts
+screenshots/
+wps-screenshot.png
+wps-with-doc.png
+floating-default.png
+.omo/
+test.run.log
+debug.finalserver.log
+
+# Local archives
+*.zip
+*.7z
+!release/*.7z
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test artifacts
+test-output/
+coverage/
+playwright-report/
+test-results/
+
+# Local paths (just in case)
+%APPDATA%/

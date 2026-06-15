@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="文档生成 PPT">
+  <title>文档生成 PPT</title>
+  <path d="M5 4h14l4 4v16H5V4z" stroke="#2f3437" stroke-width="2" stroke-linejoin="round" fill="#fff"/>
+  <path d="M19 4v5h5" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M9 13h7M9 17h5" stroke="#2f3437" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M22 14l4 2-4 2M22 18h7" stroke="#2f3437" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 25l.5-1.4.5 1.4 1.4.5-1.4.5-.5 1.4-.5-1.4-1.4-.5 1.4-.5z" fill="#f26b30"/>
+</svg>

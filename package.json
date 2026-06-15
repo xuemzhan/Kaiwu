@@ -1,0 +1,41 @@
+{
+  "name": "kaiwu",
+  "version": "1.0.0",
+  "addonType": "wps",
+  "description": "Kaiwu (开悟) - WPS Office AI writing add-in",
+  "author": "xuemzhan",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xuemzhan/Kaiwu.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xuemzhan/Kaiwu/issues"
+  },
+  "homepage": "https://github.com/xuemzhan/Kaiwu#readme",
+  "scripts": {
+    "assets": "node scripts/copy-assets.js",
+    "env": "node scripts/init-env.js",
+    "sync": "node scripts/sync-build.js",
+    "test": "node --test --test-force-exit tests/*.test.js",
+    "debug": "npm run assets && npm run env && wpsjs debug",
+    "debug:server": "npm run assets && npm run env && wpsjs debug --server",
+    "build": "npm run assets && npm run env && npm run sync && node scripts/package.js 7z",
+    "build:exe": "npm run assets && npm run env && npm run sync && node scripts/package.js exe",
+    "build:all": "npm run assets && npm run env && npm run sync && node scripts/package.js both",
+    "package": "node scripts/package.js 7z",
+    "package:exe": "node scripts/package.js exe",
+    "package:both": "node scripts/package.js both"
+  },
+  "dependencies": {
+    "highlight.js": "^11.8.0",
+    "html2canvas": "^1.4.1",
+    "marked": "^4.3.0",
+    "mermaid": "^10.6.1"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "playwright-core": "^1.60.0",
+    "wpsjs": "^2.2.0"
+  }
+}
