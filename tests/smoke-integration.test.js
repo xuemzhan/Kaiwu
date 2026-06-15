@@ -172,8 +172,9 @@ test('smoke: ChatManager export/import roundtrip', () => {
     assert.ok(json.indexOf('msg1') !== -1);
     var data = JSON.parse(json);
     assert.ok(data.chats);
-    // 清空 localStorage + 当前 id, 模拟首次导入
+    // 清空 localStorage + 缓存 + 当前 id, 模拟首次导入
     window.localStorage.clear();
+    ChatManager._cache = null;
     ChatManager._currentChatId = null;
     var result = ChatManager.importAll(json);
     assert.equal(result.imported, 1);

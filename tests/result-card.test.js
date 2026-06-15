@@ -81,6 +81,7 @@ test('ResultCard: render populates resultContainer', () => {
     window.document.body.appendChild(container);
     const c = ResultCard.create({ actionId: 'write', actionLabel: '写' });
     ResultCard.update(c.id, { resultText: 'hello', status: 'done' });
+    ResultCard.render();  // 强制同步渲染（update 使用防抖，测试中直接触发）
     assert.ok(container.innerHTML.length > 0);
     assert.ok(container.innerHTML.indexOf('hello') !== -1);
 });

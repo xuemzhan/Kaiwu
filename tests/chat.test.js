@@ -66,6 +66,7 @@ test('ChatManager: updateLastAssistant with skipSave does not persist', () => {
     ChatManager.create();
     ChatManager.addMessage('user', 'q');
     ChatManager.addMessage('assistant', '');
+    ChatManager._flushSave();  // 确保之前的数据已持久化
     ChatManager.updateLastAssistant('partial', { skipSave: true });
     // Reload from storage and check it wasn't saved
     const saved = JSON.parse(window.localStorage.getItem('wps_assistant_chats'));
@@ -138,6 +139,7 @@ test('ChatManager: prunes to 50 most recent chats on save', () => {
         ChatManager.create();
         ChatManager.addMessage('user', 'q' + i);
     }
+    ChatManager._flushSave();  // 强制落盘触发剪枝
     const recent = ChatManager.getRecent(100);
     assert.ok(recent.length <= 50, 'should prune to 50, got ' + recent.length);
 });

@@ -46,7 +46,8 @@ var KwSecurity = {
         if (
             lowered.indexOf('javascript:') === 0 ||
             lowered.indexOf('vbscript:') === 0 ||
-            lowered.indexOf('data:') === 0
+            lowered.indexOf('data:') === 0 ||
+            lowered.indexOf('blob:') === 0
         ) {
             return '';
         }

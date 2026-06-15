@@ -5,6 +5,9 @@
 
 var ChatManager = {
     _currentChatId: null,
+    // 内存缓存: 避免每次操作都从 localStorage 读取
+    _cache: null,
+    _saveTimer: null,
 
     // 创建新对话
     create: function () {
@@ -15,8 +18,9 @@ var ChatManager = {
             createdAt: Date.now(),
             updatedAt: Date.now()
         };
-        this._saveChat(chat);
+        this._updateCache(chat.id, chat);
         this._currentChatId = chat.id;
+        this._scheduleSave();
         return chat;
     },
 
@@ -60,7 +64,8 @@ var ChatManager = {
             chat.title = content.substring(0, 30) + (content.length > 30 ? '...' : '');
         }
         chat.updatedAt = Date.now();
-        this._saveChat(chat);
+        this._updateCache(chat.id, chat);
+        this._scheduleSave();
         return chat;
     },
 
@@ -74,8 +79,9 @@ var ChatManager = {
             lastMsg.content = content;
             lastMsg.timestamp = Date.now();
             chat.updatedAt = Date.now();
+            this._updateCache(chat.id, chat);
             if (!options.skipSave) {
-                this._saveChat(chat);
+                this._scheduleSave();
             }
         }
         return chat;
@@ -89,7 +95,8 @@ var ChatManager = {
         if (lastMsg.role === 'assistant') {
             lastMsg.content += delta;
             chat.updatedAt = Date.now();
-            this._saveChat(chat);
+            this._updateCache(chat.id, chat);
+            this._scheduleSave();
         }
         return chat;
     },
@@ -115,7 +122,8 @@ var ChatManager = {
             chat.messages = [];
             chat.title = '新对话';
             chat.updatedAt = Date.now();
-            this._saveChat(chat);
+            this._updateCache(chat.id, chat);
+            this._scheduleSave();
         }
         return chat;
     },
@@ -124,7 +132,8 @@ var ChatManager = {
     delete: function (id) {
         var chats = this._loadAll();
         delete chats[id];
-        this._saveAll(chats);
+        this._cache = chats;
+        this._scheduleSave();
         if (this._currentChatId === id) {
             this._currentChatId = null;
         }
@@ -135,19 +144,93 @@ var ChatManager = {
         return this._currentChatId;
     },
 
+    // ============ 内部 ============
+
+    // 内存中更新缓存 (避免反复 JSON.parse)
+    _updateCache: function (id, chat) {
+        if (!this._cache) this._cache = this._loadAll();
+        this._cache[id] = chat;
+    },
+
     // 内部：生成唯一ID
     _generateId: function () {
         return 'chat_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
     },
 
-    // 内部：加载所有对话
+    // 内部：加载所有对话 (优先走缓存)
     _loadAll: function () {
+        if (this._cache) return this._cache;
         try {
             var data = localStorage.getItem('wps_assistant_chats');
-            return data ? JSON.parse(data) : {};
+            this._cache = data ? JSON.parse(data) : {};
+            return this._cache;
         } catch (e) {
             console.warn('[Chat] 加载对话失败:', e);
-            return {};
+            this._cache = {};
+            return this._cache;
+        }
+    },
+
+    /**
+     * 防抖落盘: 流式期间高频调用时不立即写盘, 节流到 500ms
+     */
+    _scheduleSave: function () {
+        if (this._saveTimer) return;
+        var self = this;
+        this._saveTimer = setTimeout(function () {
+            self._saveTimer = null;
+            self._saveNow();
+        }, 500);
+    },
+
+    _flushSave: function () {
+        if (this._saveTimer) {
+            clearTimeout(this._saveTimer);
+            this._saveTimer = null;
+        }
+        this._saveNow();
+    },
+
+    _saveNow: function () {
+        if (!this._cache) return;
+        var chats = this._cache;
+        try {
+            // 清理过旧的对话（保留最近50个），仅在数量超限时执行
+            var keys = Object.keys(chats);
+            if (keys.length > 50) {
+                var sorted = keys.sort(function (a, b) { return chats[b].updatedAt - chats[a].updatedAt; });
+                var toKeep = sorted.slice(0, 50);
+                var pruned = {};
+                for (var i = 0; i < toKeep.length; i++) {
+                    pruned[toKeep[i]] = chats[toKeep[i]];
+                }
+                chats = pruned;
+                this._cache = pruned;
+            }
+            localStorage.setItem('wps_assistant_chats', JSON.stringify(chats));
+        } catch (e) {
+            if (e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22)) {
+                console.warn('[Chat] localStorage 配额已满, 仅保留当前对话');
+                var currentId = this._currentChatId;
+                if (currentId && chats[currentId]) {
+                    try {
+                        var single = {};
+                        single[currentId] = chats[currentId];
+                        localStorage.setItem('wps_assistant_chats', JSON.stringify(single));
+                        this._cache = single;
+                    } catch (e2) {
+                        console.error('[Chat] 强制清理后仍无法保存:', e2);
+                        // 连单条都写不下: 清空缓存, 避免下次 _saveNow 又试图写整张大对象.
+                        this._cache = {};
+                    }
+                } else {
+                    // 当前对话不在缓存中 (极端边界): 避免下次再写同样大数据,
+                    // 清空缓存, 后续 addMessage 会重建一个新 _cache.
+                    this._cache = {};
+                }
+            } else {
+                console.error('[Chat] 保存对话失败:', e);
+            }
         }
     },
 
@@ -192,52 +275,11 @@ var ChatManager = {
                 existing[id] = data.chats[id];
                 imported++;
             }
-            this._saveAll(existing);
+            this._cache = existing;
+            this._scheduleSave();
             return { imported: imported, skipped: skipped };
         } catch (e) {
             return { imported: 0, skipped: 0, error: e.message || 'parse error' };
-        }
-    },
-
-    // 内部：保存单个对话
-    _saveChat: function (chat) {
-        var chats = this._loadAll();
-        chats[chat.id] = chat;
-        this._saveAll(chats);
-    },
-
-    // 内部：保存所有对话
-    _saveAll: function (chats) {
-        try {
-            // 清理过旧的对话（保留最近50个）
-            var keys = Object.keys(chats);
-            if (keys.length > 50) {
-                var sorted = keys.sort(function (a, b) { return chats[b].updatedAt - chats[a].updatedAt; });
-                var toKeep = sorted.slice(0, 50);
-                var pruned = {};
-                for (var i = 0; i < toKeep.length; i++) {
-                    pruned[toKeep[i]] = chats[toKeep[i]];
-                }
-                chats = pruned;
-            }
-            localStorage.setItem('wps_assistant_chats', JSON.stringify(chats));
-        } catch (e) {
-            if (e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22)) {
-                // Try one aggressive prune: keep only the current chat.
-                console.warn('[Chat] localStorage 配额已满, 仅保留当前对话');
-                var currentId = this._currentChatId;
-                if (currentId && chats[currentId]) {
-                    try {
-                        localStorage.setItem('wps_assistant_chats', JSON.stringify(
-                            Object.defineProperty({}, currentId, { value: chats[currentId], enumerable: true })
-                        ));
-                    } catch (e2) {
-                        console.error('[Chat] 强制清理后仍无法保存:', e2);
-                    }
-                }
-            } else {
-                console.error('[Chat] 保存对话失败:', e);
-            }
         }
     }
 };

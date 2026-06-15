@@ -531,13 +531,11 @@
         } catch (e) { /* ignore */ }
     }
 
+    // escapeHtml 已统一收敛到 KwUtils.escapeHtml, floating.js 之前保留
+    // 的 inline fallback 实际不会被触发 (utils.js 加载先于此处调用).
+    // 保留命名仅为最小化改动; 直接调用 KwUtils 即可.
     function escapeHtml(text) {
-        return String(text || '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+        return KwUtils.escapeHtml(text);
     }
 
     document.addEventListener('DOMContentLoaded', init);

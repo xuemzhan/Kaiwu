@@ -165,6 +165,16 @@ window.__WPS_BRIDGE__ = {
     }
 };
 
+// ==================== 全局未捕获异常处理 ====================
+// 防止未处理的 Promise 拒绝静默吞掉错误
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('unhandledrejection', function (e) {
+        if (e && e.reason) {
+            console.warn('[开悟] 未捕获的 Promise 拒绝:', e.reason && e.reason.message ? e.reason.message : e.reason);
+        }
+    });
+}
+
 // ==================== 应用初始化 ====================
 document.addEventListener('DOMContentLoaded', function () {
     // 检测并打印组件类型

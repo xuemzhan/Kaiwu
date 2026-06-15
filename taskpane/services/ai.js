@@ -74,6 +74,7 @@ var AIService = {
 
         var url = config.apiBaseUrl.replace(/\/+$/, '') + '/chat/completions';
 
+        var self = this;
         this._fetchWithRetry(url, {
             method: 'POST',
             headers: {
@@ -93,7 +94,7 @@ var AIService = {
             var message = data.choices && data.choices[0] && data.choices[0].message;
             var content = message && message.content;
             var shouldStrip = Config.isReasoningModel(config.model) || config.stripReasoning !== false;
-            if (shouldStrip) content = AIService.stripReasoningContent(content);
+            if (shouldStrip) content = self.stripReasoningContent(content);
             if (content) {
                 onSuccess && onSuccess(content);
             } else {

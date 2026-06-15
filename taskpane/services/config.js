@@ -108,9 +108,16 @@ var Config = {
     set: function (key, value) {
         if (!this._data) this.init();
         if (typeof key === 'object') {
-            Object.assign(this._data, key);
+            // 防止原型污染: 跳过 __proto__ 等危险属性
+            for (var k in key) {
+                if (key.hasOwnProperty(k) && k !== '__proto__' && k !== 'constructor' && k !== 'prototype') {
+                    this._data[k] = key[k];
+                }
+            }
         } else {
-            this._data[key] = value;
+            if (key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
+                this._data[key] = value;
+            }
         }
         this._save();
     },

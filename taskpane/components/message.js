@@ -39,13 +39,12 @@ var MessageRenderer = {
         var streamingClass = isStreaming ? ' streaming' : '';
         var caretClass = isStreaming ? ' kw-streaming-caret' : '';
         var renderedContent = this._renderMarkdown(mainContent);
-        var self = this;
 
         return '' +
             '<div class="message message-assistant' + streamingClass + '" data-mid="' + this._idFor(content) + '">' +
             '  <div class="message-label">AI</div>' +
             '  <div class="message-bubble assistant-bubble markdown-body' + caretClass + '" data-content="' + KwUtils.escapeAttr(mainContent) + '">' +
-            '    ' + renderedContent +
+            '    <div class="message-body-content">' + renderedContent + '</div>' +
             '    <div class="message-actions">' +
             '      <button class="msg-action-btn" data-kw-action="copy-message" title="复制">📋</button>' +
             '      <button class="msg-action-btn" data-kw-action="insert-message" title="插入文档">📄</button>' +
@@ -58,6 +57,10 @@ var MessageRenderer = {
     /**
      * 仅更新已存在的助手消息节点, 不重建整条对话.
      * 流式阶段走这里; 配合 ChatUI 流式节流, 避免每帧重建 DOM.
+     *
+     * 依赖 _renderAssistantMessage 已经输出标准结构:
+     *   .message-bubble > .message-body-content + .message-actions
+     * 没有正则切 DOM 的手术, 直接覆盖 body 子节点即可.
      */
     updateStreamingMessage: function (container, msg) {
         if (!container) return null;
@@ -66,36 +69,15 @@ var MessageRenderer = {
         if (!node) return null;
         var bubble = node.querySelector('.message-bubble');
         if (!bubble) return null;
+        var body = bubble.querySelector('.message-body-content');
+        if (!body) return null;
         var mainContent = KwUtils.cleanResult(msg.content || '');
         bubble.setAttribute('data-content', mainContent);
-
-        // 替换 .message-content 子节点 (该子节点由 _renderAssistantMessage 创建,
-        // 我们把它提取出来以方便局部更新; 旧实现直接 innerHTML 整体覆盖)
-        var body = bubble.querySelector('.message-body-content');
-        if (!body) {
-            // 第一次更新: 提取已有渲染内容, 包一层 div
-            var existing = bubble.innerHTML;
-            var headerActions = '';
-            var actionsMatch = existing.match(/<div class="message-actions">[\s\S]*?<\/div>/);
-            if (actionsMatch) {
-                headerActions = actionsMatch[0];
-                bubble.innerHTML = existing.replace(actionsMatch[0], '');
-            }
-            var wrap = document.createElement('div');
-            wrap.className = 'message-body-content';
-            wrap.innerHTML = self._renderMarkdown(mainContent);
-            bubble.insertBefore(wrap, bubble.firstChild);
-            if (headerActions) bubble.insertAdjacentHTML('beforeend', headerActions);
-            body = wrap;
-        } else {
-            body.innerHTML = self._renderMarkdown(mainContent);
-        }
-
+        body.innerHTML = MessageRenderer._renderMarkdown(mainContent);
         // 代码高亮 (幂等)
         if (typeof KwMarkdown !== 'undefined') {
             KwMarkdown.highlightCodeOnly(body);
         }
-
         return node;
     },
 

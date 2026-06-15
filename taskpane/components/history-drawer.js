@@ -178,7 +178,15 @@ var HistoryDrawer = {
     },
 
     _merge: function (oldCard, newCard) {
-        var merged = Object.assign({}, oldCard, newCard, { updatedAt: Date.now() });
+        var merged = {};
+        var keys = Object.keys(oldCard).concat(Object.keys(newCard));
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+            if (newCard.hasOwnProperty(k)) merged[k] = newCard[k];
+            else if (oldCard.hasOwnProperty(k)) merged[k] = oldCard[k];
+        }
+        merged.updatedAt = Date.now();
         return merged;
     },
 
@@ -209,6 +217,11 @@ var HistoryDrawer = {
         }
     },
 
+    /**
+     * 安排一次持久化.
+     * @param {boolean} [immediate=false] - true: 立即同步写盘 (用于 clear 等清空操作);
+     *                                      默认: 500ms 防抖合并多次流式调用.
+     */
     _scheduleSave: function (immediate) {
         if (this._saveTimer) {
             clearTimeout(this._saveTimer);

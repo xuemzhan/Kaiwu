@@ -6,6 +6,10 @@
  * _formatTime / stripReasoningContent 等 5+ 份重复实现统一收敛到此.
  */
 var KwUtils = {
+    // 复用节点: escapeHtml 每次调用都 new div + appendChild 有 GC 压力,
+    // 同步路径下复用是安全的 (没有 await, 同一 tick 内串行使用).
+    _escapeDiv: null,
+
     /**
      * 剥离模型返回的思考过程痕迹.
      * 处理四种格式:
@@ -38,11 +42,12 @@ var KwUtils = {
     /**
      * 转义 HTML 文本 (用于 user-content 渲染前的安全处理).
      * 用 textContent 桥接, 避免正则误判 Unicode / 引号.
+     * 复用单个 div 节点, 高频调用场景 (流式 / 列表渲染) 减少 GC 压力.
      */
     escapeHtml: function (str) {
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(str == null ? '' : String(str)));
-        return div.innerHTML;
+        if (!this._escapeDiv) this._escapeDiv = document.createElement('div');
+        this._escapeDiv.textContent = str == null ? '' : String(str);
+        return this._escapeDiv.innerHTML;
     },
 
     /**

@@ -4,6 +4,7 @@
 var ResultCard = {
     _cards: {},
     _latestId: null,
+    _renderTimer: null,
 
     create: function (options) {
         var id = 'result_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
@@ -27,7 +28,7 @@ var ResultCard = {
     update: function (id, patch) {
         if (!this._cards[id]) return;
         Object.assign(this._cards[id], patch || {});
-        this.render();
+        this._scheduleRender();
     },
 
     append: function (id, fullContent) {
@@ -139,5 +140,14 @@ var ResultCard = {
         if (typeof ChatUI !== 'undefined' && ChatUI._postRender) {
             ChatUI._postRender();
         }
+    },
+
+    _scheduleRender: function () {
+        if (this._renderTimer) return;
+        var self = this;
+        this._renderTimer = setTimeout(function () {
+            self._renderTimer = null;
+            self.render();
+        }, 80);
     }
 };

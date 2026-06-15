@@ -50,27 +50,27 @@ var SettingsUI = {
             var p = PRESET_MODELS[i];
             var selected = (!p.disabled && p.value && p.value === currentModel) ? ' selected' : '';
             var disabled = p.disabled ? ' disabled' : '';
-            optionsHtml += '<option value="' + this._escapeAttr(p.value) + '"' + selected + disabled + '>' + this._escapeHtml(p.label) + '</option>';
+            optionsHtml += '<option value="' + KwUtils.escapeAttr(p.value) + '"' + selected + disabled + '>' + KwUtils.escapeHtml(p.label) + '</option>';
         }
 
         body.innerHTML = '' +
             '<div class="form-group">' +
             '  <label class="form-label">API 地址 (Base URL)</label>' +
-            '  <input id="settingBaseUrl" class="form-input" type="text" value="' + this._escapeAttr(config.apiBaseUrl) + '" placeholder="https://api.minimaxi.com/v1">' +
+            '  <input id="settingBaseUrl" class="form-input" type="text" value="' + KwUtils.escapeAttr(config.apiBaseUrl) + '" placeholder="https://api.minimaxi.com/v1">' +
             '</div>' +
             '<div class="form-group">' +
             '  <label class="form-label">API Key</label>' +
-            '  <input id="settingApiKey" class="form-input" type="password" value="' + this._escapeAttr(config.apiKey) + '" placeholder="输入你的 API Key">' +
+            '  <input id="settingApiKey" class="form-input" type="password" value="' + KwUtils.escapeAttr(config.apiKey) + '" placeholder="输入你的 API Key">' +
             '  <button id="btnToggleKey" class="btn btn-sm form-btn" style="margin-top:4px;">👁️ 显示</button>' +
             '</div>' +
             '<div class="form-group">' +
             '  <label class="form-label">模型 (Model)</label>' +
             '  <select id="settingModelSelect" class="form-input">' + optionsHtml + '</select>' +
-            '  <input id="settingModelCustom" class="form-input" type="text" placeholder="输入自定义模型名称" style="margin-top:6px;' + (isPreset ? ' display:none;' : '') + '" value="' + (isPreset ? '' : this._escapeAttr(currentModel)) + '">' +
+            '  <input id="settingModelCustom" class="form-input" type="text" placeholder="输入自定义模型名称" style="margin-top:6px;' + (isPreset ? ' display:none;' : '') + '" value="' + (isPreset ? '' : KwUtils.escapeAttr(currentModel)) + '">' +
             '</div>' +
             '<div class="form-group">' +
             '  <label class="form-label">系统提示词 (System Prompt)</label>' +
-            '  <textarea id="settingPrompt" class="form-input form-textarea" rows="4" placeholder="你是一个AI写作助手（开悟）...">' + this._escapeHtml(config.systemPrompt) + '</textarea>' +
+            '  <textarea id="settingPrompt" class="form-input form-textarea" rows="4" placeholder="你是一个AI写作助手（开悟）...">' + KwUtils.escapeHtml(config.systemPrompt) + '</textarea>' +
             '</div>' +
             '<div class="form-group">' +
             '  <label class="form-label">温度 (Temperature): <span id="tempValue">' + config.temperature + '</span></label>' +
@@ -268,15 +268,5 @@ var SettingsUI = {
                 el.textContent = '';
             }, 3000);
         }
-    },
-
-    _escapeAttr: function (str) {
-        return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    },
-
-    _escapeHtml: function (str) {
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(str));
-        return div.innerHTML;
     }
 };
