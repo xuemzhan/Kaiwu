@@ -16,6 +16,9 @@ const DRAWER_DOM = `
             <button id="btnCloseHistory">×</button>
         </div>
     </div>
+    <div class="history-search">
+        <input id="historySearch" type="text" class="form-input">
+    </div>
     <div class="history-meta" id="historyMeta">共 0 条</div>
     <div id="historyList" class="history-list"></div>
 </div>
@@ -32,9 +35,12 @@ function loadDrawer() {
     env.window.__ENV_MODEL__ = 'test';
     mockVendorLibs(env.window);
     loadScripts(env.window, [
+        'taskpane/services/utils.js',
+        'taskpane/services/toast.js',
         'taskpane/services/security.js',
         'taskpane/services/config.js',
         'taskpane/services/ai.js',
+        'taskpane/services/markdown.js',
         'taskpane/adapters/writer-adapter.js',
         'taskpane/actions/action-registry.js',
         'taskpane/actions/prompt-templates.js',
@@ -208,12 +214,15 @@ test('HistoryDrawer: copy action uses clipboard', () => {
     assert.equal(copied, 'copyable');
 });
 
-test('HistoryDrawer: _cleanResult strips thinking blocks', () => {
-    const { HistoryDrawer } = loadDrawer();
-    const cleaned = HistoryDrawer._cleanResult('```thinking\nhidden\n```\nvisible');
+test('HistoryDrawer: cleanResult strips thinking blocks (via KwUtils)', () => {
+    const { HistoryDrawer, window } = loadDrawer();
+    // 新版本: cleanResult 委托给 KwUtils.cleanResult; 直接验证 KwUtils
+    const cleaned = window.KwUtils.cleanResult('```thinking\nhidden\n```\nvisible');
     assert.equal(cleaned, 'visible');
-    const cleaned2 = HistoryDrawer._cleanResult('<think>hidden</think> final');
+    const cleaned2 = window.KwUtils.cleanResult('<think>hidden</think> final');
     assert.equal(cleaned2, 'final');
+    // HistoryDrawer 不再保留 _cleanResult, 但 _renderEntry 仍会调用 KwUtils
+    assert.equal(typeof HistoryDrawer._renderEntry, 'function');
 });
 
 test('HistoryDrawer: _normalize fills defaults', () => {

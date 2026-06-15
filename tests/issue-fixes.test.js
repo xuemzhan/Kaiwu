@@ -110,9 +110,9 @@ test('fix: streaming result has cancel button (■) instead of regenerate (↻)'
     ResultPanel.mount(ResultCard._cards[card.id], mount, { streaming: true });
     await new Promise(r => setTimeout(r, 100));
     const html = mount.innerHTML;
-    assert.ok(html.indexOf('ResultPanel.abort()') !== -1,
-        'cancel button should call ResultPanel.abort()');
     assert.ok(html.indexOf('取消生成') !== -1, 'cancel button should have cancel title');
+    assert.ok(html.indexOf('data-kw-action="abort"') !== -1,
+        'cancel button should bind via data-kw-action=abort');
 });
 
 test('fix: done result has regenerate button (↻) not cancel', () => {
@@ -123,11 +123,11 @@ test('fix: done result has regenerate button (↻) not cancel', () => {
     ResultCard.update(card.id, { status: 'done', resultText: 'completed' });
     ResultPanel.mount(ResultCard._cards[card.id], mount);
     const html = mount.innerHTML;
-    assert.ok(html.indexOf('ResultPanel.regenerate()') !== -1,
-        'should show regenerate button when done');
+    assert.ok(html.indexOf('data-kw-action="regenerate"') !== -1,
+        'should show regenerate button via data-kw-action when done');
 });
 
-test('fix: ResultPanel.abort() marks active card as error and clears controller', () => {
+test('fix: ResultPanel.abort() marks active card as cancelled and clears controller', () => {
     const { window, ResultCard, ResultPanel } = loadPanel();
     const mount = window.document.createElement('div');
     window.document.body.appendChild(mount);
@@ -144,7 +144,9 @@ test('fix: ResultPanel.abort() marks active card as error and clears controller'
     ResultPanel.abort();
 
     assert.equal(aborted, true, 'controller.abort should be called');
-    assert.equal(ResultCard._cards[card.id].status, 'error', 'card status should be error');
+    // 新语义: 主动取消标记为 cancelled (区别于 API error)
+    assert.equal(ResultCard._cards[card.id].status, 'cancelled',
+        'card status should be cancelled');
     assert.equal(ResultCard._cards[card.id].error, '已取消', 'error message should be 已取消');
     assert.equal(ResultPanel._abortController, null, 'controller should be cleared');
 });

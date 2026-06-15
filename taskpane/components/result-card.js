@@ -66,23 +66,23 @@ var ResultCard = {
             error: '失败'
         }[card.status] || card.status;
         var content = card.error
-            ? '<div class="result-error">' + this._escapeHtml(card.error) + '</div>'
+            ? '<div class="result-error">' + KwUtils.escapeHtml(card.error) + '</div>'
             : this._renderMarkdown(card.resultText || '正在准备...');
         var canApply = card.status === 'done' && !!card.resultText;
         return '' +
-            '<section class="result-card" data-card-id="' + this._escapeAttr(card.id) + '">' +
+            '<section class="result-card" data-card-id="' + KwUtils.escapeAttr(card.id) + '">' +
             '  <div class="result-card-header">' +
             '    <div>' +
-            '      <div class="result-title">' + this._escapeHtml(card.actionLabel) + '</div>' +
-            '      <div class="result-meta">' + this._escapeHtml(this._sourceLabel(card)) + ' · ' + statusText + '</div>' +
+            '      <div class="result-title">' + KwUtils.escapeHtml(card.actionLabel) + '</div>' +
+            '      <div class="result-meta">' + KwUtils.escapeHtml(this._sourceLabel(card)) + ' · ' + statusText + '</div>' +
             '    </div>' +
-            '    <button class="result-icon-btn" title="重新生成" onclick="ResultCard.regenerate(&quot;' + this._escapeAttr(card.id) + '&quot;)">↻</button>' +
+            '    <button class="result-icon-btn" title="重新生成" data-kw-action="regenerate" data-card-id="' + KwUtils.escapeAttr(card.id) + '">↻</button>' +
             '  </div>' +
             '  <div class="result-content markdown-body">' + content + '</div>' +
             '  <div class="result-actions">' +
-            '    <button class="btn btn-primary btn-sm" ' + (canApply ? '' : 'disabled') + ' onclick="ResultCard.replaceOriginal(&quot;' + this._escapeAttr(card.id) + '&quot;)">替换原文</button>' +
-            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' onclick="ResultCard.insertAtCursor(&quot;' + this._escapeAttr(card.id) + '&quot;)">插入光标</button>' +
-            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' onclick="ResultCard.copy(&quot;' + this._escapeAttr(card.id) + '&quot;)">复制</button>' +
+            '    <button class="btn btn-primary btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="replace-original" data-card-id="' + KwUtils.escapeAttr(card.id) + '">替换原文</button>' +
+            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="insert-at-cursor" data-card-id="' + KwUtils.escapeAttr(card.id) + '">插入光标</button>' +
+            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="copy-result" data-card-id="' + KwUtils.escapeAttr(card.id) + '">复制</button>' +
             '  </div>' +
             '</section>';
     },
@@ -91,21 +91,22 @@ var ResultCard = {
         var card = this._cards[id];
         if (!card || !card.resultText) return;
         var result = WriterAdapter.replaceSelection(this._cleanResult(card.resultText), card.sourceText);
-        MessageRenderer._showToast(result.ok ? '已替换原文' : result.reason);
+        KwToast.show(result.ok ? '已替换原文' : result.reason);
     },
 
     insertAtCursor: function (id) {
         var card = this._cards[id];
         if (!card || !card.resultText) return;
         var ok = WriterAdapter.insertAtCursor(this._cleanResult(card.resultText));
-        MessageRenderer._showToast(ok ? '已插入光标位置' : '插入失败，请手动复制');
+        KwToast.show(ok ? '已插入光标位置' : '插入失败，请手动复制');
     },
 
     copy: function (id) {
         var card = this._cards[id];
         if (!card || !card.resultText) return;
-        MessageRenderer._copyToClipboard(this._cleanResult(card.resultText));
-        MessageRenderer._showToast('已复制');
+        KwUtils.copyToClipboard(this._cleanResult(card.resultText)).then(function () {
+            KwToast.show('已复制');
+        });
     },
 
     regenerate: function (id) {
@@ -121,34 +122,22 @@ var ResultCard = {
     },
 
     _cleanResult: function (text) {
-        return String(text || '')
-            .replace(/```thinking\b[\s\S]*?```/gi, '')
-            .replace(/```thinking\b[\s\S]*$/gi, '')
-            .replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, '')
-            .replace(/<think\b[^>]*>[\s\S]*$/gi, '')
-            .trim();
+        return KwUtils.cleanResult(text);
     },
 
     _renderMarkdown: function (text) {
-        if (typeof MessageRenderer !== 'undefined' && MessageRenderer._renderMarkdown) {
-            return MessageRenderer._renderMarkdown(text);
+        if (typeof KwMarkdown !== 'undefined') {
+            return KwMarkdown.render(text);
         }
-        return '<p>' + this._escapeHtml(text) + '</p>';
+        if (typeof MessageRenderer !== 'undefined' && MessageRenderer._legacyRenderMarkdown) {
+            return MessageRenderer._legacyRenderMarkdown(text);
+        }
+        return '<p>' + KwUtils.escapeHtml(text) + '</p>';
     },
 
     _postRender: function () {
         if (typeof ChatUI !== 'undefined' && ChatUI._postRender) {
             ChatUI._postRender();
         }
-    },
-
-    _escapeHtml: function (str) {
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(String(str || '')));
-        return div.innerHTML;
-    },
-
-    _escapeAttr: function (str) {
-        return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 };

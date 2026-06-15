@@ -35,9 +35,12 @@ function loadTabs() {
     // 显式设宽屏
     Object.defineProperty(env.window, 'innerWidth', { value: 1024, configurable: true });
     loadScripts(env.window, [
+        'taskpane/services/utils.js',
+        'taskpane/services/toast.js',
         'taskpane/services/security.js',
         'taskpane/services/config.js',
         'taskpane/services/ai.js',
+        'taskpane/services/markdown.js',
         'taskpane/adapters/writer-adapter.js',
         'taskpane/actions/action-registry.js',
         'taskpane/actions/prompt-templates.js',
@@ -47,7 +50,12 @@ function loadTabs() {
         'taskpane/components/result-panel.js',
         'taskpane/components/chat.js'
     ]);
-    // 注入 toast 监听
+    // 注入 toast 监听 (新版本用 KwToast.show, 旧版本兼容 MessageRenderer._showToast)
+    if (env.window.KwToast) {
+        env.window.KwToast.show = function (msg) {
+            env.window._lastToast = msg;
+        };
+    }
     if (env.window.MessageRenderer) {
         env.window.MessageRenderer._showToast = function (msg) {
             env.window._lastToast = msg;
@@ -56,7 +64,8 @@ function loadTabs() {
     return Object.assign({}, env, {
         ChatUI: env.window.ChatUI,
         ActionRunner: env.window.ActionRunner,
-        MessageRenderer: env.window.MessageRenderer
+        MessageRenderer: env.window.MessageRenderer,
+        KwToast: env.window.KwToast
     });
 }
 

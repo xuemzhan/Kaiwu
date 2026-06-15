@@ -83,6 +83,7 @@ var SettingsUI = {
             '<div class="form-actions">' +
             '  <button id="btnSaveSettings" class="btn btn-primary">💾 保存</button>' +
             '  <button id="btnResetConfig" class="btn btn-sm" style="margin-left:8px;">↺ 重置默认</button>' +
+            '  <button id="btnTestConnection" class="btn btn-sm" style="margin-left:8px;">🧪 测试连接</button>' +
             '</div>' +
             '<div class="form-status" id="formStatus"></div>';
 
@@ -139,6 +140,10 @@ var SettingsUI = {
             }
 
             Config.set(config);
+            // G4: 标记 systemPrompt 来源为 'user' (覆盖组件默认值)
+            if (config.systemPrompt) {
+                Config.set('systemPromptSource', 'user:custom');
+            }
             self._showStatus('✅ 设置已保存', 'success');
             ChatUI._updateModelIndicator();
 
@@ -152,6 +157,11 @@ var SettingsUI = {
             self._renderForm();
             self._showStatus('✅ 已恢复默认设置', 'success');
             ChatUI._updateModelIndicator();
+        });
+
+        // 测试连接 (D1)
+        document.getElementById('btnTestConnection').addEventListener('click', function () {
+            self._testConnection();
         });
 
         // 显示/隐藏 API Key
@@ -170,6 +180,81 @@ var SettingsUI = {
         document.getElementById('settingTemp').addEventListener('input', function () {
             document.getElementById('tempValue').textContent = this.value;
         });
+    },
+
+    /**
+     * 测试连接 (D1): 用当前表单值 (不写入 Config) 发一个最小请求.
+     * 成功 → 弹绿色提示 + 延迟 (ms).
+     * 失败 → 弹错误原因 (401 / 超时 / 网络 等).
+     */
+    _testConnection: function () {
+        var baseUrl = document.getElementById('settingBaseUrl').value.trim();
+        var apiKey = document.getElementById('settingApiKey').value.trim();
+        var model = this._getModelValue();
+        if (!baseUrl || !apiKey || !model) {
+            this._showStatus('请先填写 API 地址、Key 和 模型', 'error');
+            return;
+        }
+
+        var btn = document.getElementById('btnTestConnection');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '⏳ 测试中...';
+        }
+        this._showStatus('正在测试连接...', 'info');
+
+        var url = baseUrl.replace(/\/+$/, '') + '/chat/completions';
+        var startTime = Date.now();
+        var self = this;
+        var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        var timeoutTimer = setTimeout(function () {
+            if (controller) {
+                try { controller.abort(); } catch (e) { /* ignore */ }
+            }
+        }, 15000);
+
+        var fetchOpts = {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + apiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: model,
+                messages: [{ role: 'user', content: 'hi' }],
+                max_tokens: 1,
+                stream: false
+            })
+        };
+        if (controller) fetchOpts.signal = controller.signal;
+
+        fetch(url, fetchOpts)
+            .then(function (response) {
+                clearTimeout(timeoutTimer);
+                var latency = Date.now() - startTime;
+                if (response.ok) {
+                    self._showStatus('✅ 连接成功！延迟 ' + latency + 'ms', 'success');
+                    return;
+                }
+                return response.text().then(function (text) {
+                    var snippet = String(text || '').slice(0, 120);
+                    self._showStatus('❌ ' + response.status + ': ' + snippet, 'error');
+                });
+            })
+            .catch(function (err) {
+                clearTimeout(timeoutTimer);
+                if (err && err.name === 'AbortError') {
+                    self._showStatus('❌ 连接超时 (>15s)。请检查网络或 API 地址', 'error');
+                } else {
+                    self._showStatus('❌ 网络错误: ' + (err.message || err), 'error');
+                }
+            })
+            .then(function () {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '🧪 测试连接';
+                }
+            });
     },
 
     _showStatus: function (msg, type) {

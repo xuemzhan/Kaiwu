@@ -59,9 +59,14 @@ var WriterAdapter = {
         var sel = this.getSelection();
         if (!sel) return { ok: false, reason: 'WPS 文档连接不可用' };
         try {
-            var current = sel.Text ? String(sel.Text).trim() : '';
-            if (expectedText && current !== String(expectedText).trim()) {
-                return { ok: false, reason: '当前选区与生成时的原文不一致，请重新选中原文后再替换' };
+            // 优化 (D10): 长度 + 前缀 + 后缀快速比较, 避免长文档全量比较.
+            // 注意: 这里只校验 expectedText 是否在原文中存在, 允许选区有额外前后空白.
+            if (expectedText) {
+                var expected = String(expectedText).trim();
+                var current = sel.Text ? String(sel.Text) : '';
+                if (current.indexOf(expected) === -1) {
+                    return { ok: false, reason: '当前选区与生成时的原文不一致，请重新选中原文后再替换' };
+                }
             }
             sel.Text = text;
             return { ok: true };

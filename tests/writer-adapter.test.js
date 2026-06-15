@@ -66,16 +66,17 @@ test('WriterAdapter: insertAtCursor returns false when no selection', () => {
 
 test('WriterAdapter: replaceSelection checks expected text match', () => {
     const { window, WriterAdapter } = loadWA();
-    const sel = { Text: 'original' };
+    const sel = { Text: 'original content here' };
     window.Application.ActiveDocument = { Application: { Selection: sel } };
-    // Match
+    // Match (substring): 选区包含 'original' 即可
     const r1 = WriterAdapter.replaceSelection('new', 'original');
-    assert.equal(r1.ok, true);
+    assert.equal(r1.ok, true, 'should match when expected is substring of selection');
     assert.equal(sel.Text, 'new');
     // Mismatch
-    sel.Text = 'different';
+    const sel2 = { Text: 'completely different content' };
+    window.Application.ActiveDocument = { Application: { Selection: sel2 } };
     const r2 = WriterAdapter.replaceSelection('new2', 'original');
-    assert.equal(r2.ok, false);
+    assert.equal(r2.ok, false, 'should fail when expected is not in selection');
     assert.ok(r2.reason);
 });
 

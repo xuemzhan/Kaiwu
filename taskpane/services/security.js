@@ -30,6 +30,15 @@ var KwSecurity = {
         TD: { class: true }
     },
 
+    // D20: 复用同一个 <template> 节点, 避免每次 sanitize 都创建新节点.
+    _templateEl: null,
+    _getTemplate: function () {
+        if (!this._templateEl || this._templateEl.ownerDocument !== document) {
+            this._templateEl = document.createElement('template');
+        }
+        return this._templateEl;
+    },
+
     sanitizeUrl: function (value) {
         if (!value) return '';
         var text = String(value).trim();
@@ -46,9 +55,9 @@ var KwSecurity = {
     },
 
     sanitizeHtml: function (html) {
-        var template = document.createElement('template');
+        var template = this._getTemplate();
         template.innerHTML = html || '';
-        this._sanitizeNode(template.content);
+        KwSecurity._sanitizeNode(template.content);
         return template.innerHTML;
     },
 

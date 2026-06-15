@@ -155,6 +155,25 @@
         });
     }
 
+    // rAF 合并: 同一帧内多次位置请求只重排一次
+    var _schedulePosition = (function () {
+        var scheduled = false;
+        return function () {
+            if (scheduled) return;
+            scheduled = true;
+            var run = function () {
+                scheduled = false;
+                positionAiCmdPanel();
+                positionResultPanel();
+            };
+            if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+                window.requestAnimationFrame(run);
+            } else {
+                setTimeout(run, 16);
+            }
+        };
+    })();
+
     // ============================================================
     // 监听 ResultPanel.clear 事件: 关闭浮动结果面板 (与 TaskPane 行为一致)
     // ============================================================
@@ -199,8 +218,7 @@
         $('kwSend').addEventListener('click', send);
 
         window.addEventListener('resize', function () {
-            if (isAiCmdOpen) positionAiCmdPanel();
-            positionResultPanel();
+            _schedulePosition();
         });
 
         Array.prototype.forEach.call(document.querySelectorAll('.kw-aicmd-item'), function (btn) {
@@ -399,23 +417,40 @@
             if (answerEl) answerEl.innerHTML = '<div class="kw-error">AI 服务未就绪</div>';
             return;
         }
+        // 流式阶段: 复用同一个 article 节点, 只更新 .answer-body 子节点, 避免闪烁
+        var articleEl = answerEl.querySelector('.kw-answer');
+        if (!articleEl) {
+            articleEl = document.createElement('article');
+            articleEl.className = 'kw-answer';
+            var bodyWrap = document.createElement('div');
+            bodyWrap.className = 'answer-body';
+            articleEl.appendChild(bodyWrap);
+            answerEl.innerHTML = '';
+            answerEl.appendChild(articleEl);
+        }
+        var bodyEl = articleEl.querySelector('.answer-body');
         AIService.sendStream(
             messages,
             function (delta, fullContent) {
-                if (answerEl) answerEl.innerHTML = '<article class="kw-answer is-streaming">' + renderMarkdownSafe(fullContent) + '</article>';
+                articleEl.classList.add('is-streaming');
+                bodyEl.innerHTML = renderMarkdownSafe(fullContent);
             },
             function (fullContent) {
-                if (answerEl) answerEl.innerHTML = '<article class="kw-answer">' + renderMarkdownSafe(fullContent) + '</article>';
+                articleEl.classList.remove('is-streaming');
+                bodyEl.innerHTML = renderMarkdownSafe(fullContent);
                 var actions = $('kwResultActions'); if (actions) actions.hidden = !fullContent;
             },
             function (error) {
-                if (answerEl) answerEl.innerHTML = '<div class="kw-error">' + escapeHtml(error || '发生错误') + '</div>';
+                answerEl.innerHTML = '<div class="kw-error">' + escapeHtml(error || '发生错误') + '</div>';
                 var actions = $('kwResultActions'); if (actions) actions.hidden = true;
             }
         );
     }
 
     function renderMarkdownSafe(text) {
+        if (typeof KwMarkdown !== 'undefined') {
+            return KwMarkdown.render(text);
+        }
         if (typeof marked === 'undefined') return '<p>' + escapeHtml(text || '') + '</p>';
         var html = marked.parse(text || '');
         if (typeof KwSecurity !== 'undefined') html = KwSecurity.sanitizeHtml(html);
@@ -427,6 +462,11 @@
     window._kwShowResultPanel = showResultPanel;
 
     function showToast(message) {
+        if (typeof KwToast !== 'undefined' && KwToast.show) {
+            KwToast.show(message, 'floating');
+            return;
+        }
+        // 兜底: 自己创建临时元素
         var existing = document.getElementById('kwToast');
         if (existing) existing.remove();
         var el = document.createElement('div');

@@ -50,6 +50,12 @@ var ActionRunner = {
             input: inputInfo.input,
             question: inputInfo.question || ''
         });
+        // F6: 把 action 的覆盖参数 (temperature / maxTokens / maxHistoryMessages) 传给 AIService
+        var sendOptions = {
+            temperature: action.temperature,
+            maxTokens: action.maxTokens,
+            maxHistoryMessages: action.maxHistoryMessages
+        };
         var self = this;
         var controller = AIService.sendStream(
             messages,
@@ -67,7 +73,7 @@ var ActionRunner = {
                     ResultPanel.update(self._readCard(card.id), mountEl, { streaming: false });
                     ResultPanel.setAbortController(null);
                 }
-                MessageRenderer._showToast(action.label + '完成');
+                KwToast.show(action.label + '完成');
             },
             function (errorMsg) {
                 ResultCard.fail(card.id, errorMsg);
@@ -76,8 +82,9 @@ var ActionRunner = {
                     ResultPanel.update(self._readCard(card.id), mountEl, { streaming: false });
                     ResultPanel.setAbortController(null);
                 }
-                MessageRenderer._showToast(action.label + '失败：' + errorMsg);
-            }
+                KwToast.show(action.label + '失败：' + errorMsg);
+            },
+            sendOptions
         );
         // 将 abort controller 暴露给 ResultPanel, 用户可点击 ■ 取消生成
         if (controller && mountEl && typeof ResultPanel !== 'undefined') {

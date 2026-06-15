@@ -67,17 +67,15 @@ var ResultPanel = {
             this._abortController = null;
         }
         if (this._activeCard) {
-            this._activeCard.status = 'error';
+            this._activeCard.status = 'cancelled';
             this._activeCard.error = '已取消';
             if (typeof ResultCard !== 'undefined' && ResultCard.update) {
-                ResultCard.update(this._activeCard.id, { status: 'error', error: '已取消' });
+                ResultCard.update(this._activeCard.id, { status: 'cancelled', error: '已取消' });
             }
             this._activeStreaming = false;
             this._render({});
         }
-        if (typeof MessageRenderer !== 'undefined' && MessageRenderer._showToast) {
-            MessageRenderer._showToast('已取消');
-        }
+        KwToast.show('已取消');
     },
 
     unmount: function (mountEl) {
@@ -108,16 +106,50 @@ var ResultPanel = {
             clearTimeout(this._streamingTimer);
             this._streamingTimer = null;
         }
-        var renderNow = function () {
-            if (!self._activeCard || !self._activeMount) return;
-            self._activeMount.innerHTML = self._renderCard(self._activeCard, options);
-            self._postRender();
-        };
         if (this._activeStreaming) {
-            this._streamingTimer = setTimeout(renderNow, 60);
+            this._streamingTimer = setTimeout(function () {
+                self._streamingTimer = null;
+                self._renderNow(options);
+            }, 60);
         } else {
-            renderNow();
+            this._renderNow(options);
         }
+    },
+
+    /**
+     * 实际渲染: 流式阶段只更新 .result-content 子节点, 避免重建整张卡片.
+     * options.forceFull = true 时仍然整张重渲染 (状态切换场景).
+     */
+    _renderNow: function (options) {
+        if (!this._activeCard || !this._activeMount) return;
+        var card = this._activeCard;
+        var mountEl = this._activeMount;
+
+        var existing = mountEl.querySelector('.result-card[data-card-id="' + KwUtils.escapeAttr(card.id).replace(/"/g, '\\"') + '"]');
+        var isStreaming = card.status === 'streaming';
+        // 流式阶段 + 已有节点 → 增量更新
+        if (isStreaming && existing && options && options.forceFull !== true) {
+            var body = existing.querySelector('.result-content');
+            if (body) {
+                var cleaned = this._cleanResult(card.resultText || '');
+                body.innerHTML = cleaned
+                    ? this._renderMarkdown(cleaned)
+                    : '<div class="result-loading"><span class="result-loading-dot"></span><span class="result-loading-dot"></span><span class="result-loading-dot"></span> 正在生成...</div>';
+                // 代码高亮增量
+                if (typeof KwMarkdown !== 'undefined') KwMarkdown.highlightCodeOnly(body);
+            }
+            // 更新 meta 状态文字 (生成中)
+            var meta = existing.querySelector('.result-meta');
+            if (meta) {
+                var sourceLbl = this._sourceLabel(card);
+                meta.innerHTML = KwUtils.escapeHtml(sourceLbl) + ' · 生成中';
+            }
+            return;
+        }
+
+        // 非流式 / 强制全量: 整张重渲染
+        mountEl.innerHTML = this._renderCard(card, options);
+        this._postRender();
     },
 
     _renderCard: function (card, options) {
@@ -126,12 +158,15 @@ var ResultPanel = {
             pending: '等待生成',
             streaming: '生成中',
             done: '已完成',
-            error: '失败'
+            error: '失败',
+            cancelled: '已取消'
         }[card.status] || card.status;
         var cleaned = this._cleanResult(card.resultText || '');
         var contentHtml;
         if (card.status === 'error') {
-            contentHtml = '<div class="result-error">' + this._escapeHtml(card.error || '生成失败') + '</div>';
+            contentHtml = '<div class="result-error">' + KwUtils.escapeHtml(card.error || '生成失败') + '</div>';
+        } else if (card.status === 'cancelled') {
+            contentHtml = '<div class="result-error result-cancelled">' + KwUtils.escapeHtml(card.error || '已取消') + '</div>';
         } else if (card.status === 'pending') {
             contentHtml = '<div class="result-loading">正在准备...</div>';
         } else if (card.status === 'streaming') {
@@ -148,36 +183,43 @@ var ResultPanel = {
 
         // 顶部操作栏: 重新生成 / 取消 (流式中) + 始终显示的 [清除] 按钮
         var headerActions = isStreaming
-            ? '<button class="result-icon-btn" title="取消生成" onclick="ResultPanel.abort()">' + this._icons.abort + '</button>'
-            : '<button class="result-icon-btn" title="重新生成" onclick="ResultPanel.regenerate()">' + this._icons.regenerate + '</button>';
-        // 插入按钮: 在流式未完成时禁用, 但始终可见以提供快捷意图
+            ? '<button class="result-icon-btn" title="取消生成" data-kw-action="abort">'
+              + this._icons.abort + '</button>'
+            : '<button class="result-icon-btn" title="重新生成" data-kw-action="regenerate">'
+              + this._icons.regenerate + '</button>';
         var insertDisabled = canApply ? '' : 'disabled';
         var headerHtml = options.showHeader !== false ? (
             '<div class="result-card-header">' +
             '  <div class="result-card-titles">' +
-            '    <div class="result-title">' + this._escapeHtml(card.actionLabel) + '</div>' +
-            '    <div class="result-meta">' + this._escapeHtml(this._sourceLabel(card)) + ' · ' + statusText + '</div>' +
+            '    <div class="result-title">' + KwUtils.escapeHtml(card.actionLabel) + '</div>' +
+            '    <div class="result-meta">' + KwUtils.escapeHtml(this._sourceLabel(card)) + ' · ' + statusText + '</div>' +
             '  </div>' +
             '  <div class="result-header-actions">' +
-            '    <button class="result-icon-btn result-icon-btn-primary" title="插入到文档" ' + insertDisabled + ' onclick="ResultPanel.insertAtCursor()">' + this._icons.insert + '</button>' +
-            '    <button class="result-icon-btn" title="复制" ' + insertDisabled + ' onclick="ResultPanel.copy()">' + this._icons.copy + '</button>' +
+            '    <button class="result-icon-btn result-icon-btn-primary" title="插入到文档" ' + insertDisabled + ' data-kw-action="insert">'
+              + this._icons.insert + '</button>' +
+            '    <button class="result-icon-btn" title="复制" ' + insertDisabled + ' data-kw-action="copy">'
+              + this._icons.copy + '</button>' +
             headerActions +
-            '    <button class="result-icon-btn result-icon-btn-danger" title="清除此条" onclick="ResultPanel.clear()">' + this._icons.clear + '</button>' +
+            '    <button class="result-icon-btn result-icon-btn-danger" title="清除此条" data-kw-action="clear">'
+              + this._icons.clear + '</button>' +
             '  </div>' +
             '</div>'
         ) : '';
 
-        // 底部操作栏: 替换原文 + 插入文档 (主操作, 显眼按钮)
         return '' +
-            '<section class="result-card" data-card-id="' + this._escapeAttr(card.id) + '">' +
+            '<section class="result-card" data-card-id="' + KwUtils.escapeAttr(card.id) + '">' +
             headerHtml +
             '  <div class="result-content markdown-body">' + contentHtml + '</div>' +
             '  <div class="result-actions">' +
-            '    <button class="btn btn-primary btn-sm" ' + (canApply ? '' : 'disabled') + ' onclick="ResultPanel.replaceOriginal()">' + this._icons.replace + '<span>替换原文</span></button>' +
-            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' onclick="ResultPanel.insertAtCursor()">' + this._icons.insert + '<span>插入文档</span></button>' +
-            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' onclick="ResultPanel.copy()">' + this._icons.copy + '<span>复制</span></button>' +
+            '    <button class="btn btn-primary btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="replace">'
+              + this._icons.replace + '<span>替换原文</span></button>' +
+            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="insert">'
+              + this._icons.insert + '<span>插入文档</span></button>' +
+            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="copy">'
+              + this._icons.copy + '<span>复制</span></button>' +
             '    <span class="result-actions-spacer"></span>' +
-            '    <button class="btn btn-sm btn-link" ' + (card.status ? '' : 'disabled') + ' onclick="ResultPanel.clear()">' + this._icons.clear + '<span>清除</span></button>' +
+            '    <button class="btn btn-sm btn-link" ' + (card.status ? '' : 'disabled') + ' data-kw-action="clear">'
+              + this._icons.clear + '<span>清除</span></button>' +
             '  </div>' +
             '</section>';
     },
@@ -189,35 +231,20 @@ var ResultPanel = {
     },
 
     _cleanResult: function (text) {
-        return String(text || '')
-            .replace(/```thinking\b[\s\S]*?```/gi, '')
-            .replace(/```thinking\b[\s\S]*$/gi, '')
-            .replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, '')
-            .replace(/<think\b[^>]*>[\s\S]*$/gi, '')
-            .trim();
+        return KwUtils.cleanResult(text);
     },
 
     _renderMarkdown: function (text) {
-        if (typeof MessageRenderer !== 'undefined' && MessageRenderer._renderMarkdown) {
-            return MessageRenderer._renderMarkdown(text);
+        if (typeof KwMarkdown !== 'undefined') {
+            return KwMarkdown.render(text);
         }
-        return '<p>' + this._escapeHtml(text) + '</p>';
+        return '<p>' + KwUtils.escapeHtml(text) + '</p>';
     },
 
     _postRender: function () {
         if (typeof ChatUI !== 'undefined' && ChatUI._postRender) {
             try { ChatUI._postRender(); } catch (e) { /* ignore */ }
         }
-    },
-
-    _escapeHtml: function (str) {
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(String(str || '')));
-        return div.innerHTML;
-    },
-
-    _escapeAttr: function (str) {
-        return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     },
 
     // ============ 卡片操作 ============
@@ -231,7 +258,7 @@ var ResultPanel = {
             this._cleanResult(this._activeCard.resultText),
             this._activeCard.sourceText
         );
-        MessageRenderer._showToast(result.ok ? '已替换原文' : (result.reason || '替换失败'));
+        KwToast.show(result.ok ? '已替换原文' : (result.reason || '替换失败'));
     },
 
     /**
@@ -247,9 +274,8 @@ var ResultPanel = {
         }
         var ok = WriterAdapter.insertAtCursor(text);
         if (ok) {
-            MessageRenderer._showToast('已插入到文档');
+            KwToast.show('已插入到文档');
         } else {
-            // 回退: 复制到剪贴板
             this._copyFallback(text, 'WPS 不允许直接插入, 已复制到剪贴板');
         }
     },
@@ -260,67 +286,60 @@ var ResultPanel = {
     copy: function () {
         if (!this._activeCard || !this._activeCard.resultText) return;
         var text = this._cleanResult(this._activeCard.resultText);
-        if (typeof MessageRenderer !== 'undefined' && MessageRenderer._copyToClipboard) {
-            MessageRenderer._copyToClipboard(text);
-        } else if (navigator.clipboard) {
-            navigator.clipboard.writeText(text);
-        }
-        MessageRenderer._showToast('已复制');
+        KwUtils.copyToClipboard(text).then(function () {
+            KwToast.show('已复制');
+        }, function () {
+            KwToast.error('复制失败');
+        });
     },
 
     _copyFallback: function (text, toast) {
-        try {
-            if (typeof MessageRenderer !== 'undefined' && MessageRenderer._copyToClipboard) {
-                MessageRenderer._copyToClipboard(text);
-            } else if (navigator.clipboard) {
-                navigator.clipboard.writeText(text);
-            }
-        } catch (e) { /* ignore */ }
-        MessageRenderer._showToast(toast || '已复制');
+        KwUtils.copyToClipboard(text).then(function () {
+            KwToast.show(toast || '已复制');
+        }, function () {
+            KwToast.error(toast || '已复制');
+        });
     },
 
     /**
-     * 重新生成: 用相同的源文再次执行同一动作.
+     * 重新生成: 用相同的源文再次执行同一动作. 带防抖, 避免连点导致并发.
      */
     regenerate: function () {
         if (!this._activeCard) return;
-        var card = this._activeCard;
         if (typeof ActionRunner === 'undefined') return;
+        if (this._regenerateInFlight) {
+            KwToast.show('正在重新生成，请稍候');
+            return;
+        }
+        var card = this._activeCard;
+        this._regenerateInFlight = true;
+        var self = this;
+        setTimeout(function () { self._regenerateInFlight = false; }, 800);
         ActionRunner.run(card.actionId, { reuseInput: card.sourceText });
     },
 
     /**
-     * 清除当前卡片:
-     *   - 清空挂载点 DOM
-     *   - 从 ResultCard._cards 中移除
-     *   - 从 HistoryDrawer 移除 (如果存在)
-     *   - 清空 _activeCard / _abortController
-     *   - 触发 kwresult:cleared 事件, 让浮动对话框可关闭结果面板
+     * 清除当前卡片: 从 ResultCard 存储 / HistoryDrawer / DOM 中彻底移除.
      */
     clear: function () {
         var cardId = this._activeCard && this._activeCard.id;
-        // 先中止未完成的流
         if (this._abortController) {
             try { this._abortController.abort(); } catch (e) { /* ignore */ }
             this._abortController = null;
         }
-        // 从 HistoryDrawer 移除
         if (cardId && typeof HistoryDrawer !== 'undefined' && HistoryDrawer.remove) {
             HistoryDrawer.remove(cardId);
         }
-        // 从 ResultCard 存储移除
         if (cardId && typeof ResultCard !== 'undefined' && ResultCard._cards) {
             delete ResultCard._cards[cardId];
             if (ResultCard._latestId === cardId) ResultCard._latestId = null;
         }
-        // 清空挂载点
         if (this._activeMount) {
             this._activeMount.innerHTML = '';
         }
         this._activeCard = null;
         this._activeMount = null;
         this._activeStreaming = false;
-        // 触发自定义事件, 让其他模块 (如 floating) 关闭结果面板
         try {
             if (typeof window !== 'undefined' && window.dispatchEvent) {
                 window.dispatchEvent(new window.CustomEvent('kwresult:cleared', {
@@ -328,9 +347,7 @@ var ResultPanel = {
                 }));
             }
         } catch (e) { /* ignore */ }
-        if (typeof MessageRenderer !== 'undefined' && MessageRenderer._showToast) {
-            MessageRenderer._showToast('已清除');
-        }
+        KwToast.show('已清除');
     },
 
     /**

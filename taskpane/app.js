@@ -1,30 +1,10 @@
 /**
  * app.js — 应用入口
  * 负责 TaskPane 的生命周期管理、桥接通信初始化
+ *
+ * DEFAULT_API_KEY / DEFAULT_API_BASE / DEFAULT_MODEL 由 config.js 顶部捕获
+ * (从 window.__ENV_*__ 读取, 由 env.js 提供默认值). 此处不再重复.
  */
-
-// ==================== 默认环境变量注入 ====================
-// DEFAULT_API_KEY / DEFAULT_API_BASE / DEFAULT_MODEL 由 config.js 顶部捕获
-// (从 window.__ENV_*__ 读取, 由 env.js 提供默认值). 这里只重新导出.
-
-var DEFAULT_API_KEY = (function () {
-    try {
-        if (typeof window.__ENV_API_KEY__ !== 'undefined' && window.__ENV_API_KEY__) return window.__ENV_API_KEY__;
-    } catch (e) { /* ignore */ }
-    return '';
-})();
-var DEFAULT_API_BASE = (function () {
-    try {
-        if (typeof window.__ENV_API_BASE__ !== 'undefined' && window.__ENV_API_BASE__) return window.__ENV_API_BASE__;
-    } catch (e) { /* ignore */ }
-    return '';
-})();
-var DEFAULT_MODEL = (function () {
-    try {
-        if (typeof window.__ENV_MODEL__ !== 'undefined' && window.__ENV_MODEL__) return window.__ENV_MODEL__;
-    } catch (e) { /* ignore */ }
-    return '';
-})();
 
 // ==================== WPS 桥接器 ====================
 window.__WPS_BRIDGE__ = {

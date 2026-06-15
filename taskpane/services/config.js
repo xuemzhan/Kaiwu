@@ -91,6 +91,11 @@ var Config = {
         if (this._data.systemPrompt === this._defaults.systemPrompt || !this._data.systemPrompt) {
             this._data.systemPrompt = defaultPrompt;
         }
+        // G4: 追踪 systemPrompt 来源 ('user' | 'default:wps' | 'default:et' | ...)
+        // 这条信息供 settings.js 在用户切换组件时智能判断是否要更新 prompt.
+        if (!this._data.systemPromptSource || this._data.systemPromptSource.indexOf('user:') === 0) {
+            this._data.systemPromptSource = 'default:' + detectedComponent;
+        }
         return this._data;
     },
 
@@ -125,6 +130,7 @@ var Config = {
         // Reset system prompt to current component's default.
         var detectedComponent = this.detectComponent();
         this._data.systemPrompt = this.getSystemPromptFor(detectedComponent);
+        this._data.systemPromptSource = 'default:' + detectedComponent;
         this._save();
         return this._data;
     },

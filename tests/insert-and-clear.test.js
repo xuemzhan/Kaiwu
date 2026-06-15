@@ -69,13 +69,13 @@ test('insert: result card header has a primary 插入到文档 button with icon'
     assert.ok(insertBtn, 'should have a primary 插入到文档 icon button in header');
     // 按钮内有 SVG 图标
     assert.ok(insertBtn.querySelector('svg'), 'insert button should contain an icon');
-    // 底部操作栏也有 "插入文档" 按钮
-    assert.ok(html.indexOf('ResultPanel.insertAtCursor()') !== -1,
-        'should have ResultPanel.insertAtCursor handler binding');
+    // 底部操作栏也有 "插入文档" 按钮 (新版本通过 data-kw-action 绑定)
+    assert.ok(html.indexOf('data-kw-action="insert"') !== -1,
+        'should have insert action binding via data-kw-action');
     assert.ok(html.indexOf('>插入文档<') !== -1, 'should have bottom insert button labeled 插入文档');
 });
 
-test('insert: clicking 插入到文档 calls WriterAdapter.insertAtCursor', () => {
+test('insert: clicking 插入到文档 calls WriterAdapter.insertAtCursor', async () => {
     const { window, ResultCard, ResultPanel, WriterAdapter } = loadPanel();
     const drawer = window.document.createElement('aside');
     drawer.id = 'historyDrawer';
@@ -84,9 +84,9 @@ test('insert: clicking 插入到文档 calls WriterAdapter.insertAtCursor', () =
     let inserted = null;
     WriterAdapter.insertAtCursor = (text) => { inserted = text; return true; };
     let toast = null;
-    if (window.MessageRenderer) {
-        const orig = window.MessageRenderer._showToast;
-        window.MessageRenderer._showToast = (m) => { toast = m; };
+    if (window.KwToast) {
+        const origShow = window.KwToast.show;
+        window.KwToast.show = (m) => { toast = m; };
     }
     const mount = window.document.createElement('div');
     window.document.body.appendChild(mount);
@@ -98,7 +98,7 @@ test('insert: clicking 插入到文档 calls WriterAdapter.insertAtCursor', () =
     assert.equal(toast, '已插入到文档', 'toast should confirm insert');
 });
 
-test('insert: when WriterAdapter.insertAtCursor fails, falls back to clipboard copy', () => {
+test('insert: when WriterAdapter.insertAtCursor fails, falls back to clipboard copy', async () => {
     const { window, ResultCard, ResultPanel, WriterAdapter } = loadPanel();
     const drawer = window.document.createElement('aside');
     drawer.id = 'historyDrawer';
@@ -106,9 +106,8 @@ test('insert: when WriterAdapter.insertAtCursor fails, falls back to clipboard c
     window.document.body.appendChild(drawer);
     WriterAdapter.insertAtCursor = () => false;
     let copied = null;
-    if (window.MessageRenderer) {
-        const orig = window.MessageRenderer._copyToClipboard;
-        window.MessageRenderer._copyToClipboard = (t) => { copied = t; };
+    if (window.navigator.clipboard) {
+        window.navigator.clipboard.writeText = (t) => { copied = t; return Promise.resolve(); };
     }
     const mount = window.document.createElement('div');
     window.document.body.appendChild(mount);
@@ -116,6 +115,8 @@ test('insert: when WriterAdapter.insertAtCursor fails, falls back to clipboard c
     ResultCard.update(card.id, { resultText: 'fallback text', status: 'done' });
     ResultPanel.mount(ResultCard._cards[card.id], mount);
     ResultPanel.insertAtCursor();
+    // 等 microtask 让 copyToClipboard promise 解析
+    await new Promise(r => setTimeout(r, 50));
     assert.equal(copied, 'fallback text', 'should fall back to clipboard copy');
 });
 

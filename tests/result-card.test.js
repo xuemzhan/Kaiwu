@@ -14,9 +14,12 @@ function loadRC() {
     env.window.__ENV_MODEL__ = 'test';
     mockVendorLibs(env.window);
     loadScripts(env.window, [
+        'taskpane/services/utils.js',
+        'taskpane/services/toast.js',
         'taskpane/services/security.js',
         'taskpane/services/config.js',
         'taskpane/services/ai.js',
+        'taskpane/services/markdown.js',
         'taskpane/adapters/writer-adapter.js',
         'taskpane/actions/action-registry.js',
         'taskpane/actions/prompt-templates.js',
@@ -100,13 +103,13 @@ test('ResultCard: _cleanResult strips thinking blocks', () => {
     assert.equal(cleaned2, 'final');
 });
 
-test('ResultCard: copy uses clipboard', () => {
+test('ResultCard: copy uses clipboard', async () => {
     const { window, ResultCard } = loadRC();
     let copied = null;
-    window.navigator.clipboard.writeText = (t) => { copied = t; };
+    window.navigator.clipboard.writeText = (t) => { copied = t; return Promise.resolve(); };
     const c = ResultCard.create({ actionId: 'write', actionLabel: '写' });
     ResultCard.complete(c.id, 'final text');
-    ResultCard.copy(c.id);
+    await ResultCard.copy(c.id);
     assert.equal(copied, 'final text');
 });
 

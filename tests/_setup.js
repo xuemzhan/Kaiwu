@@ -102,6 +102,22 @@ function makeEnv(html) {
     };
 }
 
+/** Provide lightweight mocks for the new KwUtils / KwMarkdown / KwToast modules. */
+function mockKwUtils(window) {
+    // KwUtils is normally loaded from disk; tests get the same code. We just
+    // ensure document.createElement('template') works in jsdom (it does) and
+    // that textContent-based escaping behaves the same.
+    if (!window.KwUtils) {
+        loadScripts(window, 'taskpane/services/utils.js');
+    }
+    if (!window.KwMarkdown) {
+        loadScripts(window, 'taskpane/services/markdown.js');
+    }
+    if (!window.KwToast) {
+        loadScripts(window, 'taskpane/services/toast.js');
+    }
+}
+
 let lastCtx = null;
 
 /**
@@ -109,9 +125,36 @@ let lastCtx = null;
  * Uses vm.runInContext so `var X = ...` declarations become properties
  * of the window (matching browser script-tag behaviour). The window
  * is also accessible as `this`, `window`, `self`, and `globalThis`.
+ *
+ * Always pre-loads the shared utility modules (utils / toast / markdown)
+ * so dependent scripts can rely on KwUtils / KwToast / KwMarkdown being
+ * defined. Pre-loading is idempotent within a single loadScripts call.
  */
+const _PRELOAD_UTILS = [
+    'taskpane/services/utils.js',
+    'taskpane/services/toast.js',
+    'taskpane/services/markdown.js'
+];
+
 function loadScripts(window, paths) {
     const list = Array.isArray(paths) ? paths : [paths];
+    const seen = new Set();
+    const ordered = [];
+    // Prepend utility scripts unless caller explicitly listed them.
+    // Only mark as seen if we actually queued it, so that an explicit
+    // caller listing still runs in the order they wrote.
+    for (const u of _PRELOAD_UTILS) {
+        if (!list.includes(u)) {
+            ordered.push(u);
+            seen.add(u);
+        }
+    }
+    for (const p of list) {
+        if (!seen.has(p)) {
+            ordered.push(p);
+            seen.add(p);
+        }
+    }
     // Use a SINGLE vm context for all scripts so var declarations
     // across scripts share the same scope (matching browser behaviour
     // where <script> tags accumulate globals on the same window).
@@ -119,7 +162,7 @@ function loadScripts(window, paths) {
     const vm = require('vm');
     vm.createContext(ctx);
     const prefix = 'var window = this.window; var self = this.window; var globalThis = this.window;\n';
-    for (const p of list) {
+    for (const p of ordered) {
         const abs = path.isAbsolute(p) ? p : path.join(ROOT, p);
         const code = fs.readFileSync(abs, 'utf8');
         vm.runInContext(prefix + code, ctx);

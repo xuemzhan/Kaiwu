@@ -151,6 +151,54 @@ var ChatManager = {
         }
     },
 
+    /**
+     * 导出当前所有对话为 JSON 字符串.
+     * @returns {string|null} JSON 字符串, 失败返回 null
+     */
+    exportAll: function () {
+        try {
+            var chats = this._loadAll();
+            return JSON.stringify({
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                chats: chats
+            }, null, 2);
+        } catch (e) {
+            console.error('[Chat] 导出失败:', e);
+            return null;
+        }
+    },
+
+    /**
+     * 导入对话 JSON 字符串. 与现有对话合并 (按 id 去重, 新数据跳过已存在的).
+     * @param {string} jsonStr
+     * @returns {object} { imported, skipped, error }
+     */
+    importAll: function (jsonStr) {
+        if (!jsonStr) return { imported: 0, skipped: 0, error: 'empty' };
+        try {
+            var data = JSON.parse(jsonStr);
+            if (!data || typeof data !== 'object' || !data.chats) {
+                return { imported: 0, skipped: 0, error: 'invalid format' };
+            }
+            var existing = this._loadAll();
+            var imported = 0, skipped = 0;
+            for (var id in data.chats) {
+                if (!data.chats.hasOwnProperty(id)) continue;
+                if (existing[id]) {
+                    skipped++;
+                    continue;
+                }
+                existing[id] = data.chats[id];
+                imported++;
+            }
+            this._saveAll(existing);
+            return { imported: imported, skipped: skipped };
+        } catch (e) {
+            return { imported: 0, skipped: 0, error: e.message || 'parse error' };
+        }
+    },
+
     // 内部：保存单个对话
     _saveChat: function (chat) {
         var chats = this._loadAll();

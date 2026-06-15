@@ -15,12 +15,15 @@
     <!-- html2canvas 图片导出 -->
     <script src="vendor/html2canvas.min.js"></script>
 
-    <!-- 服务层 -->
+    <!-- 服务层 (utils 必须先加载, 后续模块依赖 KwUtils/KwMarkdown) -->
+    <script src="services/utils.js"></script>
+    <script src="services/toast.js"></script>
     <script src="services/security.js"></script>
     <script src="services/config.js"></script>
     <script src="services/chat.js"></script>
     <script src="services/ai.js"></script>
     <script src="services/wakeword.js"></script>
+    <script src="services/markdown.js"></script>
     <script src="adapters/writer-adapter.js"></script>
     <script src="actions/action-registry.js"></script>
     <script src="actions/prompt-templates.js"></script>
@@ -48,6 +51,9 @@
                 <span class="header-title">🤖 开悟</span>
             </div>
             <div class="header-right">
+                <button id="btnExportChats" class="header-btn" title="导出对话" aria-label="导出对话">⬇</button>
+                <button id="btnImportChats" class="header-btn" title="导入对话" aria-label="导入对话">⬆</button>
+                <input id="importFileInput" type="file" accept="application/json" style="display:none;">
                 <button id="btnHistory" class="header-btn" title="历史记录" aria-label="历史记录">
                     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                         <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/>
@@ -127,12 +133,14 @@
             <div class="input-wrapper">
                 <textarea id="inputBox" class="input-box" rows="3" placeholder="输入消息，Ctrl+Enter 发送..."></textarea>
             </div>
+            <div class="input-counter" id="inputCounter"></div>
             <div class="input-toolbar">
                 <div class="toolbar-left">
-                    <button id="btnClear" class="btn btn-sm" title="清空当前对话">🗑️ 清空</button>
+                    <button id="btnClear" class="btn btn-sm" title="清空当前对话 (Ctrl+L)">🗑️ 清空</button>
                 </div>
                 <div class="toolbar-right">
                     <span id="modelIndicator" class="model-indicator"></span>
+                    <button id="btnAbort" class="btn btn-sm btn-abort" style="display:none;" title="停止生成 (Esc)">⏹ 停止</button>
                     <button id="btnSend" class="btn btn-primary">发送</button>
                 </div>
             </div>
@@ -164,12 +172,17 @@
                     <button id="btnCloseHistory" class="btn btn-sm" title="关闭">✕</button>
                 </div>
             </div>
+            <div class="history-search">
+                <input id="historySearch" type="text" class="form-input" placeholder="搜索 (源文 / 结果 / 动作)">
+            </div>
             <div class="history-meta" id="historyMeta">共 0 条</div>
             <div id="historyList" class="history-list">
                 <!-- 由 history-drawer.js 动态渲染 -->
             </div>
         </aside>
         <div id="historyBackdrop" class="history-backdrop" hidden></div>
+        <!-- KwToast 静态节点: 默认 channel, 浮动对话框使用 channel='floating' -->
+        <div id="kw-toast-default" class="kw-toast"></div>
     </div>
 
     <script>

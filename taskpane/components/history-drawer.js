@@ -9,45 +9,63 @@
  *
  * 抽屉打开后, TaskPane 内的最新结果区仍保留 (ResultPanel 渲染),
  * 形成「最新结果 + 历史可回溯」的双层结构.
+ *
+ * 重构:
+ *   - 节流写入 localStorage (500ms), 流式期间避免每 chunk 触发 stringify
+ *   - 维护内存中的 _items, push 时仅 patch 单条, 流式阶段不重渲染整个列表
+ *   - 搜索 / 过滤 / 按源文分组 — 完整渲染只在抽屉打开 + 数据真正变化时触发
  */
 var HistoryDrawer = {
     _storageKey: 'wps_assistant_card_history',
     _maxItems: 100,
     _isOpen: false,
     _listeners: [],
+    _items: [],
+    _saveTimer: null,
+    _lastRenderedHash: '',
+    _lastRenderedEmpty: null,
+    _filterText: '',
 
     init: function () {
         this._bindHeaderButton();
         this._bindCloseEvents();
+        this._bindSearchEvents();
+        this._items = this._load();
+        this._scheduleSave();
         this._render();
     },
 
     /**
-     * 推入一张新卡片 (或更新已有卡片). 这里的卡片结构与 ResultCard 一致:
-     *   { id, actionId, actionLabel, sourceType, sourceText, resultText, status, error, createdAt, documentRef }
+     * 推入一张新卡片 (或更新已有卡片). 流式期间高频调用, 但只 patch 单条 + 节流落盘.
      */
     push: function (card) {
         if (!card || !card.id) return;
-        var items = this._load();
-        var idx = this._indexOf(items, card.id);
+        var idx = this._indexOf(card.id);
         if (idx >= 0) {
-            items[idx] = this._merge(items[idx], card);
+            this._items[idx] = this._merge(this._items[idx], card);
         } else {
-            items.unshift(this._normalize(card));
+            this._items.unshift(this._normalize(card));
         }
-        this._save(items);
-        this._render();
-        if (this._isOpen) this._animateIn();
+        if (this._items.length > this._maxItems) {
+            this._items = this._items.slice(0, this._maxItems);
+        }
+        this._scheduleSave();
+        if (this._isOpen) this._render();
+        this._fireUpdate(this._items[idx >= 0 ? idx : 0]);
     },
 
     remove: function (id) {
-        var items = this._load().filter(function (it) { return it.id !== id; });
-        this._save(items);
-        this._render();
+        var before = this._items.length;
+        this._items = this._items.filter(function (it) { return it.id !== id; });
+        if (this._items.length !== before) {
+            this._scheduleSave();
+            this._render();
+        }
     },
 
     clear: function () {
-        this._save([]);
+        this._items = [];
+        this._scheduleSave(true);
         this._render();
     },
 
@@ -86,15 +104,18 @@ var HistoryDrawer = {
     },
 
     /**
-     * 监听卡片更新 (ActionRunner 在生成过程中持续调用)
-     *  - callback(card) 在 push 时触发
+     * 监听卡片更新.
      */
     onUpdate: function (fn) {
         if (typeof fn === 'function') this._listeners.push(fn);
     },
 
     count: function () {
-        return this._load().length;
+        return this._items.length;
+    },
+
+    all: function () {
+        return this._items.slice();
     },
 
     // ============ 内部 ============
@@ -120,8 +141,24 @@ var HistoryDrawer = {
         if (backdrop) backdrop.addEventListener('click', function () { self.close(); });
     },
 
-    _animateIn: function () {
-        // 占位: 当前版本用 CSS transition 处理, 保留扩展点
+    _bindSearchEvents: function () {
+        var self = this;
+        var search = document.getElementById('historySearch');
+        if (!search) return;
+        search.addEventListener('input', function () {
+            self._filterText = String(this.value || '').toLowerCase().trim();
+            // 过滤条件变了, 强制重新渲染
+            self._lastRenderedHash = '';
+            self._lastRenderedEmpty = null;
+            self._render();
+        });
+    },
+
+    _fireUpdate: function (card) {
+        if (!card) return;
+        for (var i = 0; i < this._listeners.length; i++) {
+            try { this._listeners[i](card); } catch (e) { /* ignore */ }
+        }
     },
 
     _normalize: function (card) {
@@ -141,7 +178,8 @@ var HistoryDrawer = {
     },
 
     _merge: function (oldCard, newCard) {
-        return Object.assign({}, oldCard, newCard, { updatedAt: Date.now() });
+        var merged = Object.assign({}, oldCard, newCard, { updatedAt: Date.now() });
+        return merged;
     },
 
     _currentDocumentRef: function () {
@@ -154,9 +192,9 @@ var HistoryDrawer = {
         return '';
     },
 
-    _indexOf: function (items, id) {
-        for (var i = 0; i < items.length; i++) {
-            if (items[i].id === id) return i;
+    _indexOf: function (id) {
+        for (var i = 0; i < this._items.length; i++) {
+            if (this._items[i].id === id) return i;
         }
         return -1;
     },
@@ -171,17 +209,31 @@ var HistoryDrawer = {
         }
     },
 
-    _save: function (items) {
+    _scheduleSave: function (immediate) {
+        if (this._saveTimer) {
+            clearTimeout(this._saveTimer);
+            this._saveTimer = null;
+        }
+        if (immediate) {
+            this._saveNow();
+            return;
+        }
+        var self = this;
+        this._saveTimer = setTimeout(function () {
+            self._saveTimer = null;
+            self._saveNow();
+        }, 500);
+    },
+
+    _saveNow: function () {
         try {
-            if (items.length > this._maxItems) {
-                items = items.slice(0, this._maxItems);
-            }
-            localStorage.setItem(this._storageKey, JSON.stringify(items));
+            localStorage.setItem(this._storageKey, JSON.stringify(this._items));
         } catch (e) {
             if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
                 console.warn('[HistoryDrawer] localStorage 配额已满, 仅保留最近 20 条');
                 try {
-                    localStorage.setItem(this._storageKey, JSON.stringify(items.slice(0, 20)));
+                    localStorage.setItem(this._storageKey, JSON.stringify(this._items.slice(0, 20)));
+                    KwToast && KwToast.show && KwToast.show('历史记录已满，已自动清理');
                 } catch (e2) { /* ignore */ }
             } else {
                 console.error('[HistoryDrawer] 保存失败:', e);
@@ -189,23 +241,68 @@ var HistoryDrawer = {
         }
     },
 
+    /**
+     * 渲染入口. 计算当前所有 entry 的 hash, 与上次相同则跳过 DOM 重渲染.
+     * (避免流式期间每 chunk 都把整张列表 innerHTML 重建)
+     *
+     * 注意: 空集合也要重渲染 (从有数据 → 空 时, hash 仍为空字符串,
+     * 但旧 DOM 里还有历史条目; 必须清空). 所以空集合总是渲染.
+     */
     _render: function () {
         var list = document.getElementById('historyList');
         var meta = document.getElementById('historyMeta');
         if (!list) return;
-        var items = this._load();
-        if (meta) meta.textContent = '共 ' + items.length + ' 条';
-        if (items.length === 0) {
-            list.innerHTML = '<div class="history-entry-empty">还没有历史记录<br>尝试点击场景按钮生成内容</div>';
+        var filtered = this._filter();
+        if (meta) {
+            meta.textContent = this._filterText
+                ? '匹配 ' + filtered.length + ' / ' + this._items.length + ' 条'
+                : '共 ' + this._items.length + ' 条';
+        }
+        var hash = this._hashItems(filtered);
+        if (filtered.length === 0) {
+            // 空集合: 总是渲染 (确保旧的 history-entry 被清掉)
+            if (this._lastRenderedHash === hash && this._lastRenderedEmpty === true) return;
+            this._lastRenderedHash = hash;
+            this._lastRenderedEmpty = true;
+            list.innerHTML = this._filterText
+                ? '<div class="history-entry-empty">没有匹配项</div>'
+                : '<div class="history-entry-empty">还没有历史记录<br>尝试点击场景按钮生成内容</div>';
             return;
         }
-        var groups = this._groupBySource(items);
+        if (hash === this._lastRenderedHash && this._lastRenderedEmpty === false) return;
+        this._lastRenderedHash = hash;
+        this._lastRenderedEmpty = false;
+        var groups = this._groupBySource(filtered);
         var html = '';
         for (var i = 0; i < groups.length; i++) {
             html += this._renderGroup(groups[i]);
         }
         list.innerHTML = html;
         this._bindEntryEvents();
+    },
+
+    _filter: function () {
+        if (!this._filterText) return this._items.slice();
+        var q = this._filterText;
+        return this._items.filter(function (it) {
+            var src = (it.sourceText || '').toLowerCase();
+            var res = (it.resultText || '').toLowerCase();
+            var lbl = (it.actionLabel || '').toLowerCase();
+            return src.indexOf(q) !== -1 || res.indexOf(q) !== -1 || lbl.indexOf(q) !== -1;
+        });
+    },
+
+    /**
+     * 内容 hash: 用于判断是否需要重新生成 DOM. 流式期间仅 status / resultText 改变,
+     * 我们把这些字段都纳入 hash, 但只在确实变化时才重建.
+     */
+    _hashItems: function (items) {
+        var parts = [];
+        for (var i = 0; i < items.length; i++) {
+            var it = items[i];
+            parts.push(it.id + ':' + it.status + ':' + (it.resultText || '').length);
+        }
+        return parts.join('|');
     },
 
     _groupBySource: function (items) {
@@ -233,7 +330,7 @@ var HistoryDrawer = {
         var html = '' +
             '<section class="history-group">' +
             '  <header class="history-group-header">' +
-            '    <div class="history-group-title">' + this._escapeHtml(group.documentRef) + ' · ' + sourceLabel + '</div>' +
+            '    <div class="history-group-title">' + KwUtils.escapeHtml(group.documentRef) + ' · ' + sourceLabel + '</div>' +
             '    <div class="history-group-count">' + countLabel + '</div>' +
             '  </header>';
         for (var i = 0; i < group.items.length; i++) {
@@ -246,25 +343,27 @@ var HistoryDrawer = {
     _renderEntry: function (entry) {
         var statusClass = 'is-' + (entry.status || 'pending');
         var sourcePreview = this._preview((entry.sourceText || '').trim(), 80);
-        var resultPreview = this._cleanResult(entry.resultText || '');
+        var resultPreview = KwUtils.cleanResult(entry.resultText || '');
         if (entry.status === 'error') {
             resultPreview = entry.error || '生成失败';
+        } else if (entry.status === 'cancelled') {
+            resultPreview = entry.error || '已取消';
         } else if (entry.status === 'pending' || entry.status === 'streaming') {
             resultPreview = '生成中...';
         } else {
             resultPreview = this._preview(resultPreview, 120);
         }
         return '' +
-            '<article class="history-entry" data-entry-id="' + this._escapeAttr(entry.id) + '">' +
+            '<article class="history-entry" data-entry-id="' + KwUtils.escapeAttr(entry.id) + '">' +
             '  <div class="history-entry-head">' +
             '    <div class="history-entry-label">' +
-            '      <span>' + this._escapeHtml(entry.actionLabel) + '</span>' +
+            '      <span>' + KwUtils.escapeHtml(entry.actionLabel) + '</span>' +
             '      <span class="history-entry-status ' + statusClass + '">' + this._statusText(entry.status) + '</span>' +
             '    </div>' +
-            '    <div class="history-entry-time">' + this._formatTime(entry.updatedAt || entry.createdAt) + '</div>' +
+            '    <div class="history-entry-time">' + KwUtils.formatTime(entry.updatedAt || entry.createdAt) + '</div>' +
             '  </div>' +
-            (sourcePreview ? '<div class="history-entry-source">' + this._escapeHtml(sourcePreview) + '</div>' : '') +
-            '  <div class="history-entry-preview">' + this._escapeHtml(resultPreview) + '</div>' +
+            (sourcePreview ? '<div class="history-entry-source">' + KwUtils.escapeHtml(sourcePreview) + '</div>' : '') +
+            '  <div class="history-entry-preview">' + KwUtils.escapeHtml(resultPreview) + '</div>' +
             '  <div class="history-entry-actions">' +
             '    <button class="btn btn-sm" data-history-action="insert">插入光标</button>' +
             '    <button class="btn btn-sm" data-history-action="copy">复制</button>' +
@@ -293,31 +392,31 @@ var HistoryDrawer = {
     _actionInsert: function (id) {
         var it = this._findById(id);
         if (!it) return;
-        var text = this._cleanResult(it.resultText || '');
+        var text = KwUtils.cleanResult(it.resultText || '');
         if (!text) {
-            MessageRenderer._showToast('该记录暂无结果');
+            KwToast.show('该记录暂无结果');
             return;
         }
         var ok = WriterAdapter.insertAtCursor(text);
-        MessageRenderer._showToast(ok ? '已插入' : '插入失败');
+        KwToast.show(ok ? '已插入' : '插入失败');
     },
 
     _actionCopy: function (id) {
         var it = this._findById(id);
         if (!it) return;
-        var text = this._cleanResult(it.resultText || '');
+        var text = KwUtils.cleanResult(it.resultText || '');
         if (!text) {
-            MessageRenderer._showToast('该记录暂无结果');
+            KwToast.show('该记录暂无结果');
             return;
         }
-        MessageRenderer._copyToClipboard(text);
-        MessageRenderer._showToast('已复制');
+        KwUtils.copyToClipboard(text).then(function () {
+            KwToast.show('已复制');
+        });
     },
 
     _findById: function (id) {
-        var items = this._load();
-        for (var i = 0; i < items.length; i++) {
-            if (items[i].id === id) return items[i];
+        for (var i = 0; i < this._items.length; i++) {
+            if (this._items[i].id === id) return this._items[i];
         }
         return null;
     },
@@ -328,40 +427,7 @@ var HistoryDrawer = {
         return t.slice(0, max) + '…';
     },
 
-    _cleanResult: function (text) {
-        return String(text || '')
-            .replace(/```thinking\b[\s\S]*?```/gi, '')
-            .replace(/```thinking\b[\s\S]*$/gi, '')
-            .replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, '')
-            .replace(/<think\b[^>]*>[\s\S]*$/gi, '')
-            .trim();
-    },
-
     _statusText: function (status) {
-        return { pending: '等待', streaming: '生成', done: '完成', error: '失败' }[status] || status || '';
-    },
-
-    _formatTime: function (ts) {
-        var d = new Date(ts);
-        var now = new Date();
-        var sameDay = d.toDateString() === now.toDateString();
-        if (sameDay) {
-            return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-        }
-        var sameYear = d.getFullYear() === now.getFullYear();
-        if (sameYear) {
-            return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-        }
-        return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
-    },
-
-    _escapeHtml: function (str) {
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(String(str || '')));
-        return div.innerHTML;
-    },
-
-    _escapeAttr: function (str) {
-        return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return { pending: '等待', streaming: '生成', done: '完成', error: '失败', cancelled: '已取消' }[status] || status || '';
     }
 };

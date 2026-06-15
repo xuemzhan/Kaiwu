@@ -70,6 +70,20 @@ function OnAddinLoad(ribbonUI) {
                 }
             } catch (e) { /* ignore */ }
         }
+        // D16: ribbon 上下文主动绑定 ComponentDetector 自动失效 (新文档 / 切换组件时).
+        if (typeof ComponentDetector !== 'undefined' && ComponentDetector.bindAutoReset) {
+            try { ComponentDetector.bindAutoReset(); } catch (e3) { /* ignore */ }
+        }
+        // 监听选区 / 文档变化, 主动失效 ribbon 缓存 (D13 配套)
+        try {
+            if (window.Application && window.Application.ApiEvent && typeof window.Application.ApiEvent.AddApiEventListener === 'function') {
+                var onSel = function () { invalidateRibbonCaches(); };
+                window.Application.ApiEvent.AddApiEventListener('WindowSelectionChange', onSel);
+                window.Application.ApiEvent.AddApiEventListener('DocumentOpen', onSel);
+                window.Application.ApiEvent.AddApiEventListener('NewDocument', onSel);
+            }
+        } catch (e4) { /* ignore */ }
+
         try {
             if (ribbonUI && typeof ribbonUI.Invalidate === 'function') ribbonUI.Invalidate();
         } catch (e2) { /* ignore */ }
@@ -491,6 +505,43 @@ var DOCUMENT_REQUIRED_ACTIONS = {
     'doc_summary': true
 };
 
+// D13: 选区文本缓存 (200ms). WPS 在每次 OnGetEnabled 调用中同步读
+// Selection.Text 触发 COM, 长文档会拖慢 ribbon; 缓存可显著降低调用频率.
+var _selectionCache = { text: '', ts: 0 };
+var _SELECTION_CACHE_TTL = 200;
+var _documentCache = { has: false, ts: 0 };
+var _DOCUMENT_CACHE_TTL = 500;
+
+function readSelectionTextCached() {
+    var now = Date.now();
+    if (now - _selectionCache.ts < _SELECTION_CACHE_TTL) {
+        return _selectionCache.text;
+    }
+    var text = readSelectionText();
+    _selectionCache = { text: text, ts: now };
+    return text;
+}
+
+function hasActiveDocumentCached() {
+    var now = Date.now();
+    if (now - _documentCache.ts < _DOCUMENT_CACHE_TTL) {
+        return _documentCache.has;
+    }
+    var has = false;
+    try {
+        has = !!(window.Application && window.Application.ActiveDocument);
+    } catch (e) { has = false; }
+    _documentCache = { has: has, ts: now };
+    return has;
+}
+
+// 主动失效缓存: 当 WPS 选区变化 / 文档切换时, 缓存会过期 (200ms 内) 自动刷新.
+// 同时提供手动失效函数, 供外部 (如 taskpane context bar 事件) 调用.
+function invalidateRibbonCaches() {
+    _selectionCache.ts = 0;
+    _documentCache.ts = 0;
+}
+
 function OnGetEnabled(control) {
     if (!control) return true;
     var id = control.Id;
@@ -503,12 +554,10 @@ function OnGetEnabled(control) {
     if (!actionId) return true;
 
     if (SELECTION_REQUIRED_ACTIONS[actionId]) {
-        return readSelectionText().length > 0;
+        return readSelectionTextCached().length > 0;
     }
     if (DOCUMENT_REQUIRED_ACTIONS[actionId]) {
-        try {
-            return !!(window.Application && window.Application.ActiveDocument);
-        } catch (e) { return false; }
+        return hasActiveDocumentCached();
     }
     return true;
 }

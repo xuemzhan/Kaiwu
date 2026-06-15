@@ -1267,3 +1267,134 @@ select.form-input {
     background: #fff3e0;
     color: #ef6c00;
 }
+/* ========== 流式闪烁光标 (C3) ========== */
+@keyframes kw-caret-blink {
+    0%, 50%   { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+.kw-streaming-caret::after {
+    content: '\u25CD';
+    display: inline-block;
+    margin-left: 1px;
+    color: var(--primary);
+    font-weight: bold;
+    animation: kw-caret-blink 1s steps(2) infinite;
+    vertical-align: baseline;
+}
+
+.message-bubble.kw-streaming-caret::after {
+    content: '\u25CD';
+    display: inline-block;
+    margin-left: 2px;
+    color: var(--primary);
+    font-weight: bold;
+    animation: kw-caret-blink 1s steps(2) infinite;
+}
+
+/* ========== 错误消息卡片 (C6) ========== */
+.message-bubble-error {
+    background: #ffebee !important;
+    border-left: 3px solid #c62828;
+    color: #b71c1c;
+}
+
+.message-error-header {
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #c62828;
+}
+
+.message-error-body {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.message-error-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.message-error-actions .btn {
+    background: white;
+    border: 1px solid #c62828;
+    color: #c62828;
+}
+
+.message-error-actions .btn:hover {
+    background: #c62828;
+    color: white;
+}
+
+/* ========== Abort 按钮 (C1) ========== */
+.btn-abort {
+    background: #fff3e0 !important;
+    color: #e65100 !important;
+    border: 1px solid #ffb74d !important;
+}
+
+.btn-abort:hover {
+    background: #ffe0b2 !important;
+}
+
+/* ========== Token / 字数计数 (D5) ========== */
+.input-counter {
+    text-align: right;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 2px 6px;
+    min-height: 16px;
+    line-height: 14px;
+}
+
+/* ========== 历史抽屉搜索框 (D7) ========== */
+.history-search {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.history-search input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    background: var(--bg);
+    color: var(--text);
+    box-sizing: border-box;
+}
+
+.history-search input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: white;
+}
+
+/* ========== Toast 样式 (KwToast) ========== */
+.kw-toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(50, 50, 50, 0.92);
+    color: white;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    z-index: 10000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    max-width: 80%;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.kw-toast.kw-toast-show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}

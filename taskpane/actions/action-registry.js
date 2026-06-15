@@ -1,6 +1,9 @@
 /**
  * Writer action registry. Ribbon buttons and TaskPane scenario buttons share
  * this table so prompts and behavior stay consistent.
+ *
+ * 优化点 (F2/F6): 在 action 上声明 temperature / maxTokens / maxHistoryMessages
+ * 等覆盖项, AIService 在调用时会优先用 action 的覆盖, 没有再回退到 Config.
  */
 var ActionRegistry = {
     _actions: {
@@ -11,7 +14,8 @@ var ActionRegistry = {
             input: 'user',
             output: 'insert',
             promptKey: 'write',
-            placeholder: '输入你想生成的内容，例如：写一份项目周报'
+            placeholder: '输入你想生成的内容，例如：写一份项目周报',
+            temperature: 0.8
         },
         cowrite: {
             id: 'cowrite',
@@ -20,7 +24,8 @@ var ActionRegistry = {
             input: 'user',
             output: 'insert',
             promptKey: 'cowrite',
-            placeholder: '输入你想协作写的主题，例如：开悟插件的产品介绍'
+            placeholder: '输入你想协作写的主题，例如：开悟插件的产品介绍',
+            temperature: 0.7
         },
         continue_write: {
             id: 'continue_write',
@@ -29,7 +34,8 @@ var ActionRegistry = {
             input: 'selection',
             output: 'replaceable',
             promptKey: 'continue_write',
-            requireSelection: true
+            requireSelection: true,
+            temperature: 0.7
         },
         imitate: {
             id: 'imitate',
@@ -39,7 +45,8 @@ var ActionRegistry = {
             output: 'insert',
             promptKey: 'imitate',
             placeholder: '请输入要仿写的内容主题（用选中文本作为风格样本）',
-            requireSelection: true
+            requireSelection: true,
+            temperature: 0.8
         },
         polish_quick: {
             id: 'polish_quick',
@@ -48,7 +55,8 @@ var ActionRegistry = {
             input: 'selection',
             output: 'replaceable',
             promptKey: 'polish_quick',
-            requireSelection: true
+            requireSelection: true,
+            temperature: 0.3
         },
         polish_formal: {
             id: 'polish_formal',
@@ -57,7 +65,8 @@ var ActionRegistry = {
             input: 'selection',
             output: 'replaceable',
             promptKey: 'polish_formal',
-            requireSelection: true
+            requireSelection: true,
+            temperature: 0.3
         },
         polish_government: {
             id: 'polish_government',
@@ -66,7 +75,8 @@ var ActionRegistry = {
             input: 'selection',
             output: 'replaceable',
             promptKey: 'polish_government',
-            requireSelection: true
+            requireSelection: true,
+            temperature: 0.3
         },
         correct: {
             id: 'correct',
@@ -75,7 +85,8 @@ var ActionRegistry = {
             input: 'selection',
             output: 'replaceable',
             promptKey: 'correct',
-            requireSelection: true
+            requireSelection: true,
+            temperature: 0.1
         },
         expand: {
             id: 'expand',
@@ -84,7 +95,8 @@ var ActionRegistry = {
             input: 'selection',
             output: 'replaceable',
             promptKey: 'expand',
-            requireSelection: true
+            requireSelection: true,
+            temperature: 0.6
         },
         shrink: {
             id: 'shrink',
@@ -93,7 +105,8 @@ var ActionRegistry = {
             input: 'selection',
             output: 'replaceable',
             promptKey: 'shrink',
-            requireSelection: true
+            requireSelection: true,
+            temperature: 0.3
         },
         rewrite: {
             id: 'rewrite',
@@ -102,7 +115,8 @@ var ActionRegistry = {
             input: 'selection',
             output: 'replaceable',
             promptKey: 'rewrite',
-            requireSelection: true
+            requireSelection: true,
+            temperature: 0.6
         },
         translate: {
             id: 'translate',
@@ -111,7 +125,8 @@ var ActionRegistry = {
             input: 'selection',
             output: 'replaceable',
             promptKey: 'translate',
-            requireSelection: true
+            requireSelection: true,
+            temperature: 0.2
         },
         summarize: {
             id: 'summarize',
@@ -120,7 +135,8 @@ var ActionRegistry = {
             input: 'selection',
             output: 'insert',
             promptKey: 'summarize',
-            requireSelection: true
+            requireSelection: true,
+            temperature: 0.3
         },
         doc_summary: {
             id: 'doc_summary',
@@ -128,7 +144,9 @@ var ActionRegistry = {
             category: 'document',
             input: 'document',
             output: 'insert',
-            promptKey: 'doc_summary'
+            promptKey: 'doc_summary',
+            temperature: 0.3,
+            maxHistoryMessages: 4  // 全文总结通常不需要聊天上下文
         }
     },
 

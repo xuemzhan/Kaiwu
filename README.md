@@ -23,7 +23,7 @@ Kaiwu (开悟) is a community-maintained WPS Office add-in that brings a full-fe
 
 | Category | Capability |
 |---|---|
-| **Chat** | Multi-turn conversation with streaming responses, Markdown rendering, Mermaid diagrams, code highlighting |
+| **Chat** | Multi-turn conversation with streaming responses, Markdown rendering, Mermaid diagrams, code highlighting, ⏹ stop, 🔄 retry, ↕ import/export, ⌨ shortcuts (Esc / Ctrl+L / Ctrl+N), live token counter |
 | **Polish** | One-click text refinement — formal / academic / colloquial / Party-government styles |
 | **Continue** | Auto-continue writing in the document's existing style |
 | **Cowrite** | Real-time collaborative writing that follows your cursor |

@@ -14,9 +14,12 @@ function loadPanel() {
     env.window.__ENV_MODEL__ = 'test';
     mockVendorLibs(env.window);
     loadScripts(env.window, [
+        'taskpane/services/utils.js',
+        'taskpane/services/toast.js',
         'taskpane/services/security.js',
         'taskpane/services/config.js',
         'taskpane/services/ai.js',
+        'taskpane/services/markdown.js',
         'taskpane/adapters/writer-adapter.js',
         'taskpane/actions/action-registry.js',
         'taskpane/actions/prompt-templates.js',
