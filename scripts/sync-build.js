@@ -8,8 +8,7 @@ const buildRoot = path.join(root, 'wps-addon-build');
 const mirrorDirs = [
   ['taskpane', 'taskpane'],
   ['floating', 'floating'],
-  ['images', 'images'],
-  ['tests', 'tests']
+  ['images', 'images']
 ];
 
 // 单独同步的文件 (根目录)

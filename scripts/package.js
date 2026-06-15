@@ -68,9 +68,11 @@ const EXCLUDE = new Set([
     '.omo',
     'package-lock.json',
     'package.json',
+    'scripts',           // 打包脚本本身, 用户机器不需要
     '.env.template',     // 模板不进包, 真实 .env 进
     'README.md',         // 项目根的 README 是开发文档, 不进包
     'INSTALL.md',        // 同样的根开发 SOP 不进包
+    'CHANGELOG.md',      // 开发 changelog 不进包
     // 单个文件
     'debug.finalserver.log',
     'test.run.log',
@@ -97,6 +99,45 @@ function readEnvOrFail() {
         throw new Error('.env 中的 VITE_DEFAULT_API_KEY 仍为占位符, 请填入真实 API Key 后再打包');
     }
     return vars;
+}
+
+/**
+ * 信息性预检: 打印本机 WPS jsaddons 下已安装的所有 Kaiwu 变体.
+ * 不修改任何文件, 仅供打包者知晓当前环境状态.
+ * (实际卸载逻辑在生成的 install.bat 中执行 — 部署到用户机器时使用)
+ */
+function printExistingInstalls() {
+    if (process.platform !== 'win32') {
+        console.log('        (非 Windows 平台, 跳过 WPS 安装状态检查)');
+        return;
+    }
+    const appdata = process.env.APPDATA;
+    if (!appdata) {
+        console.log('        (未设置 APPDATA 环境变量, 跳过)');
+        return;
+    }
+    const destDir = path.join(appdata, 'kingsoft', 'wps', 'jsaddons');
+    if (!fs.existsSync(destDir)) {
+        console.log('        (未发现 WPS jsaddons 目录: ' + destDir + ')');
+        return;
+    }
+    var found = [];
+    try {
+        for (const entry of fs.readdirSync(destDir)) {
+            if (entry.startsWith('kaiwu_') || entry.startsWith('开悟_')) {
+                found.push(entry);
+            }
+        }
+    } catch (e) { /* ignore */ }
+    if (found.length === 0) {
+        console.log('        (未发现 Kaiwu 安装 — 干净环境)');
+    } else {
+        console.log('        发现 ' + found.length + ' 个 Kaiwu 安装:');
+        for (const f of found) {
+            const isCurrent = (f === PACKAGE_DIR_ASCII);
+            console.log('          - ' + f + (isCurrent ? '  (与本次打包同版本, xcopy 会覆盖)' : '  (旧版, install.bat 将自动卸载)'));
+        }
+    }
 }
 
 function cleanDir(dir) {
@@ -132,7 +173,7 @@ function generatePublishXml() {
 function generateInstallBat() {
     return (
         '@echo off\n' +
-        'setlocal\n' +
+        'setlocal EnableExtensions EnableDelayedExpansion\n' +
         'title Kaiwu WPS Addon - Installer\n' +
         'echo.\n' +
         'echo  ============================================\n' +
@@ -155,6 +196,39 @@ function generateInstallBat() {
         '    pause\n' +
         '    exit /b 1\n' +
         ')\n' +
+        '\n' +
+        'rem ============================================================\n' +
+        'rem  [0/4] 检测是否已有旧版 Kaiwu 安装, 若有则先卸载\n' +
+        'rem ============================================================\n' +
+        'echo  [0/4] Checking for existing Kaiwu installation ...\n' +
+        'set "FOUND_OLD=0"\n' +
+        'if exist "%DEST_DIR%" (\n' +
+        '    for /d %%D in ("%DEST_DIR%\\kaiwu_*") do (\n' +
+        '        if /i not "%%~nxD"=="' + PACKAGE_DIR_ASCII + '" (\n' +
+        '            echo         [FOUND] Old Kaiwu install: %%~nxD\n' +
+        '            echo                Removing: %%D\n' +
+        '            rmdir /S /Q "%%D"\n' +
+        '            set "FOUND_OLD=1"\n' +
+        '        )\n' +
+        '    )\n' +
+        '    for /d %%D in ("%DEST_DIR%\\开悟_*") do (\n' +
+        '        echo         [FOUND] Legacy Kaiwu install: %%~nxD\n' +
+        '        echo                Removing: %%D\n' +
+        '        rmdir /S /Q "%%D"\n' +
+        '        set "FOUND_OLD=1"\n' +
+        '    )\n' +
+        '    if exist "%DEST_DIR%\\' + PACKAGE_DIR_ASCII + '" (\n' +
+        '        echo         [FOUND] Same version: ' + PACKAGE_DIR_ASCII + '\n' +
+        '        echo                Will be overwritten by xcopy.\n' +
+        '        set "FOUND_OLD=1"\n' +
+        '    )\n' +
+        ') else (\n' +
+        '    echo         [INFO] No previous install detected.\n' +
+        ')\n' +
+        'if "!FOUND_OLD!"=="1" (\n' +
+        '    echo         [OK] Old installations cleared.\n' +
+        ')\n' +
+        'echo.\n' +
         '\n' +
         'echo  [1/4] Creating destination directories ...\n' +
         'if not exist "%DEST_DIR%" mkdir "%DEST_DIR%"\n' +
@@ -286,7 +360,7 @@ function generateVerifyBat() {
 function generateUninstallBat() {
     return (
         '@echo off\n' +
-        'setlocal\n' +
+        'setlocal EnableExtensions EnableDelayedExpansion\n' +
         'title Kaiwu WPS Addon - Uninstaller\n' +
         'echo.\n' +
         'echo  ============================================\n' +
@@ -297,7 +371,7 @@ function generateUninstallBat() {
         'set "DEST_DIR=%APPDATA%\\kingsoft\\wps\\jsaddons"\n' +
         'set "PLUGIN_DIR=%DEST_DIR%\\' + PACKAGE_DIR_ASCII + '"\n' +
         '\n' +
-        'echo  Will delete: %PLUGIN_DIR%\n' +
+        'echo  Will scan for: %DEST_DIR%\\kaiwu_*  and  %DEST_DIR%\\开悟_*\n' +
         'echo.\n' +
         'set /p CONFIRM=Confirm uninstall? (Y/N): \n' +
         'if /i not "%CONFIRM%"=="Y" (\n' +
@@ -306,16 +380,36 @@ function generateUninstallBat() {
         '    exit /b 0\n' +
         ')\n' +
         '\n' +
-        'if exist "%PLUGIN_DIR%" (\n' +
-        '    rmdir /S /Q "%PLUGIN_DIR%"\n' +
-        '    echo  [OK] Plugin directory removed.\n' +
+        'set "REMOVED=0"\n' +
+        'if not exist "%DEST_DIR%" (\n' +
+        '    echo  [INFO] Destination folder not found, nothing to do.\n' +
+        '    goto :cache_clear\n' +
+        ')\n' +
+        'for /d %%D in ("%DEST_DIR%\\kaiwu_*") do (\n' +
+        '    echo         [FOUND] %%~nxD  -  removing ...\n' +
+        '    rmdir /S /Q "%%D"\n' +
+        '    set "REMOVED=1"\n' +
+        ')\n' +
+        'for /d %%D in ("%DEST_DIR%\\开悟_*") do (\n' +
+        '    echo         [FOUND] %%~nxD  -  removing ...\n' +
+        '    rmdir /S /Q "%%D"\n' +
+        '    set "REMOVED=1"\n' +
+        ')\n' +
+        'if "!REMOVED!"=="0" (\n' +
+        '    echo         [INFO] No Kaiwu install found.\n' +
         ') else (\n' +
-        '    echo  [INFO] Plugin directory not found, skipping.\n' +
+        '    echo         [OK] All Kaiwu directories removed.\n' +
         ')\n' +
         '\n' +
+        ':cache_clear\n' +
         'if exist "%DEST_DIR%\\authaddin.json" (\n' +
         '    del /F /Q "%DEST_DIR%\\authaddin.json" >nul 2>nul\n' +
         '    echo  [OK] Cleared WPS plugin cache (authaddin.json)\n' +
+        ')\n' +
+        'if exist "%DEST_DIR%\\publish.xml" (\n' +
+        '    findstr /I /C:"' + ADDON_NAME_ASCII + '" "%DEST_DIR%\\publish.xml" >nul 2>nul && (\n' +
+        '        echo  [WARN] publish.xml still references Kaiwu; remove it manually if needed.\n' +
+        '    )\n' +
         ')\n' +
         '\n' +
         'echo.\n' +
@@ -451,6 +545,9 @@ function build() {
     console.log('        API:  ' + (envVars.VITE_DEFAULT_API_BASE || '(未设置)'));
     console.log('        Model:' + (envVars.VITE_DEFAULT_MODEL || '(未设置)'));
     console.log('        Key:  ' + envVars.VITE_DEFAULT_API_KEY.substring(0, 8) + '...');
+
+    console.log('[package] 预检: WPS 现有安装 (信息性)...');
+    printExistingInstalls();
 
     console.log('[package] 清理发布目录...');
     cleanDir(PUBLISH_DIR);
