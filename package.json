@@ -25,7 +25,10 @@
     "build:all": "npm run assets && npm run env && npm run sync && node scripts/package.js both",
     "package": "node scripts/package.js 7z",
     "package:exe": "node scripts/package.js exe",
-    "package:both": "node scripts/package.js both"
+    "package:both": "node scripts/package.js both",
+    "release": "node scripts/release.js",
+    "release:quick": "node scripts/release.js --skip-test",
+    "release:clean": "node scripts/release.js --clean"
   },
   "dependencies": {
     "highlight.js": "^11.8.0",

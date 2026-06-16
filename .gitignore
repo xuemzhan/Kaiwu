@@ -32,7 +32,7 @@ debug.finalserver.log
 # Local archives
 *.zip
 *.7z
-!release/*.7z
+!packages/*.7z
 
 # OS / editor cruft
 .DS_Store

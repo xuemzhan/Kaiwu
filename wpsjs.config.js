@@ -4,7 +4,7 @@ module.exports = {
     systems: ['wps'],
     addonName: '开悟',
     name: '开悟',
-    version: '1.0.0',
+    version: '0.2.0',
     description: '基于AI大模型的WPS写作助手，支持对话、润色、续写、翻译、摘要等功能。',
     author: 'xuemzhan',
     devServer: {
