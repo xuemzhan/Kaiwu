@@ -425,7 +425,7 @@ var ICON_MAP = {
     menuMore:         'images/kaiwu.svg',
 
     // 创作
-    btnWrite:         'images/assistant.svg',
+    btnWrite:         'images/assistant_write.svg',
     btnContinue:      'images/continue.svg',
     btnMenuContinue:  'images/continue.svg',
     btnCoWrite:       'images/cowrite.svg',
@@ -452,8 +452,8 @@ var ICON_MAP = {
     btnMenuRewrite:   'images/rewrite.svg',
 
     // 文档
-    btnDocQA:         'images/assistant.svg',
-    btnDocSummary:    'images/summarize.svg',
+    btnDocQA:         'images/pdf_qa.svg',
+    btnDocSummary:    'images/pdf_sum.svg',
     btnDocMind:       'images/outline.svg',
     btnTalkDoc:       'images/talk_doc.svg',
 

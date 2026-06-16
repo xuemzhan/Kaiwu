@@ -1,6 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="6" fill="#1e88e5"/>
-  <circle cx="16" cy="16" r="10" fill="none" stroke="#fff" stroke-width="2"/>
-  <path d="M12 14c0-2.2 1.8-4 4-4s4 1.8 4 4c0 1.5-.8 2.8-2 3.5v.5h-4v-.5c-1.2-.7-2-2-2-3.5z" fill="#fff"/>
-  <path d="M10 22h12" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="翻译">
+  <title>翻译</title>
+  <path d="M3 5h13a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-3.5 3V16H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"
+        fill="#fff" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M29 11H16a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h5v3L25.5 23H29a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z"
+        fill="#fff" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M13 9l-3 2.5L13 14M19 18l3-2.5-3-4" stroke="#2f3437" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M27 5l.6-1.6.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z" fill="#f26b30"/>
 </svg>

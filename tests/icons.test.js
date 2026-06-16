@@ -120,7 +120,7 @@ test('icons: all required new icons exist', () => {
 });
 
 test('icons: all SVGs are valid 32x32 viewBox', () => {
-    const files = fs.readdirSync(ICON_DIR).filter(f => f.endsWith('.svg'));
+    const files = fs.readdirSync(ICON_DIR).filter(f => f.endsWith('.svg') && f !== 'banner.svg');
     const invalid = [];
     for (const f of files) {
         const content = fs.readFileSync(path.join(ICON_DIR, f), 'utf8');

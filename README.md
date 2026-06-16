@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Kaiwu logo](images/assistant.svg)
+![Kaiwu logo](images/kaiwu.svg)
 
 **An AI-powered writing add-in for WPS Office**
 

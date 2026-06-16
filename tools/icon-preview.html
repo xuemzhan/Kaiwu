@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>开悟图标预览 — v0.3.0</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'Microsoft YaHei', sans-serif; background: #f5f5f5; padding: 32px; }
+  h1 { text-align: center; margin-bottom: 8px; color: #2f3437; }
+  .subtitle { text-align: center; color: #888; margin-bottom: 32px; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 900px; margin: 0 auto; }
+  .card { background: #fff; border-radius: 12px; padding: 24px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card h3 { margin-top: 12px; color: #2f3437; font-size: 15px; }
+  .card .desc { color: #888; font-size: 12px; margin-top: 4px; }
+  .card .replace { color: #f26b30; font-size: 11px; margin-top: 6px; font-weight: 600; }
+  .icon-row { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 16px; }
+  .icon-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .icon-box .label { font-size: 11px; color: #999; }
+  svg { width: 64px; height: 64px; }
+  .vs { color: #ccc; font-size: 20px; font-weight: 300; }
+  .section-title { grid-column: 1 / -1; text-align: center; color: #f26b30; font-size: 14px; font-weight: 600; margin-top: 12px; padding: 8px 0; border-top: 1px solid #eee; }
+  .note { max-width: 900px; margin: 32px auto 0; padding: 16px 20px; background: #fff9f5; border-left: 3px solid #f26b30; border-radius: 4px; font-size: 13px; color: #666; line-height: 1.8; }
+</style>
+</head>
+<body>
+<h1>开悟 (Kaiwu) 图标预览</h1>
+<p class="subtitle">v0.3.0 新增 & 重设计 — 6 个图标 · 统一标准风格</p>
+
+<div class="grid">
+
+  <!-- 1. translate -->
+  <div class="card">
+    <h3>翻译 translate.svg</h3>
+    <div class="desc">双语对话气泡 + 双向箭头 + 星星</div>
+    <div class="replace">替换蓝底旧版 translate.svg</div>
+    <div class="icon-row">
+      <div class="icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="翻译">
+          <title>翻译</title>
+          <path d="M3 5h13a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-3.5 3V16H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" fill="#fff" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M29 11H16a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h5v3L25.5 23H29a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z" fill="#fff" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M13 9l-3 2.5L13 14M19 18l3-2.5-3-4" stroke="#2f3437" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M27 5l.6-1.6.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z" fill="#f26b30"/>
+        </svg>
+        <span class="label">新版 (标准)</span>
+      </div>
+      <span class="vs">vs</span>
+      <div class="icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="6" fill="#1e88e5"/>
+          <circle cx="16" cy="16" r="10" fill="none" stroke="#fff" stroke-width="2"/>
+          <path d="M12 14c0-2.2 1.8-4 4-4s4 1.8 4 4c0 1.5-.8 2.8-2 3.5v.5h-4v-.5c-1.2-.7-2-2-2-3.5z" fill="#fff"/>
+          <path d="M10 22h12" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="label">旧版 (蓝底)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. assistant_write -->
+  <div class="card">
+    <h3>帮我写 assistant_write.svg</h3>
+    <div class="desc">文档 + 橙色铅笔 + 内容线</div>
+    <div class="replace">替换 btnWrite 的 assistant.svg</div>
+    <div class="icon-row">
+      <div class="icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="帮我写">
+          <title>帮我写</title>
+          <path d="M18 3H8a2 2 0 0 0-2 2v22a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V11L18 3z" fill="#fff" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M18 3v8h8" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M10 17h12M10 21h10M10 25h7" stroke="#2f3437" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M22.5 18.5l-7 7-2 1 1-2 7-7 1 1z" fill="#f26b30" stroke="#2f3437" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M15.5 26.5l-1.5 1.5a.4.4 0 0 1-.6 0l-1-1a.4.4 0 0 1 0-.6l1.5-1.5" stroke="#2f3437" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <span class="label">新版</span>
+      </div>
+      <span class="vs">vs</span>
+      <div class="icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+          <path d="M16 4a10 10 0 0 0-7.8 16.5c.7.6 1.2 1.5 1.2 2.4v1.1h13.2v-1.1c0-.9.5-1.8 1.2-2.4A10 10 0 0 0 16 4z" fill="#fff" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M12 28h8" stroke="#2f3437" stroke-width="2" stroke-linecap="round"/>
+          <path d="M13 31h6" stroke="#2f3437" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12.5" cy="14" r="1.2" fill="#2f3437"/>
+          <circle cx="19.5" cy="14" r="1.2" fill="#2f3437"/>
+          <path d="M12 19c1.5 2 6.5 2 8 0" stroke="#2f3437" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <path d="M25 7l.6-1.6.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z" fill="#f26b30"/>
+        </svg>
+        <span class="label">旧版 (对话气泡)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. pdf_qa -->
+  <div class="card">
+    <h3>PDF 问答 pdf_qa.svg</h3>
+    <div class="desc">PDF文档 + 问号 + 星星</div>
+    <div class="replace">替换蓝底旧版 pdf_qa.svg</div>
+    <div class="icon-row">
+      <div class="icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="PDF问答">
+          <title>PDF问答</title>
+          <path d="M18 2H7a2 2 0 0 0-2 2v24a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V10L18 2z" fill="#fff" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M18 2v8h8" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M9 26h6" stroke="#2f3437" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M20 16a3.5 3.5 0 0 0-1.5-2.9A3.5 3.5 0 0 0 15 10a3.5 3.5 0 0 0-3.5 3.5c0 1.2.7 2 1.5 2.5.3.2.5.5.5.8v1.2" stroke="#2f3437" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <circle cx="13.5" cy="22" r="1" fill="#2f3437"/>
+          <path d="M27 3.5l.6-1.6.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z" fill="#f26b30"/>
+        </svg>
+        <span class="label">新版 (标准)</span>
+      </div>
+      <span class="vs">vs</span>
+      <div class="icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="6" fill="#1e88e5"/>
+          <path d="M10 8h8l4 4v14H10V8z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M18 8v4h4" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M14 18a2 2 0 0 1-2-2v-1h4v1a2 2 0 0 1-2 2z" fill="#fff"/>
+          <circle cx="14" cy="21" r="1" fill="#fff"/>
+        </svg>
+        <span class="label">旧版 (蓝底)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. pdf_sum -->
+  <div class="card">
+    <h3>PDF 摘要 pdf_sum.svg</h3>
+    <div class="desc">PDF文档 + 精简文本线 + 星星</div>
+    <div class="replace">替换 btnDocSummary 的 summarize.svg</div>
+    <div class="icon-row">
+      <div class="icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="PDF摘要">
+          <title>PDF摘要</title>
+          <path d="M18 2H7a2 2 0 0 0-2 2v24a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V10L18 2z" fill="#fff" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M18 2v8h8" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M9 15h10M9 19h8M9 23h6" stroke="#2f3437" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M9 27h5" stroke="#2f3437" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M27 3.5l.6-1.6.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z" fill="#f26b30"/>
+        </svg>
+        <span class="label">新版 (标准)</span>
+      </div>
+      <span class="vs">vs</span>
+      <div class="icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+          <path d="M9 5h11l5 5v17H9V5z" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M20 5v6h6M13 15h8M13 19h8M13 23h5" stroke="#2f3437" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="label">旧版 (通用摘要)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. chart -->
+  <div class="card">
+    <h3>图表 chart.svg</h3>
+    <div class="desc">3根柱状图 + 基线 + 星星</div>
+    <div class="replace">新增图标</div>
+    <div class="icon-row">
+      <div class="icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="图表">
+          <title>图表</title>
+          <path d="M4 28h24" stroke="#2f3437" stroke-width="2" stroke-linecap="round"/>
+          <rect x="6" y="18" width="5" height="10" rx="1" fill="#fff" stroke="#2f3437" stroke-width="2"/>
+          <rect x="13.5" y="12" width="5" height="16" rx="1" fill="#fff" stroke="#2f3437" stroke-width="2"/>
+          <rect x="21" y="6" width="5" height="22" rx="1" fill="#fff" stroke="#2f3437" stroke-width="2"/>
+          <path d="M28 2l.6-1.6.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z" fill="#f26b30"/>
+        </svg>
+        <span class="label">新版</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. formula -->
+  <div class="card">
+    <h3>公式 formula.svg</h3>
+    <div class="desc">fx 数学符号 + 文档页 + 星星</div>
+    <div class="replace">替换蓝底旧版 formula.svg</div>
+    <div class="icon-row">
+      <div class="icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-label="公式">
+          <title>公式</title>
+          <path d="M18 3H8a2 2 0 0 0-2 2v22a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V11L18 3z" fill="#fff" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M18 3v8h8" stroke="#2f3437" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M13 14c-1.5 0-2.5-.8-2.5-2s1-2 2.5-2c1 0 1.8.4 2.2 1" stroke="#f26b30" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <path d="M12 13h3" stroke="#f26b30" stroke-width="2" stroke-linecap="round"/>
+          <path d="M15 19l4 7M19 19l-4 7" stroke="#2f3437" stroke-width="2" stroke-linecap="round"/>
+          <path d="M26 5l.6-1.6.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z" fill="#f26b30"/>
+        </svg>
+        <span class="label">新版 (标准)</span>
+      </div>
+      <span class="vs">vs</span>
+      <div class="icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="6" fill="#1e88e5"/>
+          <path d="M11 10l-4 12M16 10l-4 12M9 17h6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M20 12v10M20 12l4 5-4 5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="label">旧版 (蓝底)</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <strong>设计规范：</strong><br>
+  · 尺寸: viewBox="0 0 32 32" · 主色: #2f3437 描边 · 强调: #f26b30 橙色星星<br>
+  · 线条: 主轮廓 stroke-width="2" · 细节 1.5-1.8 · 圆角 rx="1"~"2"<br>
+  · 风格: 描边为主 + 白色填充容器 + 4角星点缀 (统一替换蓝底风格)
+</div>
+
+</body>
+</html>

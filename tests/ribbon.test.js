@@ -127,7 +127,7 @@ test('ribbon: GetImage returns correct icon for known controls', () => {
     assert.equal(r.GetImage({ Id: 'btnSettings' }), 'images/settings.svg');
     assert.equal(r.GetImage({ Id: 'btnContinue' }), 'images/continue.svg');
     assert.equal(r.GetImage({ Id: 'btnPolishFormal' }), 'images/formal.svg');
-    assert.equal(r.GetImage({ Id: 'btnDocSummary' }), 'images/summarize.svg');
+    assert.equal(r.GetImage({ Id: 'btnDocSummary' }), 'images/pdf_sum.svg');
     assert.equal(r.GetImage({ Id: 'btnDocMind' }), 'images/outline.svg');
     assert.equal(r.GetImage({ Id: 'btnOpenAssistant' }), 'images/kaiwu.svg');
     assert.equal(r.GetImage({ Id: 'btnHistory' }), 'images/history.svg');
