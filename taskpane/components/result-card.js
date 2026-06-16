@@ -149,5 +149,15 @@ var ResultCard = {
             self._renderTimer = null;
             self.render();
         }, 80);
+    },
+
+    get: function (id) {
+        return this._cards[id] || null;
+    },
+
+    remove: function (id) {
+        if (!this._cards[id]) return;
+        delete this._cards[id];
+        this._scheduleRender();
     }
 };

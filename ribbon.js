@@ -398,7 +398,7 @@ function OnAction(control) {
         return true;
     }
     console.warn('[开悟] 未处理的按钮:', eleId);
-    return true;
+    return false;
 }
 
 /**

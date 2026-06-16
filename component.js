@@ -60,12 +60,14 @@ var ComponentDetector = {
         return labels[type || this.detect()] || '未知';
     },
 
-    // 绑定文档切换事件: 新建/打开文档时自动重置缓存
+    _bound: false,
     bindAutoReset: function () {
+        if (this._bound) return;
         var self = this;
         try {
             var app = window.Application;
             if (!app || !app.ApiEvent || typeof app.ApiEvent.AddApiEventListener !== 'function') return;
+            this._bound = true;
             app.ApiEvent.AddApiEventListener('DocumentOpen', function () { self.reset(); });
             app.ApiEvent.AddApiEventListener('NewDocument', function () { self.reset(); });
             if (typeof app.ApiEvent.AddApiEventListener === 'function') {

@@ -92,7 +92,11 @@ var WriterAdapter = {
             if (this.isAvailable()) {
                 var doc = window.Application.ActiveDocument;
                 name = doc.Name || name;
-                textLength = this.getDocumentText().length;
+                if (doc.Content && typeof doc.Content.Count === 'number') {
+                    textLength = doc.Content.Count;
+                } else {
+                    textLength = this.getDocumentText().length;
+                }
             }
         } catch (e) { /* ignore */ }
         return {

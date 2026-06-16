@@ -15,6 +15,7 @@ var KwToast = (function () {
         var id = 'kw-toast-' + (channel || 'default');
         var el = document.getElementById(id);
         if (el) return el;
+        if (!document.body) return null;
         el = document.createElement('div');
         el.id = id;
         el.className = 'kw-toast';

@@ -17,7 +17,6 @@ var ChatUI = {
     _latestStreamingChat: null,
     _streamController: null,
     _isUserAtBottom: true,
-    _historyHTML: null,  // 缓存已渲染的历史消息 HTML, 避免重复 marked.parse
 
     // 初始化
     init: function () {
@@ -83,20 +82,17 @@ var ChatUI = {
                 '  <p class="welcome-tip">💡 提示：在文档中选中文字后，点击功能区按钮可进行润色、续写、翻译等操作。</p>' +
                 '  <p class="welcome-model" id="welcomeModel"></p>' +
                 '</div>';
-            this._historyHTML = null;
             this._updateWelcomeModel();
             return;
         }
 
-        // 缓存: 整段对话的 HTML (后续流式只 patch 最后一条)
-        var html = '';
+        var parts = [];
         for (var i = 0; i < chat.messages.length; i++) {
             var msg = chat.messages[i];
             var isStreaming = streamingMsg && (i === chat.messages.length - 1) && msg.role === 'assistant';
-            html += MessageRenderer.render(msg, isStreaming);
+            parts.push(MessageRenderer.render(msg, isStreaming));
         }
-        this._historyHTML = html;
-        container.innerHTML = html;
+        container.innerHTML = parts.join('');
         this._postRender();
         this._maybeScrollToBottom();
     },
@@ -178,6 +174,12 @@ var ChatUI = {
         this.renderChat(chat, true);
 
         // 构建消息列表
+        if (typeof AIService === 'undefined') {
+            this._renderErrorMessage(chat, 'AI 服务未加载，请刷新页面');
+            this._enableInput();
+            this._showAbortButton(false);
+            return;
+        }
         var messages = AIService.buildMessages(config.systemPrompt, chat.messages.slice(0, -1));
 
         // 发送流式请求
@@ -245,15 +247,20 @@ var ChatUI = {
         if (typeof ChatManager === 'undefined') return;
         var chat = ChatManager.getCurrent();
         if (!chat || chat.messages.length < 2) return;
-        // 找到最后一个 user 消息
         var lastUser = null;
         for (var i = chat.messages.length - 1; i >= 0; i--) {
             if (chat.messages[i].role === 'user') { lastUser = chat.messages[i]; break; }
         }
         if (!lastUser) return;
-        // 删除最后一条 assistant 错误消息
+        // 删除最后一条 assistant 错误消息, 通过内存缓存 + 落盘
         chat.messages.pop();
-        ChatManager._saveChat(chat);
+        chat.updatedAt = Date.now();
+        if (typeof ChatManager._updateCache === 'function') {
+            ChatManager._updateCache(chat.id, chat);
+        }
+        if (typeof ChatManager._flushSave === 'function') {
+            ChatManager._flushSave();
+        }
         var inputBox = document.getElementById('inputBox');
         if (inputBox) inputBox.value = lastUser.content;
         this.sendMessage();
@@ -269,7 +276,13 @@ var ChatUI = {
         var last = chat.messages[chat.messages.length - 1];
         if (last && last.role === 'assistant' && last.content && last.content.indexOf('[错误]') === 0) {
             chat.messages.pop();
-            ChatManager._saveChat(chat);
+            chat.updatedAt = Date.now();
+            if (typeof ChatManager._updateCache === 'function') {
+                ChatManager._updateCache(chat.id, chat);
+            }
+            if (typeof ChatManager._flushSave === 'function') {
+                ChatManager._flushSave();
+            }
             this.renderChat(chat);
         }
     },
@@ -310,7 +323,7 @@ var ChatUI = {
                 return;
             }
 
-            if (typeof ActionRunner !== 'undefined' && ActionRegistry && ActionRegistry.get(action)) {
+            if (typeof ActionRunner !== 'undefined' && typeof ActionRegistry !== 'undefined' && ActionRegistry.get(action)) {
                 ActionRunner.run(action);
             } else {
                 console.warn('[ChatUI] Unknown pending action:', action);
@@ -343,15 +356,6 @@ var ChatUI = {
         }
         var tipEl = container.querySelector('.welcome-tip');
         if (tipEl) tipEl.textContent = tip;
-    },
-
-    _showQuickActionBar: function (label, message) {
-        var bar = document.getElementById('quickActionBar');
-        var labelEl = document.getElementById('quickActionLabel');
-        if (bar && labelEl) {
-            labelEl.textContent = label + ': ' + message;
-            bar.style.display = 'flex';
-        }
     },
 
     /**
@@ -439,9 +443,10 @@ var ChatUI = {
         });
         self._activeCategory = 'writing';
         self._setActiveCategory('writing');
-        window.addEventListener('resize', function () {
+        self._resizeHandler = KwUtils.rafSchedule(function () {
             self._setActiveCategory(self._activeCategory || 'writing');
         });
+        window.addEventListener('resize', self._resizeHandler);
     },
 
     _setActiveCategory: function (cat) {
@@ -502,63 +507,58 @@ var ChatUI = {
     _bindEvents: function () {
         var self = this;
 
-        // 发送按钮
-        document.getElementById('btnSend').addEventListener('click', function () {
-            self.sendMessage();
-        });
-
-        // 停止生成按钮
-        var abortBtn = document.getElementById('btnAbort');
-        if (abortBtn) {
-            abortBtn.addEventListener('click', function () { self.abortStreaming(); });
+        // 辅助: 安全绑定 (元素不存在时静默跳过, 不阻塞后续绑定)
+        function safeBind(id, event, handler) {
+            var el = document.getElementById(id);
+            if (el) el.addEventListener(event, handler);
         }
 
-        // Ctrl+Enter 发送
+        // 发送按钮
+        safeBind('btnSend', 'click', function () { self.sendMessage(); });
+
+        // 停止生成按钮
+        safeBind('btnAbort', 'click', function () { self.abortStreaming(); });
+
+        // Ctrl+Enter 发送 + 字数统计
         var inputBox = document.getElementById('inputBox');
-        inputBox.addEventListener('keydown', function (e) {
-            if (e.ctrlKey && e.key === 'Enter') {
-                e.preventDefault();
-                self.sendMessage();
-            }
-        });
-        inputBox.addEventListener('input', function () {
-            self._updateTokenCounter();
-        });
+        if (inputBox) {
+            inputBox.addEventListener('keydown', function (e) {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    self.sendMessage();
+                }
+            });
+            inputBox.addEventListener('input', function () {
+                self._updateTokenCounter();
+            });
+        }
 
         // 清空按钮
-        document.getElementById('btnClear').addEventListener('click', function () {
-            self.clearChat();
-        });
+        safeBind('btnClear', 'click', function () { self.clearChat(); });
 
         // 新建对话
-        document.getElementById('btnNewChat').addEventListener('click', function () {
-            self.newChat();
-        });
+        safeBind('btnNewChat', 'click', function () { self.newChat(); });
 
         // 设置按钮
-        document.getElementById('btnSettings').addEventListener('click', function () {
-            SettingsUI.show();
+        safeBind('btnSettings', 'click', function () {
+            if (typeof SettingsUI !== 'undefined') SettingsUI.show();
         });
 
         // 关闭设置
-        document.getElementById('btnCloseSettings').addEventListener('click', function () {
-            SettingsUI.hide();
+        safeBind('btnCloseSettings', 'click', function () {
+            if (typeof SettingsUI !== 'undefined') SettingsUI.hide();
         });
 
         // 点击遮罩关闭设置
-        document.getElementById('settingsOverlay').addEventListener('click', function (e) {
-            if (e.target === this) SettingsUI.hide();
+        safeBind('settingsOverlay', 'click', function (e) {
+            if (e.target === this && typeof SettingsUI !== 'undefined') SettingsUI.hide();
         });
 
-        // 插入助手消息: 走 _executeInsertMessage, 用 KwUtils.stripThinking 统一清洗
-        document.getElementById('btnExecuteAction').addEventListener('click', function () {
-            self._executeInsertLastAssistant();
-        });
+        // 插入助手消息
+        safeBind('btnExecuteAction', 'click', function () { self._executeInsertLastAssistant(); });
 
         // 取消快捷操作
-        document.getElementById('btnCancelAction').addEventListener('click', function () {
-            self._hideQuickActionBar();
-        });
+        safeBind('btnCancelAction', 'click', function () { self._hideQuickActionBar(); });
 
         // 全局事件代理: 重试 / 关闭错误 / 复制 / 插入 / 复制代码
         var chatContainer = document.getElementById('chatContainer');
@@ -712,10 +712,12 @@ var ChatUI = {
         a.download = 'kaiwu-chats-' + new Date().toISOString().slice(0, 10) + '.json';
         document.body.appendChild(a);
         a.click();
-        setTimeout(function () {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 100);
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        });
         KwToast.show('已导出对话');
     },
 

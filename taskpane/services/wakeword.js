@@ -82,17 +82,11 @@
             _lastTriggerTime = 0;
             _onKeyDown = onKeyDown;
             document.addEventListener('keydown', _onKeyDown, true);
-            if (typeof window !== 'undefined' && window !== document) {
-                window.addEventListener('keydown', _onKeyDown, true);
-            }
         },
         stop: function () {
             if (!_installed) return;
             if (typeof document !== 'undefined' && _onKeyDown) {
                 document.removeEventListener('keydown', _onKeyDown, true);
-            }
-            if (typeof window !== 'undefined' && window !== document && _onKeyDown) {
-                window.removeEventListener('keydown', _onKeyDown, true);
             }
             _installed = false;
         }

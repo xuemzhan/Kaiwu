@@ -25,7 +25,13 @@ var KwMarkdown = (function () {
     }
 
     function buildRenderer() {
-        var renderer = window.marked.Renderer ? new window.marked.Renderer() : null;
+        var renderer;
+        try {
+            renderer = window.marked.Renderer ? new window.marked.Renderer() : null;
+        } catch (e) {
+            console.warn('[KwMarkdown] Renderer constructor failed:', e);
+            renderer = null;
+        }
         if (!renderer) return null;
 
         renderer.code = function (code, language) {
@@ -106,7 +112,8 @@ var KwMarkdown = (function () {
                 KwSecurity._sanitizeNode(tpl.content);
                 html = tpl.innerHTML;
             } catch (e) {
-                console.warn('[KwMarkdown] sanitize failed, returning raw html:', e);
+                console.warn('[KwMarkdown] sanitize failed, returning escaped text:', e);
+                return '<p>' + KwUtils.escapeHtml(raw) + '</p>';
             }
         }
 

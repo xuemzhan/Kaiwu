@@ -36,9 +36,13 @@ test('PromptTemplates: substitutes {{question}} placeholder for imitate', () => 
     assert.ok(msgs[1].content.indexOf('关于AI的报告') !== -1, 'should embed user question');
 });
 
-test('PromptTemplates: throws on unknown prompt key', () => {
+test('PromptTemplates: returns fallback on unknown prompt key', () => {
     const tpl = loadTpl();
-    assert.throws(() => tpl.buildMessages('nonexistent', { input: 'x' }), /未找到/);
+    const msgs = tpl.buildMessages('nonexistent', { input: 'test' });
+    assert.equal(msgs.length, 2);
+    assert.equal(msgs[0].role, 'system');
+    assert.equal(msgs[1].role, 'user');
+    assert.ok(msgs[1].content.indexOf('test') !== -1);
 });
 
 test('PromptTemplates: covers all expected actions', () => {

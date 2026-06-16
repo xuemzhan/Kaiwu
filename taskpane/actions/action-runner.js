@@ -7,17 +7,28 @@
  *   - 不再每条结果都生成一张独立 DOM 卡片
  */
 var ActionRunner = {
+    _lastPushHistoryTime: 0,
+
     run: function (actionId, options) {
         options = options || {};
+        try {
+            this._runInternal(actionId, options);
+        } catch (e) {
+            console.error('[Kaiwu] ActionRunner.run error:', actionId, e);
+            if (typeof KwToast !== 'undefined') KwToast.show('操作执行异常：' + (e.message || e));
+        }
+    },
+
+    _runInternal: function (actionId, options) {
         var action = ActionRegistry.get(actionId);
         if (!action) {
-            MessageRenderer._showToast('未知动作：' + actionId);
+            if (typeof KwToast !== 'undefined') KwToast.show('未知动作：' + actionId);
             return;
         }
 
         var config = Config.getAll();
         if (!config.apiKey) {
-            MessageRenderer._showToast('请先在设置中配置 API Key');
+            if (typeof KwToast !== 'undefined') KwToast.show('请先在设置中配置 API Key');
             SettingsUI.show();
             return;
         }
@@ -28,7 +39,7 @@ var ActionRunner = {
             return;
         }
         if (inputInfo.error) {
-            MessageRenderer._showToast(inputInfo.error);
+            if (typeof KwToast !== 'undefined') KwToast.show(inputInfo.error);
             return;
         }
 
@@ -50,7 +61,6 @@ var ActionRunner = {
             input: inputInfo.input,
             question: inputInfo.question || ''
         });
-        // F6: 把 action 的覆盖参数 (temperature / maxTokens / maxHistoryMessages) 传给 AIService
         var sendOptions = {
             temperature: action.temperature,
             maxTokens: action.maxTokens,
@@ -86,7 +96,6 @@ var ActionRunner = {
             },
             sendOptions
         );
-        // 将 abort controller 暴露给 ResultPanel, 用户可点击 ■ 取消生成
         if (controller && mountEl && typeof ResultPanel !== 'undefined') {
             ResultPanel.setAbortController(controller);
         }
@@ -141,13 +150,19 @@ var ActionRunner = {
 
     _pushHistory: function (id) {
         if (typeof HistoryDrawer === 'undefined') return;
+        var now = Date.now();
+        if (now - this._lastPushHistoryTime < 500) return;
+        this._lastPushHistoryTime = now;
         var card = this._readCard(id);
         if (card) HistoryDrawer.push(card);
     },
 
     _resolveInput: function (action, options) {
         if (options.reuseInput) {
-            return { input: options.reuseInput, sourceType: action.input === 'document' ? 'document' : 'selection' };
+            var sourceType = 'selection';
+            if (action.input === 'document') sourceType = 'document';
+            else if (action.input === 'user') sourceType = 'user';
+            return { input: options.reuseInput, sourceType: sourceType };
         }
         if (action.input === 'user') {
             var userText = (options.userInput || '').trim();

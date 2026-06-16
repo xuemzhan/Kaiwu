@@ -125,7 +125,7 @@ var ResultPanel = {
         var card = this._activeCard;
         var mountEl = this._activeMount;
 
-        var existing = mountEl.querySelector('.result-card[data-card-id="' + KwUtils.escapeAttr(card.id).replace(/"/g, '\\"') + '"]');
+        var existing = mountEl.querySelector('.result-card[data-card-id="' + card.id + '"]');
         var isStreaming = card.status === 'streaming';
         // 流式阶段 + 已有节点 → 增量更新
         if (isStreaming && existing && options && options.forceFull !== true) {
@@ -254,10 +254,12 @@ var ResultPanel = {
      */
     replaceOriginal: function () {
         if (!this._activeCard || !this._activeCard.resultText) return;
-        var result = WriterAdapter.replaceSelection(
-            this._cleanResult(this._activeCard.resultText),
-            this._activeCard.sourceText
-        );
+        var text = this._cleanResult(this._activeCard.resultText);
+        if (typeof WriterAdapter === 'undefined' || !WriterAdapter.replaceSelection) {
+            this._copyFallback(text, 'WPS 未连接, 已复制到剪贴板');
+            return;
+        }
+        var result = WriterAdapter.replaceSelection(text, this._activeCard.sourceText);
         KwToast.show(result.ok ? '已替换原文' : (result.reason || '替换失败'));
     },
 

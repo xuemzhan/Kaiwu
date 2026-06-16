@@ -41,43 +41,42 @@ function loadRunner() {
 }
 
 test('ActionRunner: run with unknown action shows toast', () => {
-    const { window, ActionRunner, MessageRenderer } = loadRunner();
+    const { window, ActionRunner } = loadRunner();
     let toastMsg = null;
-    const orig = MessageRenderer._showToast;
-    MessageRenderer._showToast = (m) => { toastMsg = m; };
+    const orig = window.KwToast.show;
+    window.KwToast.show = (m) => { toastMsg = m; };
     ActionRunner.run('nonexistent_action');
     assert.ok(toastMsg && toastMsg.indexOf('未知') !== -1);
-    MessageRenderer._showToast = orig;
+    window.KwToast.show = orig;
 });
 
 test('ActionRunner: run with no apiKey opens settings', () => {
-    const { window, ActionRunner, Config, MessageRenderer, SettingsUI } = loadRunner();
+    const { window, ActionRunner, Config, SettingsUI } = loadRunner();
     Config.init();
     Config.set('apiKey', '');
     let settingsOpened = false;
     const origShow = SettingsUI.show;
     SettingsUI.show = () => { settingsOpened = true; };
     let toastMsg = null;
-    const origToast = MessageRenderer._showToast;
-    MessageRenderer._showToast = (m) => { toastMsg = m; };
+    const origToast = window.KwToast.show;
+    window.KwToast.show = (m) => { toastMsg = m; };
     ActionRunner.run('polish_quick');
     assert.ok(toastMsg && toastMsg.indexOf('API Key') !== -1);
     assert.equal(settingsOpened, true);
     SettingsUI.show = origShow;
-    MessageRenderer._showToast = origToast;
+    window.KwToast.show = origToast;
 });
 
 test('ActionRunner: run with no selection shows error', () => {
-    const { window, ActionRunner, Config, MessageRenderer } = loadRunner();
+    const { window, ActionRunner, Config } = loadRunner();
     Config.init();
     Config.set('apiKey', 'sk-test');
-    // No selection
     let toastMsg = null;
-    const orig = MessageRenderer._showToast;
-    MessageRenderer._showToast = (m) => { toastMsg = m; };
+    const orig = window.KwToast.show;
+    window.KwToast.show = (m) => { toastMsg = m; };
     ActionRunner.run('polish_quick');
     assert.ok(toastMsg && toastMsg.indexOf('选中文本') !== -1);
-    MessageRenderer._showToast = orig;
+    window.KwToast.show = orig;
 });
 
 test('ActionRunner: run with selection streams AI response', async () => {

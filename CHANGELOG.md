@@ -5,7 +5,36 @@ All notable changes to **Kaiwu (开悟)** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — Performance, UX, and Code-Quality Overhaul
+## [Unreleased]
+
+_No unreleased changes._
+
+---
+
+## [0.2.0] — 2026-06-16
+
+### 🛡️ Production hardening
+
+- **P0-1: ChatUI._bindEvents null checks**: all `getElementById` calls wrapped with `safeBind` helper; missing elements are silently skipped instead of throwing.
+- **P0-2: ActionRunner.run() try-catch**: unhandled exceptions in action execution are caught, logged, and shown to the user via toast — prevents silent script death.
+- **P0-3: ResultPanel double-escaping fix**: removed `.replace(/"/g, '\\"')` after `KwUtils.escapeAttr` in CSS selector lookup.
+- **P0-4: sourceType for user input**: `_resolveInput` now returns `'user'` sourceType when `action.input === 'user'` with `reuseInput`, instead of always returning `'selection'`.
+- **P0-5: Markdown sanitize failure safe fallback**: `KwMarkdown.render` now returns escaped HTML when `KwSecurity._sanitizeNode` throws, instead of returning unsanitized HTML.
+- **P1: typeof guards**: `ActionRegistry`, `AIService`, `WriterAdapter` are now checked via `typeof !== 'undefined'` before access in `chat.js`, `action-runner.js`, `result-panel.js`.
+- **P1: ChatManager private API fix**: `retryLastMessage` / `dismissError` no longer call `_saveChat` (non-existent method); now uses `_updateCache` + `_flushSave`.
+- **P1: _pushHistory throttle**: `_pushHistory` in `ActionRunner` now enforces 500ms minimum interval to prevent storage thrashing during rapid streaming.
+- **P1: prompt-templates graceful error**: `buildMessages` returns fallback prompt instead of throwing on unknown key.
+- **P1: WakeWord duplicate listener**: removed redundant `window.addEventListener('keydown')` — `document.addEventListener` already captures all keydown events in capture phase.
+- **P1: Markdown Renderer constructor**: `buildRenderer` wraps `new marked.Renderer()` in try-catch for compatibility with newer marked versions.
+- **P1: Unified toast API**: `ActionRunner` now uses `KwToast.show()` instead of `MessageRenderer._showToast()`.
+- **P2: Dead code cleanup**: removed `_historyHTML` cache, `_showQuickActionBar` dead method, duplicate interval in `_init`.
+- **P2: resize debounced**: `window.resize` listener now uses `KwUtils.rafSchedule`.
+- **P2: export race fix**: download link cleanup uses double `requestAnimationFrame` instead of `setTimeout(100)`.
+- **P2: bindAutoReset idempotency**: `ComponentDetector.bindAutoReset` now uses `_bound` flag to prevent duplicate event listener registration.
+- **P2: ribbon unknown button**: `OnAction` returns `false` for unrecognized buttons (WPS best practice).
+- **P2: toast.js body guard**: `ensureEl` checks `document.body` existence before appending.
+- **P2: WriterAdapter.getDocumentInfo**: tries `doc.Content.Count` API first before falling back to full text extraction.
+- **P2: ResultCard public API**: added `get(id)` and `remove(id)` methods.
 
 ### ✨ Highlights
 
