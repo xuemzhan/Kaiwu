@@ -17,6 +17,7 @@ var ChatUI = {
     _latestStreamingChat: null,
     _streamController: null,
     _isUserAtBottom: true,
+    _contextTimeout: null,
 
     // 初始化
     init: function () {
@@ -29,13 +30,24 @@ var ChatUI = {
         this._bindScenarioActions();
         this._bindScenarioTabs();
         this._bindImportExport();
+        this._startContextTimeout();
         this._updateContextBar();
         this._checkPendingAction();
         if (typeof HistoryDrawer !== 'undefined') HistoryDrawer.init();
         // 轮询: taskpane 隐藏时自动暂停, 避免无效 WPS COM 调用
         this._actionCheckTimer = setInterval(this._checkPendingAction.bind(this), 1000);
         this._contextTimer = setInterval(this._updateContextBar.bind(this), 1500);
-        this._selectionCheckTimer = setInterval(this._updateChipStates.bind(this), 1000);
+    },
+
+    _startContextTimeout: function () {
+        var self = this;
+        this._contextTimeout = setTimeout(function () {
+            var el = document.getElementById('contextMeta');
+            if (el && el.textContent.indexOf('正在读取') !== -1) {
+                el.textContent = '未连接到 WPS Writer';
+                el.classList.add('kw-context-error');
+            }
+        }, 3000);
     },
 
     /**
@@ -492,6 +504,10 @@ var ChatUI = {
     _updateContextBar: function () {
         var el = document.getElementById('contextMeta');
         if (!el || typeof WriterAdapter === 'undefined') return;
+        if (this._contextTimeout) {
+            clearTimeout(this._contextTimeout);
+            this._contextTimeout = null;
+        }
         try {
             if (window.Application && window.Application.PluginStorage) {
                 var stored = parseInt(window.Application.PluginStorage.getItem('taskpane_user_width') || '0', 10);

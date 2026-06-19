@@ -167,3 +167,157 @@ test('ChatManager: setCurrent updates current id', () => {
     assert.equal(ChatManager.getCurrentId(), a.id);
     assert.equal(ChatManager.getCurrent().id, a.id);
 });
+
+// ==================== 首次运行引导测试 ====================
+// 创建独立的 FirstRunManager 用于测试 (不依赖完整 app.js)
+function createTestFirstRunManager(Config) {
+    return {
+        _dismissedKey: 'kw_first_run_dismissed',
+        isApiKeyConfigured: function () {
+            var config = Config.get();
+            var key = config.apiKey || '';
+            var isEmpty = !key || key.trim() === '';
+            var isPlaceholder = key.indexOf('PLEASE_REPLACE') !== -1 ||
+                               key.indexOf('sk-PLEASE') !== -1 ||
+                               key.indexOf('YOUR_API_KEY') !== -1 ||
+                               key.indexOf('your-api-key') !== -1;
+            return !isEmpty && !isPlaceholder;
+        },
+        check: function () {
+            if (this.isApiKeyConfigured()) {
+                return false;
+            }
+            if (localStorage.getItem(this._dismissedKey)) {
+                return false;
+            }
+            return true;
+        }
+    };
+}
+
+test('FirstRunManager: isApiKeyConfigured returns false when apiKey is empty', () => {
+    const env = makeEnv();
+    loadScripts(env.window, 'taskpane/services/config.js');
+    env.window.Config.init();
+    const fm = createTestFirstRunManager(env.window.Config);
+    const isConfigured = fm.isApiKeyConfigured();
+    assert.equal(isConfigured, false);
+});
+
+test('FirstRunManager: isApiKeyConfigured returns false when apiKey is placeholder PLEASE_REPLACE', () => {
+    const env = makeEnv();
+    loadScripts(env.window, 'taskpane/services/config.js');
+    env.window.Config.set('apiKey', 'PLEASE_REPLACE_THIS_KEY');
+    const fm = createTestFirstRunManager(env.window.Config);
+    const isConfigured = fm.isApiKeyConfigured();
+    assert.equal(isConfigured, false);
+});
+
+test('FirstRunManager: isApiKeyConfigured returns false when apiKey is placeholder sk-PLEASE', () => {
+    const env = makeEnv();
+    loadScripts(env.window, 'taskpane/services/config.js');
+    env.window.Config.set('apiKey', 'sk-PLEASE_REPLACE');
+    const fm = createTestFirstRunManager(env.window.Config);
+    const isConfigured = fm.isApiKeyConfigured();
+    assert.equal(isConfigured, false);
+});
+
+test('FirstRunManager: isApiKeyConfigured returns false when apiKey is placeholder YOUR_API_KEY', () => {
+    const env = makeEnv();
+    loadScripts(env.window, 'taskpane/services/config.js');
+    env.window.Config.set('apiKey', 'YOUR_API_KEY_HERE');
+    const fm = createTestFirstRunManager(env.window.Config);
+    const isConfigured = fm.isApiKeyConfigured();
+    assert.equal(isConfigured, false);
+});
+
+test('FirstRunManager: isApiKeyConfigured returns true when apiKey is valid', () => {
+    const env = makeEnv();
+    loadScripts(env.window, 'taskpane/services/config.js');
+    env.window.Config.set('apiKey', 'sk-abc123xyz');
+    const fm = createTestFirstRunManager(env.window.Config);
+    const isConfigured = fm.isApiKeyConfigured();
+    assert.equal(isConfigured, true);
+});
+
+test('FirstRunManager: check returns true and shows overlay when no API key', () => {
+    const env = makeEnv();
+    loadScripts(env.window, 'taskpane/services/config.js');
+    env.window.Config.set('apiKey', '');
+    const fm = createTestFirstRunManager(env.window.Config);
+    const result = fm.check();
+    assert.equal(result, true);
+});
+
+test('FirstRunManager: check returns false when API key is configured', () => {
+    const env = makeEnv();
+    loadScripts(env.window, 'taskpane/services/config.js');
+    env.window.Config.set('apiKey', 'sk-validkey123');
+    const fm = createTestFirstRunManager(env.window.Config);
+    const result = fm.check();
+    assert.equal(result, false);
+});
+
+test('FirstRunManager: check does not show overlay if previously dismissed', () => {
+    const env = makeEnv();
+    loadScripts(env.window, 'taskpane/services/config.js');
+    env.window.Config.set('apiKey', '');
+    env.window.localStorage.setItem('kw_first_run_dismissed', '1');
+    const fm = createTestFirstRunManager(env.window.Config);
+    const result = fm.check();
+    assert.equal(result, false);
+});
+
+test('FirstRunManager: check returns true when dismissed key is cleared', () => {
+    const env = makeEnv();
+    loadScripts(env.window, 'taskpane/services/config.js');
+    env.window.Config.set('apiKey', '');
+    env.window.localStorage.setItem('kw_first_run_dismissed', '1');
+    env.window.localStorage.removeItem('kw_first_run_dismissed');
+    const fm = createTestFirstRunManager(env.window.Config);
+    const result = fm.check();
+    assert.equal(result, true);
+});
+
+test('ChatUI: context bar shows timeout message after 3s', (t, done) => {
+    const html = '<!DOCTYPE html><html><body>' +
+        '<div class="context-bar"><div id="contextMeta">正在读取文档状态...</div></div>' +
+        '<div id="chatContainer"></div>' +
+        '<input id="inputBox" />' +
+        '</body></html>';
+    const env = makeEnv(html);
+    loadScripts(env.window, 'taskpane/services/config.js');
+    loadScripts(env.window, 'taskpane/services/chat.js');
+    loadScripts(env.window, 'taskpane/components/chat.js');
+    env.window.ChatUI.init();
+    const el = env.window.document.getElementById('contextMeta');
+    assert.equal(el.textContent, '正在读取文档状态...');
+    setTimeout(() => {
+        assert.equal(el.textContent, '未连接到 WPS Writer');
+        assert.ok(el.classList.contains('kw-context-error'));
+        done();
+    }, 3100);
+});
+
+test('ChatUI: context bar clears timeout when context loads successfully', (t, done) => {
+    const html = '<!DOCTYPE html><html><body>' +
+        '<div class="context-bar"><div id="contextMeta">正在读取文档状态...</div></div>' +
+        '<div id="chatContainer"></div>' +
+        '<input id="inputBox" />' +
+        '</body></html>';
+    const env = makeEnv(html);
+    loadScripts(env.window, 'taskpane/services/config.js');
+    loadScripts(env.window, 'taskpane/services/chat.js');
+    env.window.WriterAdapter = {
+        getDocumentInfo: function() { return { available: true, name: '测试文档.docx' }; },
+        getSelectionInfo: function() { return { hasSelection: false, length: 0 }; },
+        getSelectionText: function() { return ''; }
+    };
+    loadScripts(env.window, 'taskpane/components/chat.js');
+    env.window.ChatUI.init();
+    setTimeout(() => {
+        const el = env.window.document.getElementById('contextMeta');
+        assert.ok(el.textContent.indexOf('测试文档.docx') !== -1);
+        done();
+    }, 100);
+});

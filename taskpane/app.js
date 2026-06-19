@@ -187,6 +187,59 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     });
 }
 
+// ==================== 首次运行检测 ====================
+var FirstRunManager = {
+    _dismissedKey: 'kw_first_run_dismissed',
+
+    isApiKeyConfigured: function () {
+        var config = Config.get();
+        var key = config.apiKey || '';
+        var isEmpty = !key || key.trim() === '';
+        var isPlaceholder = key.indexOf('PLEASE_REPLACE') !== -1 ||
+                           key.indexOf('sk-PLEASE') !== -1 ||
+                           key.indexOf('YOUR_API_KEY') !== -1 ||
+                           key.indexOf('your-api-key') !== -1;
+        return !isEmpty && !isPlaceholder;
+    },
+
+    check: function () {
+        if (this.isApiKeyConfigured()) {
+            return false;
+        }
+        if (localStorage.getItem(this._dismissedKey)) {
+            return false;
+        }
+        this.showOverlay();
+        return true;
+    },
+
+    showOverlay: function () {
+        var overlay = document.getElementById('kwFirstRunOverlay');
+        if (overlay) {
+            overlay.hidden = false;
+        }
+    },
+
+    hideOverlay: function () {
+        var overlay = document.getElementById('kwFirstRunOverlay');
+        if (overlay) {
+            overlay.hidden = true;
+        }
+    },
+
+    dismiss: function () {
+        localStorage.setItem(this._dismissedKey, '1');
+        this.hideOverlay();
+    },
+
+    openSettings: function () {
+        this.hideOverlay();
+        if (typeof SettingsUI !== 'undefined') {
+            SettingsUI.show();
+        }
+    }
+};
+
 // ==================== 应用初始化 ====================
 document.addEventListener('DOMContentLoaded', function () {
     // 检测并打印组件类型
@@ -222,7 +275,26 @@ document.addEventListener('DOMContentLoaded', function () {
     // 5. 更新欢迎语 (组件感知)
     ChatUI._updateWelcomeByComponent(componentType, componentLabel);
 
-    // 6. 监听 WPS 窗口选择变化（刷新上下文状态）
+    // 6. 首次运行检测 - 显示 API Key 配置引导
+    FirstRunManager.check();
+
+    // 7. 绑定首次运行引导按钮事件
+    (function () {
+        var configBtn = document.getElementById('kwFirstRunConfigBtn');
+        var dismissBtn = document.getElementById('kwFirstRunDismissBtn');
+        if (configBtn) {
+            configBtn.addEventListener('click', function () {
+                FirstRunManager.openSettings();
+            });
+        }
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', function () {
+                FirstRunManager.dismiss();
+            });
+        }
+    })();
+
+    // 8. 监听 WPS 窗口选择变化（刷新上下文状态）
     if (window.__WPS_BRIDGE__.isWPSEnv()) {
         try {
             window.Application.ApiEvent.AddApiEventListener('WindowSelectionChange', function () {

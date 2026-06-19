@@ -70,6 +70,7 @@ const EXCLUDE = new Set([
     'package-lock.json',
     'package.json',
     'scripts',           // 打包脚本本身, 用户机器不需要
+    '.env',             // 敏感文件, 不进包 (安全修复)
     '.env.template',     // 模板不进包, 真实 .env 进
     'README.md',         // 项目根的 README 是开发文档, 不进包
     'INSTALL.md',        // 同样的根开发 SOP 不进包
@@ -609,11 +610,22 @@ function build() {
         }
     }
 
-    // 检查 .env 是否被复制 (它不在 EXCLUDE 集合里, 但我们要确保真实 .env 进包)
-    const envInBuild = path.join(sourceRoot, '.env');
-    const envInStage = path.join(stagingDir, '.env');
-    if (fs.existsSync(envInBuild) && !fs.existsSync(envInStage)) {
-        fs.copyFileSync(envInBuild, envInStage);
+    // 安全修复: 不要把真实 .env 复制到发布包中 (会泄露 API Key)
+    // 改为生成 .env.example 作为模板
+    const envExamplePath = path.join(stagingDir, '.env.example');
+    const templatePath = path.join(ROOT, '.env.template');
+    if (fs.existsSync(templatePath)) {
+        fs.copyFileSync(templatePath, envExamplePath);
+    } else {
+        fs.writeFileSync(envExamplePath,
+            '# 开悟 WPS 加载项 — API 默认配置\n' +
+            '# 复制此文件为 .env 并填入真实的 API Key\n' +
+            '\n' +
+            'VITE_DEFAULT_API_KEY=sk-PLEASE_REPLACE_WITH_YOUR_API_KEY\n' +
+            'VITE_DEFAULT_API_BASE=https://api.minimaxi.com/v1\n' +
+            'VITE_DEFAULT_MODEL=MiniMax-M3\n',
+            'utf8'
+        );
     }
 
     console.log('[package] 生成 publish.xml...');

@@ -396,6 +396,11 @@ function OnAction(control) {
         TaskPaneManager.show();
         return true;
     }
+    if (eleId === 'btnMenuHistory' || eleId === 'btnHistory') {
+        setPendingAction('open_history');
+        TaskPaneManager.show();
+        return true;
+    }
     if (eleId === 'btnToggleSidebar' || eleId === 'btnOpenAssistant') {
         setPendingAction('');
         TaskPaneManager.toggle();
