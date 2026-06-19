@@ -6,6 +6,8 @@
  * (从 window.__ENV_*__ 读取, 由 env.js 提供默认值). 此处不再重复.
  */
 
+/* global SessionManager */
+
 // ==================== WPS 桥接器 ====================
 window.__WPS_BRIDGE__ = {
     // 检查是否在 WPS 环境中
@@ -311,5 +313,53 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // 9. Setup session cleanup on document close
+    AppSessionManager._setupDocumentCloseHandler();
+
+    // 10. Start periodic session prune timer
+    AppSessionManager._startSessionPruneTimer();
+
     console.log('[开悟] 初始化完成');
 });
+
+// ==================== 应用会话管理器 ====================
+var AppSessionManager = {
+    _setupDocumentCloseHandler: function() {
+        var self = this;
+        try {
+            if (window.Application && window.Application.ActiveDocument) {
+                window.addEventListener('beforeunload', function() {
+                    self._cleanupCurrentDocumentSessions();
+                });
+            }
+        } catch (e) { /* ignore */ }
+    },
+
+    _cleanupCurrentDocumentSessions: function() {
+        try {
+            if (typeof SessionManager === 'undefined') return;
+            var documentId = this._getCurrentDocumentId();
+            if (documentId) {
+                SessionManager.cleanup(documentId);
+            }
+        } catch (e) {
+            console.warn('[App] Error cleaning up sessions:', e);
+        }
+    },
+
+    _getCurrentDocumentId: function() {
+        try {
+            if (window.Application && window.Application.ActiveDocument) {
+                return window.Application.ActiveDocument.Name || 'unknown';
+            }
+        } catch (e) { /* ignore */ }
+        return 'default';
+    },
+
+    _startSessionPruneTimer: function() {
+        if (typeof SessionManager === 'undefined') return;
+        setInterval(function() {
+            SessionManager.prune();
+        }, 24 * 60 * 60 * 1000);
+    }
+};
