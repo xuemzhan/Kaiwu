@@ -521,3 +521,215 @@ test('OpenCodeAIService: sendStream handles content field directly', async () =>
         );
     });
 });
+
+test('OpenCodeAIService: mapDocumentAction returns correct prompt for summarize', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapDocumentAction('summarize', '这是测试文档内容。');
+    assert.equal(result.system, '你是一个文档摘要助手。');
+    assert.ok(result.user.includes('这是测试文档内容。'));
+});
+
+test('OpenCodeAIService: mapDocumentAction returns correct prompt for doc_summary', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapDocumentAction('doc_summary', '这是一份长文档的内容。');
+    assert.equal(result.system, '你是一个文档总结助手，擅长从长文档中提炼结构和结论。');
+    assert.ok(result.user.includes('一句话总结、核心要点、结构大纲、行动建议'));
+});
+
+test('OpenCodeAIService: mapDocumentAction handles doc_qa with query', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapDocumentAction('doc_qa', '文档内容在这里。', '文档的主要观点是什么？');
+    assert.equal(result.system, '你是一个文档问答助手。基于提供的文档内容回答用户问题。如果无法从文档中找到答案，请明确说明。');
+    assert.ok(result.user.includes('文档内容在这里。'));
+    assert.ok(result.user.includes('文档的主要观点是什么？'));
+});
+
+test('OpenCodeAIService: mapDocumentAction handles doc_qa without query (defaults)', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapDocumentAction('doc_qa', '文档内容', '');
+    assert.ok(result.user.includes('请总结这份文档'));
+});
+
+test('OpenCodeAIService: mapDocumentAction returns correct prompt for talk_doc', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapDocumentAction('talk_doc', '需要讲解的文档内容。');
+    assert.equal(result.system, '你是一个专业的文档讲解助手，擅长将书面内容转化为适合朗读的叙述性语言。');
+    assert.ok(result.user.includes('适合朗读讲解的脚本'));
+});
+
+test('OpenCodeAIService: mapDocumentAction handles unknown action', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapDocumentAction('unknown_action', '文档内容', 'query');
+    assert.equal(result.system, '你是一个助手，请根据用户输入回答问题。');
+    assert.equal(result.user, '请帮我处理这份文档');
+});
+
+test('OpenCodeAIService: mapDocumentAction handles empty documentText', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapDocumentAction('summarize', '', '');
+    assert.equal(result.system, '你是一个文档摘要助手。');
+    assert.ok(result.user.includes('undefined') || result.user.endsWith('请为以下文字生成简洁摘要'));
+});
+
+test('OpenCodeAIService: mapLayoutAction returns ai_layout prompt', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapLayoutAction('ai_layout', '测试文档内容');
+    assert.ok(result.system.includes('文档排版助手'), 'system prompt should mention document layout');
+    assert.ok(result.user.includes('测试文档内容'), 'user prompt should include document text');
+    assert.ok(result.user.includes('标题、摘要、关键词'), 'user prompt should mention paper sections');
+});
+
+test('OpenCodeAIService: mapLayoutAction returns mindmap prompt', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapLayoutAction('mindmap', '文档内容');
+    assert.ok(result.system.includes('思维导图'), 'system prompt should mention mindmap');
+    assert.ok(result.user.includes('Mermaid'), 'user prompt should mention Mermaid');
+    assert.ok(result.user.includes('mindmap'), 'user prompt should include mindmap syntax');
+});
+
+test('OpenCodeAIService: mapLayoutAction returns doc_to_ppt prompt', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapLayoutAction('doc_to_ppt', '测试PPT内容');
+    assert.ok(result.system.includes('演示文稿'), 'system prompt should mention presentation');
+    assert.ok(result.user.includes('PPT大纲'), 'user prompt should mention PPT outline');
+    assert.ok(result.user.includes('页面标题'), 'user prompt should mention slide title');
+});
+
+test('OpenCodeAIService: mapLayoutAction returns default for unknown action', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapLayoutAction('unknown_action', '测试内容');
+    assert.ok(result.system.includes('助手'), 'default system prompt should mention assistant');
+    assert.equal(result.user, '测试内容', 'should return original text');
+});
+
+test('OpenCodeAIService: mapLayoutAction handles empty document text', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapLayoutAction('ai_layout', '');
+    assert.ok(result.user.includes('\n\n'), 'user prompt should handle empty text');
+    const mindmapResult = OpenCodeAIService.mapLayoutAction('mindmap', '');
+    assert.ok(mindmapResult.user.includes('mindmap\n'), 'mindmap should have mindmap prefix');
+});
+
+test('OpenCodeAIService: mapModifyAction returns correct prompt for polish_quick', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapModifyAction('polish_quick', '原始文本');
+    assert.equal(result.system, '你是一个专业的中文写作润色助手。');
+    assert.ok(result.user.includes('原始文本'));
+});
+
+test('OpenCodeAIService: mapModifyAction returns correct prompt for polish_formal', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapModifyAction('polish_formal', '测试文字');
+    assert.equal(result.system, '你是一个正式文书写作助手，擅长办公、公文和商务表达。');
+    assert.ok(result.user.includes('测试文字'));
+});
+
+test('OpenCodeAIService: mapModifyAction returns correct prompt for polish_government', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapModifyAction('polish_government', '公文内容');
+    assert.equal(result.system, '你熟悉党政机关、公文材料和政务表达风格。');
+    assert.ok(result.user.includes('公文内容'));
+});
+
+test('OpenCodeAIService: mapModifyAction returns correct prompt for correct', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapModifyAction('correct', '文本有错');
+    assert.equal(result.system, '你是一个中文校对与纠错助手。');
+    assert.ok(result.user.includes('文本有错'));
+});
+
+test('OpenCodeAIService: mapModifyAction returns correct prompt for expand', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapModifyAction('expand', '需要扩写');
+    assert.equal(result.system, '你是一个内容扩写助手，擅长补充细节、论据和表达层次。');
+    assert.ok(result.user.includes('需要扩写'));
+});
+
+test('OpenCodeAIService: mapModifyAction returns correct prompt for shrink', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapModifyAction('shrink', '需要压缩');
+    assert.equal(result.system, '你是一个内容压缩助手，擅长提炼重点。');
+    assert.ok(result.user.includes('需要压缩'));
+});
+
+test('OpenCodeAIService: mapModifyAction returns correct prompt for rewrite', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapModifyAction('rewrite', '需要改写');
+    assert.equal(result.system, '你是一个中文改写助手，擅长优化句式和表达方式。');
+    assert.ok(result.user.includes('需要改写'));
+});
+
+test('OpenCodeAIService: mapModifyAction returns correct prompt for translate', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapModifyAction('translate', 'Hello World');
+    assert.equal(result.system, '你是一个专业翻译助手。');
+    assert.ok(result.user.includes('Hello World'));
+});
+
+test('OpenCodeAIService: mapModifyAction handles unknown actionId', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapModifyAction('unknown_action', '测试文本');
+    assert.equal(result.system, '你是一个助手，请根据用户输入回答问题。');
+    assert.equal(result.user, '测试文本');
+});
+
+test('OpenCodeAIService: mapModifyAction handles empty text', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapModifyAction('polish_quick', '');
+    assert.equal(result.system, '你是一个专业的中文写作润色助手。');
+    assert.ok(result.user.includes('\n\n'));
+});
+
+test('OpenCodeAIService: mapModifyAction handles null text', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapModifyAction('correct', null);
+    assert.equal(result.system, '你是一个中文校对与纠错助手。');
+});
+
+test('OpenCodeAIService: mapSpecializedAction returns correct prompt for legal', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapSpecializedAction('legal', '合同违约怎么处理？');
+    assert.equal(result.system, '你是一个专业的法律助手，熟悉中国法律体系，擅长解答法律问题、解释法律条款、分析法律关系。请使用专业、严谨的法律语言，必要时引用相关法律条文。');
+    assert.ok(result.user.includes('合同违约怎么处理？'));
+});
+
+test('OpenCodeAIService: mapSpecializedAction returns correct prompt for deep_think', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapSpecializedAction('deep_think', '为什么AI能生成文本？');
+    assert.equal(result.system, '你是一个深度分析助手。请深入分析问题，逐步推理，详尽考虑各方面因素，给出全面而有深度的回答。请直接给出分析结果。');
+    assert.ok(result.user.includes('为什么AI能生成文本？'));
+});
+
+test('OpenCodeAIService: mapSpecializedAction returns correct prompt for gen_image', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapSpecializedAction('gen_image', '一只猫在草地上玩耍');
+    assert.equal(result.system, '你是一个图片描述生成助手。请将用户的描述转换为一个详细、生动的图片场景描述，适合用于AI绘图。');
+    assert.ok(result.user.includes('一只猫在草地上玩耍'));
+});
+
+test('OpenCodeAIService: mapSpecializedAction returns correct prompt for summary_image', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapSpecializedAction('summary_image', '本文介绍了机器学习的基本概念和发展历史。');
+    assert.equal(result.system, '你是一个文档可视化助手。请将文档内容总结为一个信息图场景描述。');
+    assert.ok(result.user.includes('本文介绍了机器学习的基本概念和发展历史。'));
+});
+
+test('OpenCodeAIService: mapSpecializedAction handles unknown actionId', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapSpecializedAction('unknown_action', '测试输入');
+    assert.equal(result.system, '你是一个助手。');
+    assert.equal(result.user, '测试输入');
+});
+
+test('OpenCodeAIService: mapSpecializedAction handles empty input', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapSpecializedAction('legal', '');
+    assert.equal(result.system, '你是一个专业的法律助手，熟悉中国法律体系，擅长解答法律问题、解释法律条款、分析法律关系。请使用专业、严谨的法律语言，必要时引用相关法律条文。');
+    assert.ok(result.user.includes('\n\n'));
+});
+
+test('OpenCodeAIService: mapSpecializedAction handles null input', () => {
+    const { OpenCodeAIService } = loadService();
+    const result = OpenCodeAIService.mapSpecializedAction('deep_think', null);
+    assert.equal(result.system, '你是一个深度分析助手。请深入分析问题，逐步推理，详尽考虑各方面因素，给出全面而有深度的回答。请直接给出分析结果。');
+});
