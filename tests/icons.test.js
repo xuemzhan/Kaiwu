@@ -131,13 +131,13 @@ test('icons: all SVGs are valid 32x32 viewBox', () => {
     assert.equal(invalid.length, 0, 'invalid viewBox in: ' + invalid.join(', '));
 });
 
-test('icons: all SVGs use the Kaiwu color palette (#2f3437 / #f26b30)', () => {
+test('icons: all SVGs use the Kaiwu color palette (#2f3437 / #C00000)', () => {
     const files = fs.readdirSync(ICON_DIR).filter(f => f.endsWith('.svg'));
     const invalid = [];
     for (const f of files) {
         const content = fs.readFileSync(path.join(ICON_DIR, f), 'utf8');
         const hasDark = content.indexOf('#2f3437') !== -1;
-        const hasOrange = content.indexOf('#f26b30') !== -1;
+        const hasOrange = content.indexOf('#C00000') !== -1;
         if (!hasDark && !hasOrange) {
             // 允许单一颜色 (蓝色图标如 formula.svg)
             const hasBlue = content.indexOf('#1e88e5') !== -1;

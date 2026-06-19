@@ -212,8 +212,8 @@ test('logo: kaiwu.svg represents the 开悟 concept (book + light)', () => {
     // 应包含 "开悟" 概念元素: 打开的书页 + 中心的智慧之光
     assert.ok(/书页|书|page/i.test(content) || /path d=/.test(content),
         'should contain book/page element paths');
-    // 中心应有光 (4 角星, fill #f26b30)
-    assert.ok(content.indexOf('#f26b30') !== -1, 'should have the orange light element');
+    // 中心应有光 (4 角星, fill #C00000)
+    assert.ok(content.indexOf('#C00000') !== -1, 'should have the red light element');
     // 应包含多组 path (书本页 + 光)
     const pathCount = (content.match(/<path/g) || []).length;
     assert.ok(pathCount >= 4, 'should have at least 4 path elements (book pages + light + rays)');
@@ -227,7 +227,7 @@ test('logo: kaiwu.svg represents the 开悟 concept (book + light)', () => {
 test('logo: kaiwu.svg uses the Kaiwu color palette', () => {
     const file = path.resolve(__dirname, '..', 'images', 'kaiwu.svg');
     const content = fs.readFileSync(file, 'utf8');
-    assert.ok(content.indexOf('#f26b30') !== -1, 'should use orange accent color');
+    assert.ok(content.indexOf('#C00000') !== -1, 'should use red accent color');
     assert.ok(content.indexOf('#2f3437') !== -1, 'should use dark gray for book outline');
 });
 

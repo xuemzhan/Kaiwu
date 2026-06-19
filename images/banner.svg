@@ -16,12 +16,12 @@
           fill="#ffffff" stroke="#2f3437" stroke-width="1.8" stroke-linejoin="round"/>
     <path d="M19 11h5.5M19 14.5h5.5M19 18h4.5" stroke="#2f3437" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
     <!-- 中央 4 角星 -->
-    <path d="M16 9.2l1.7 4.6 4.7 1.4-4.7 1.4L16 21.2l-1.7-4.6L9.6 15.2l4.7-1.4L16 9.2z" fill="#f26b30"/>
+    <path d="M16 9.2l1.7 4.6 4.7 1.4-4.7 1.4L16 21.2l-1.7-4.6L9.6 15.2l4.7-1.4L16 9.2z" fill="#C00000"/>
     <!-- 光芒 -->
     <path d="M16 3.5v2.4M16 24.5v2.4M3.5 14.2h2.4M26.1 14.2h2.4"
-          stroke="#f26b30" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+          stroke="#C00000" stroke-width="1.4" stroke-linecap="round" fill="none"/>
     <path d="M6.7 6.7l1.7 1.7M23.6 21.6l1.7 1.7M6.7 23.6l1.7-1.7M23.6 8.4l1.7-1.7"
-          stroke="#f26b30" stroke-width="1.1" stroke-linecap="round" fill="none" opacity="0.8"/>
+          stroke="#C00000" stroke-width="1.1" stroke-linecap="round" fill="none" opacity="0.8"/>
   </g>
 
   <!-- 右侧: 文字 -->
@@ -35,7 +35,7 @@
 
   <!-- 标语 -->
   <text x="230" y="165" font-family="-apple-system, 'Microsoft YaHei', sans-serif"
-        font-size="16" fill="#f26b30" font-weight="500">AI 写作助手 · WPS Office 插件</text>
+        font-size="16" fill="#C00000" font-weight="500">AI 写作助手 · WPS Office 插件</text>
 
   <!-- 分隔线 -->
   <line x1="230" y1="142" x2="520" y2="142" stroke="#eee" stroke-width="1"/>
@@ -46,7 +46,7 @@
   </g>
 
   <!-- 右上角装饰: 小星星 -->
-  <path d="M760 30l4-10 4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#f26b30" opacity="0.3"/>
-  <path d="M740 55l2.5-6.5 2.5 6.5 6.5 2.5-6.5 2.5-2.5 6.5-2.5-6.5-6.5-2.5 6.5-2.5z" fill="#f26b30" opacity="0.2"/>
-  <path d="M775 60l2-5 2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#f26b30" opacity="0.15"/>
+  <path d="M760 30l4-10 4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#C00000" opacity="0.3"/>
+  <path d="M740 55l2.5-6.5 2.5 6.5 6.5 2.5-6.5 2.5-2.5 6.5-2.5-6.5-6.5-2.5 6.5-2.5z" fill="#C00000" opacity="0.2"/>
+  <path d="M775 60l2-5 2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#C00000" opacity="0.15"/>
 </svg>
