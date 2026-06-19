@@ -568,7 +568,7 @@ test('OpenCodeAIService: mapDocumentAction handles empty documentText', () => {
     const { OpenCodeAIService } = loadService();
     const result = OpenCodeAIService.mapDocumentAction('summarize', '', '');
     assert.equal(result.system, '你是一个文档摘要助手。');
-    assert.ok(result.user.includes('undefined') || result.user.endsWith('请为以下文字生成简洁摘要'));
+    assert.ok(result.user.includes('请为以下文字生成简洁摘要'));
 });
 
 test('OpenCodeAIService: mapLayoutAction returns ai_layout prompt', () => {
