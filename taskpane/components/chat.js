@@ -35,6 +35,7 @@ var ChatUI = {
         // 轮询: taskpane 隐藏时自动暂停, 避免无效 WPS COM 调用
         this._actionCheckTimer = setInterval(this._checkPendingAction.bind(this), 1000);
         this._contextTimer = setInterval(this._updateContextBar.bind(this), 1500);
+        this._selectionCheckTimer = setInterval(this._updateChipStates.bind(this), 1000);
     },
 
     /**
@@ -47,11 +48,14 @@ var ChatUI = {
             if (document.hidden) {
                 if (self._actionCheckTimer) { clearInterval(self._actionCheckTimer); self._actionCheckTimer = null; }
                 if (self._contextTimer) { clearInterval(self._contextTimer); self._contextTimer = null; }
+                if (self._selectionCheckTimer) { clearInterval(self._selectionCheckTimer); self._selectionCheckTimer = null; }
             } else {
                 if (!self._actionCheckTimer) self._actionCheckTimer = setInterval(self._checkPendingAction.bind(self), 1000);
                 if (!self._contextTimer) self._contextTimer = setInterval(self._updateContextBar.bind(self), 1500);
+                if (!self._selectionCheckTimer) self._selectionCheckTimer = setInterval(self._updateChipStates.bind(self), 1000);
                 // 立刻刷新一次, 避免用户切回时看到过时状态
                 self._updateContextBar();
+                self._updateChipStates();
             }
         });
     },
@@ -412,11 +416,12 @@ var ChatUI = {
     },
 
     _bindScenarioActions: function () {
+        var self = this;
         var buttons = document.querySelectorAll('.scenario-chip[data-action-id]');
         buttons.forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var actionId = this.getAttribute('data-action-id');
-                var requireSel = this.getAttribute('data-require-selection') === '1';
+                var requireSel = this.hasAttribute('data-requires-selection');
                 if (requireSel && typeof WriterAdapter !== 'undefined') {
                     var sel = WriterAdapter.getSelectionText();
                     if (!sel) {
@@ -428,6 +433,26 @@ var ChatUI = {
                     ActionRunner.run(actionId);
                 }
             });
+        });
+        self._updateChipStates();
+    },
+
+    _updateChipStates: function () {
+        var hasSelection = false;
+        if (typeof WriterAdapter !== 'undefined') {
+            var sel = WriterAdapter.getSelectionText();
+            hasSelection = sel && sel.length > 0;
+        }
+        var chips = document.querySelectorAll('.scenario-chip[data-requires-selection]');
+        var self = this;
+        chips.forEach(function (chip) {
+            if (hasSelection) {
+                chip.classList.remove('is-disabled');
+                chip.removeAttribute('aria-disabled');
+            } else {
+                chip.classList.add('is-disabled');
+                chip.setAttribute('aria-disabled', 'true');
+            }
         });
     },
 

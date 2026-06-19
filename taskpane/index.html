@@ -92,7 +92,7 @@
             </div>
             <div class="scenario-chips" data-category="writing">
                 <button class="scenario-chip" data-action-id="write">帮我写</button>
-                <button class="scenario-chip" data-action-id="imitate" data-require-selection="1">仿写</button>
+                <button class="scenario-chip" data-action-id="imitate" data-requires-selection>仿写</button>
                 <button class="scenario-chip" data-action-id="cowrite">伴写</button>
             </div>
             <div class="scenario-chips" data-category="modify" hidden>
@@ -143,6 +143,16 @@
                     <button id="btnAbort" class="btn btn-sm btn-abort" style="display:none;" title="停止生成 (Esc)">⏹ 停止</button>
                     <button id="btnSend" class="btn btn-primary">发送</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- 首次运行引导浮层 -->
+        <div id="kwFirstRunOverlay" class="kw-first-run-overlay" hidden>
+            <div class="kw-first-run-content">
+                <h2>👋 欢迎使用开悟 AI 助手</h2>
+                <p>请先配置您的 API Key 以开始使用</p>
+                <button id="kwFirstRunConfigBtn" class="kw-btn-primary">配置 API Key</button>
+                <button id="kwFirstRunDismissBtn" class="kw-btn-secondary">稍后</button>
             </div>
         </div>
 

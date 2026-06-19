@@ -107,10 +107,11 @@ test('scenario-tabs: chip clicks trigger ActionRunner', () => {
     assert.equal(runCalled, 'polish_quick', 'should call ActionRunner.run');
 });
 
-test('scenario-tabs: chip with data-require-selection shows toast when no selection', () => {
+test('scenario-tabs: chip with data-requires-selection shows toast when no selection', () => {
     const { window, ChatUI } = loadTabs();
     const group = window.document.querySelector('.scenario-chips[data-category="writing"]');
-    group.innerHTML = '<button class="scenario-chip" data-action-id="imitate" data-require-selection="1">仿写</button>';
+    group.innerHTML = '<button class="scenario-chip" data-action-id="imitate" data-requires-selection>仿写</button>';
+    window.WriterAdapter = { getSelectionText: () => '' };
     ChatUI._bindScenarioActions();
     const chip = window.document.querySelector('.scenario-chip[data-action-id="imitate"]');
     chip.click();
@@ -143,4 +144,42 @@ test('scenario-tabs: in narrow viewport, only active category chips are visible'
     assert.equal(writingGroup.hidden, true);
     assert.equal(modifyGroup.hidden, false);
     assert.equal(documentGroup.hidden, true);
+});
+
+test('selection-required chips show disabled state when no selection', () => {
+    const { window, ChatUI } = loadTabs();
+    const group = window.document.querySelector('.scenario-chips[data-category="writing"]');
+    group.innerHTML = '<button class="scenario-chip" data-action-id="imitate" data-requires-selection>仿写</button>';
+    window.WriterAdapter = {
+        getSelectionText: function () { return ''; }
+    };
+    ChatUI._updateChipStates();
+    const chip = window.document.querySelector('.scenario-chip[data-action-id="imitate"]');
+    assert.equal(chip.classList.contains('is-disabled'), true, 'chip should have is-disabled class');
+    assert.equal(chip.getAttribute('aria-disabled'), 'true', 'chip should have aria-disabled');
+});
+
+test('chips become enabled when selection exists', () => {
+    const { window, ChatUI, ActionRunner } = loadTabs();
+    const group = window.document.querySelector('.scenario-chips[data-category="writing"]');
+    group.innerHTML = '<button class="scenario-chip" data-action-id="imitate" data-requires-selection>仿写</button>';
+    window.WriterAdapter = window.WriterAdapter || {};
+    window.WriterAdapter.getSelectionText = function () { return 'selected text'; };
+    ChatUI._bindScenarioActions();
+    const chip = window.document.querySelector('.scenario-chip[data-action-id="imitate"]');
+    ChatUI._updateChipStates();
+    assert.equal(chip.classList.contains('is-disabled'), false, 'chip should not have is-disabled class');
+    assert.equal(chip.getAttribute('aria-disabled'), null, 'chip should not have aria-disabled');
+});
+
+test('chips without require-selection attribute stay enabled', () => {
+    const { window, ChatUI } = loadTabs();
+    const group = window.document.querySelector('.scenario-chips[data-category="writing"]');
+    group.innerHTML = '<button class="scenario-chip" data-action-id="write">帮我写</button>';
+    window.WriterAdapter = {
+        getSelectionText: function () { return ''; }
+    };
+    ChatUI._updateChipStates();
+    const chip = window.document.querySelector('.scenario-chip[data-action-id="write"]');
+    assert.equal(chip.classList.contains('is-disabled'), false, 'normal chip should stay enabled');
 });
