@@ -19,7 +19,7 @@ var ChatUI = {
     _isUserAtBottom: true,
     _contextTimeout: null,
 
-    // 初始化
+// 初始化
     init: function () {
         this._bindEvents();
         this._bindScrollDetection();
@@ -33,11 +33,58 @@ var ChatUI = {
         this._startContextTimeout();
         this._updateContextBar();
         this._checkPendingAction();
-        this._bindRetryButton();
+        this._initOpencodeStatus();
         if (typeof HistoryDrawer !== 'undefined') HistoryDrawer.init();
         // 轮询: taskpane 隐藏时自动暂停, 避免无效 WPS COM 调用
         this._actionCheckTimer = setInterval(this._checkPendingAction.bind(this), 1000);
         this._contextTimer = setInterval(this._updateContextBar.bind(this), 1500);
+    },
+
+    _initOpencodeStatus: function () {
+        var dot = document.getElementById('opencodeStatusDot');
+        if (!dot) return;
+        var self = this;
+        dot.addEventListener('click', function () {
+            if (typeof SettingsUI !== 'undefined') SettingsUI.show();
+        });
+        var mode = 'standard';
+        try { mode = Config.get('mode') || 'standard'; } catch (e) { /* ignore */ }
+        if (mode === 'opencode') {
+            this._updateOpencodeStatus('connecting', '正在连接...');
+            this._checkOpencodeConnection();
+        } else {
+            dot.style.display = 'none';
+        }
+    },
+
+    _checkOpencodeConnection: function () {
+        var self = this;
+        if (typeof OpenCodeAIService !== 'undefined' && OpenCodeAIService.testConnection) {
+            OpenCodeAIService.testConnection(
+                function (result) {
+                    self._updateOpencodeStatus('connected', '已连接 OpenCode');
+                },
+                function (error) {
+                    self._updateOpencodeStatus('disconnected', error.message || '连接失败');
+                }
+            );
+        } else {
+            this._updateOpencodeStatus('disconnected', '服务未加载');
+        }
+    },
+
+    _updateOpencodeStatus: function (status, details) {
+        var dot = document.getElementById('opencodeStatusDot');
+        if (!dot) return;
+        var mode = 'standard';
+        try { mode = Config.get('mode') || 'standard'; } catch (e) { /* ignore */ }
+        if (mode !== 'opencode') {
+            dot.style.display = 'none';
+            return;
+        }
+        dot.style.display = '';
+        dot.className = 'kw-oc-status kw-oc-status-' + status;
+        dot.title = 'OpenCode 状态: ' + (details || status);
     },
 
     _startContextTimeout: function () {

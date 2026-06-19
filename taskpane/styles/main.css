@@ -1497,6 +1497,47 @@ select.form-input {
     background: var(--bg);
 }
 
+/* ========== OpenCode 连接状态指示器 ========== */
+.kw-oc-status {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: 8px;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.kw-oc-status-dot {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+}
+
+.kw-oc-status-connected .kw-oc-status-dot {
+    background: #28a745;
+}
+
+.kw-oc-status-connecting .kw-oc-status-dot {
+    background: #ffc107;
+    animation: kw-oc-pulse 1s infinite;
+}
+
+.kw-oc-status-disconnected .kw-oc-status-dot {
+    background: #dc3545;
+}
+
+.kw-oc-status-unknown .kw-oc-status-dot {
+    background: #6c757d;
+}
+
+@keyframes kw-oc-pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
 /* ========== OpenCode 设置区域 ========== */
 .kw-settings-section {
     margin: 16px 0;
