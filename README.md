@@ -37,13 +37,14 @@ Kaiwu (开悟) is a community-maintained WPS Office add-in that brings a full-fe
 
 ## Screenshots
 
-> _Add screenshots to the `screenshots/` directory and reference them here._
+![Kaiwu Ribbon](screenshots/ribbon.png)
+*WPS ribbon showing the 开悟 tab*
 
-```
-screenshots/ribbon.png        # WPS ribbon showing the 开悟 tab
-screenshots/sidebar.png       # The chat / action sidebar
-screenshots/result.png        # AI output with markdown + mermaid
-```
+![Kaiwu Sidebar](screenshots/sidebar.png)
+*The chat / action sidebar*
+
+![Kaiwu Result](screenshots/result.png)
+*AI output with markdown + mermaid*
 
 ## System Requirements
 
