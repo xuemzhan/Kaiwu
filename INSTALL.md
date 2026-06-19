@@ -154,8 +154,12 @@ node -e "
 # deploy-kaiwu.ps1 — 域推送示例
 $ErrorActionPreference = 'Stop'
 
-$source = '\\your-share\kaiwu\开悟_1.0.0'
-$dest   = "$env:APPDATA\kingsoft\wps\jsaddons\开悟_1.0.0"
+$source = '\\your-share\kaiwu\kaiwu_1.0.0'
+
+# GPO 启动脚本以 SYSTEM 身份运行
+# %APPDATA% 在 SYSTEM 下指向 C:\Windows\System32\config\systemprofile\AppData\Roaming (错误路径)
+# 使用 USERPROFILE 指向 C:\Users\Default 或遍历 HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList 获取所有用户
+$dest = "$env:USERPROFILE\AppData\Roaming\kingsoft\wps\jsaddons\kaiwu_1.0.0"
 
 # 1. 创建目录
 New-Item -ItemType Directory -Force -Path $dest
@@ -165,12 +169,21 @@ Copy-Item -Path "$source\*" -Destination $dest -Recurse -Force
 
 # 3. 注册 publish.xml
 Copy-Item -Path "$source\..\publish.xml" `
-          -Destination "$env:APPDATA\kingsoft\wps\jsaddons\" -Force
+          -Destination "$env:USERPROFILE\AppData\Roaming\kingsoft\wps\jsaddons\" -Force
 
 Write-Host "[deploy] 已部署 $dest"
 ```
 
-**注意**：GPO 启动脚本以 SYSTEM 身份运行；`%APPDATA%` 在 SYSTEM 下指向 `C:\Windows\System32\config\systemprofile\AppData\Roaming`，需改为 `C:\Users\Public\kingsoft\wps\jsaddons\` 或在用户登录脚本中执行。
+> **⚠️ 重要：GPO APPDATA 路径问题**
+>
+> GPO 启动脚本以 **SYSTEM** 身份运行，此时：
+> - `%APPDATA%` → `C:\Windows\System32\config\systemprofile\AppData\Roaming` ❌
+> - `%USERPROFILE%` → `C:\Users\Default` ✓
+>
+> **解决方案（推荐顺序）：**
+> 1. **使用用户登录脚本（User Logon Script）** 而非计算机启动脚本（Computer Startup Script）— 这样 `%APPDATA%` 会正确解析
+> 2. **使用 `$env:USERPROFILE\AppData\Roaming`** 替代 `$env:APPDATA`（如上所示）
+> 3. **遍历所有用户配置文件**：使用 `Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList'` 获取所有用户 SID，然后拼接路径
 
 ### 3.2 Intune / 第三方 MDM 推送
 
