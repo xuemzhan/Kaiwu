@@ -14,6 +14,8 @@
   },
   "homepage": "https://github.com/xuemzhan/Kaiwu#readme",
   "scripts": {
+    "format": "prettier --write taskpane/ scripts/ tests/ ribbon.js component.js index.html",
+    "format:check": "prettier --check taskpane/ scripts/ tests/ ribbon.js component.js index.html",
     "lint": "eslint taskpane/ scripts/ tests/ --max-warnings 100",
     "lint:fix": "eslint taskpane/ scripts/ tests/ --fix",
     "assets": "node scripts/copy-assets.js",
@@ -30,7 +32,9 @@
     "package:both": "node scripts/package.js both",
     "release": "node scripts/release.js",
     "release:quick": "node scripts/release.js --skip-test",
-    "release:clean": "node scripts/release.js --clean"
+    "release:clean": "node scripts/release.js --clean",
+    "coverage": "c8 --reporter=text --reporter=lcov npm test",
+    "coverage:html": "c8 --reporter=html npm test"
   },
   "dependencies": {
     "highlight.js": "^11.8.0",
@@ -39,9 +43,11 @@
     "mermaid": "^10.6.1"
   },
   "devDependencies": {
+    "c8": "^9.1.0",
     "eslint": "^8.57.1",
     "jsdom": "^29.1.1",
     "playwright-core": "^1.60.0",
+    "prettier": "^3.8.4",
     "wpsjs": "^2.2.0"
   }
 }

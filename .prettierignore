@@ -1,0 +1,7 @@
+node_modules/
+taskpane/vendor/
+wps-addon-build/
+wps-addon-publish/
+package-lock.json
+*.min.js
+coverage/
