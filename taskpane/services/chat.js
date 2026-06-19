@@ -152,9 +152,12 @@ var ChatManager = {
         this._cache[id] = chat;
     },
 
-    // 内部：生成唯一ID
+    // 内部：生成唯一ID (增加随机数位数和时间戳精度)
     _generateId: function () {
-        return 'chat_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+        var timestamp = Date.now();
+        // 使用 10 位随机数 (base36) 增加唯一性
+        var random = Math.random().toString(36).substring(2, 12);
+        return 'chat_' + timestamp + '_' + random;
     },
 
     // 内部：加载所有对话 (优先走缓存)

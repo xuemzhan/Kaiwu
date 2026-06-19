@@ -185,7 +185,7 @@ var AIService = {
             // 合并用户传入的 signal (例如 sendStream 的 streamController) 与 超时 signal
             if (baseOpts.signal && timeoutController) {
                 var userSignal = baseOpts.signal;
-                var onUserAbort = function () { try { timeoutController.abort(); } catch (e) {} };
+                var onUserAbort = function () { try { timeoutController.abort(); } catch (e) { console.debug('[AI] 中止超时控制器失败:', e); } };
                 if (userSignal.aborted) onUserAbort();
                 else userSignal.addEventListener('abort', onUserAbort, { once: true });
             }
@@ -261,6 +261,7 @@ var AIService = {
         var MAX_PARSE_FAILS = 5;
         var inThinkBlock = false;
         var inThinkFence = false;
+        var thinkBuffer = '';
 
         function readChunk() {
             if (options.aborted()) return;
@@ -308,19 +309,19 @@ var AIService = {
                         if (!chunk) continue;
                         fullContent += chunk;
 
-                        // 跟踪 think 块状态
-                        var processed = self._processStreamingThinking(chunk, {
-                            inThink: inThinkBlock,
-                            inFence: inThinkFence
-                        });
-                        inThinkBlock = processed.inThink;
-                        inThinkFence = processed.inFence;
-
                         if (options.stripReasoning) {
-                            var nextVisible = AIService.stripReasoningContent(fullContent);
-                            var visibleChunk = nextVisible.slice(visibleContent.length);
-                            visibleContent = nextVisible;
-                            if (visibleChunk && !inThinkBlock && !inThinkFence) {
+                            // 增量式处理 think 块：跟踪状态并剥离
+                            var result = self._processChunkWithThinking(chunk, {
+                                inThink: inThinkBlock,
+                                inFence: inThinkFence,
+                                thinkBuffer: thinkBuffer
+                            });
+                            inThinkBlock = result.inThink;
+                            inThinkFence = result.inFence;
+                            thinkBuffer = result.thinkBuffer;
+                            var visibleChunk = result.visibleContent;
+                            if (visibleChunk) {
+                                visibleContent += visibleChunk;
                                 options.onChunk && options.onChunk(visibleChunk, visibleContent);
                             }
                         } else {
@@ -384,6 +385,89 @@ var AIService = {
             }
         }
         return { inThink: inThink, inFence: inFence };
+    },
+
+    /**
+     * 增量式处理 chunk 内容，正确剥离 think 块。
+     * 支持 think 标签跨 chunk 的情况。
+     */
+    _processChunkWithThinking: function (chunk, state) {
+        var c = String(chunk || '');
+        var inFence = !!state.inFence;
+        var inThink = !!state.inThink;
+        var thinkBuffer = state.thinkBuffer || '';
+        var visibleContent = '';
+
+        var i = 0;
+        while (i < c.length) {
+            if (inFence) {
+                // 在 think fence 块中，寻找闭合标记
+                var closeFence = c.indexOf('```', i);
+                if (closeFence === -1) {
+                    // 未找到闭合标记，整个剩余内容都是 think 块
+                    thinkBuffer += c.substring(i);
+                    i = c.length;
+                    break;
+                }
+                // 找到闭合标记，跳出 think 块
+                thinkBuffer += c.substring(i, closeFence);
+                inFence = false;
+                i = closeFence + 3;
+            } else if (inThink) {
+                // 在 <think> 块中，寻找闭合标记
+                var closeTag = c.indexOf('</think>', i);
+                if (closeTag === -1) {
+                    // 未找到闭合标记，整个剩余内容都是 think 块
+                    thinkBuffer += c.substring(i);
+                    i = c.length;
+                    break;
+                }
+                // 找到闭合标记，跳出 think 块
+                thinkBuffer += c.substring(i, closeTag);
+                inThink = false;
+                i = closeTag + 8;
+            } else {
+                // 不在 think 块中，寻找开始标记
+                var openFence = c.indexOf('```thinking', i);
+                var openTag = c.indexOf('<think>', i);
+                var nextOpen = -1, kind = null;
+                if (openFence !== -1 && (openTag === -1 || openFence < openTag)) {
+                    nextOpen = openFence;
+                    kind = 'fence';
+                } else if (openTag !== -1) {
+                    nextOpen = openTag;
+                    kind = 'tag';
+                }
+
+                if (nextOpen === -1) {
+                    // 没有找到开始标记，整个剩余内容都是可见内容
+                    visibleContent += c.substring(i);
+                    i = c.length;
+                    break;
+                }
+
+                // 输出开始标记之前的内容
+                if (nextOpen > i) {
+                    visibleContent += c.substring(i, nextOpen);
+                }
+
+                // 进入 think 块
+                if (kind === 'fence') {
+                    inFence = true;
+                    i = nextOpen + 11; // '```thinking' 的长度
+                } else {
+                    inThink = true;
+                    i = nextOpen + 7; // '<think>' 的长度
+                }
+            }
+        }
+
+        return {
+            inThink: inThink,
+            inFence: inFence,
+            thinkBuffer: thinkBuffer,
+            visibleContent: visibleContent
+        };
     },
 
     // 构建消息数组

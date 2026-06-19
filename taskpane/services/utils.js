@@ -6,9 +6,8 @@
  * _formatTime / stripReasoningContent 等 5+ 份重复实现统一收敛到此.
  */
 var KwUtils = {
-    // 复用节点: escapeHtml 每次调用都 new div + appendChild 有 GC 压力,
-    // 同步路径下复用是安全的 (没有 await, 同一 tick 内串行使用).
-    _escapeDiv: null,
+    // 每次调用创建新 div, 避免复用可能引发的竞态 (流式渲染时可能交叉调用).
+    // 现代引擎创建空 div 的开销可忽略 (< 0.01ms).
 
     /**
      * 剥离模型返回的思考过程痕迹.
@@ -45,9 +44,9 @@ var KwUtils = {
      * 复用单个 div 节点, 高频调用场景 (流式 / 列表渲染) 减少 GC 压力.
      */
     escapeHtml: function (str) {
-        if (!this._escapeDiv) this._escapeDiv = document.createElement('div');
-        this._escapeDiv.textContent = str == null ? '' : String(str);
-        return this._escapeDiv.innerHTML;
+        var d = document.createElement('div');
+        d.textContent = str == null ? '' : String(str);
+        return d.innerHTML;
     },
 
     /**

@@ -134,7 +134,7 @@ var ChatUI = {
                 }
             });
             if (typeof mermaid !== 'undefined') {
-                try { mermaid.run({ nodes: document.querySelectorAll('.mermaid') }); } catch (e) {}
+                try { mermaid.run({ nodes: document.querySelectorAll('.mermaid') }); } catch (e) { console.debug('[Chat] Mermaid 渲染失败:', e); }
             }
         }
     },
@@ -475,17 +475,32 @@ var ChatUI = {
                     window.Application.PluginStorage.setItem('taskpane_user_width', String(detected));
                 }
             }
-        } catch (e) { /* ignore */ }
-        var doc = WriterAdapter.getDocumentInfo();
-        var sel = WriterAdapter.getSelectionInfo();
+        } catch (e) { console.debug('[ChatUI] 同步宽度失败:', e); }
+
+        var now = Date.now();
+        var cacheTTL = 5000; // 5秒缓存有效期
+        if (!this._contextCache) this._contextCache = { doc: null, sel: null, lastUpdate: 0 };
+        var cache = this._contextCache;
+
+        // 仅当缓存过期时才调用 WPS COM 接口
+        if (now - cache.lastUpdate > cacheTTL || !cache.doc) {
+            cache.doc = WriterAdapter.getDocumentInfo();
+            cache.sel = WriterAdapter.getSelectionInfo();
+            cache.lastUpdate = now;
+        }
+
+        var doc = cache.doc;
+        var sel = cache.sel;
         var model = '';
         try {
             model = Config.get('model') || '';
-        } catch (e) { /* ignore */ }
+        } catch (e) { console.debug('[ChatUI] 获取模型失败:', e); }
+
         if (!doc.available) {
             el.textContent = '未连接到 WPS Writer，可继续使用聊天和设置';
             return;
         }
+
         // 脱敏 Base URL: 屏幕共享时只显示 host
         var baseUrl = '';
         try {
@@ -496,7 +511,8 @@ var ChatUI = {
             } catch (e2) {
                 baseUrl = full.length > 32 ? full.slice(0, 28) + '...' : full;
             }
-        } catch (e3) { /* ignore */ }
+        } catch (e3) { console.debug('[ChatUI] 获取 Base URL 失败:', e3); }
+
         el.textContent = doc.name + ' · ' +
             (sel.hasSelection ? ('已选中 ' + sel.length + ' 字') : '未选中文本') +
             (model ? (' · ' + model) : '') +

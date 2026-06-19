@@ -42,6 +42,13 @@ var Config = {
     // 模型名中包含这些关键词时, 默认 stripReasoning 为 true
     _reasoningModelPatterns: ['r1', 'reasoning', 'thinking', 'o1', 'minimax'],
 
+    // API Key 脱敏: 仅显示前 4 位和后 4 位
+    _maskApiKey: function (key) {
+        if (!key) return '';
+        if (key.length <= 8) return '****';
+        return key.substring(0, 4) + '****' + key.substring(key.length - 4);
+    },
+
     // 各组件对应的系统提示词
     _systemPrompts: {
         wps: '你是一个专业的AI写作助手（开悟），帮助用户进行文档处理、写作优化、翻译和摘要等任务。请用中文回复。',
@@ -101,7 +108,7 @@ var Config = {
 
     get: function (key) {
         if (!this._data) this.init();
-        if (key) return this._data.hasOwnProperty(key) ? this._data[key] : this._defaults[key];
+        if (key) return Object.prototype.hasOwnProperty.call(this._data, key) ? this._data[key] : this._defaults[key];
         return Object.assign({}, this._data);
     },
 
@@ -110,7 +117,7 @@ var Config = {
         if (typeof key === 'object') {
             // 防止原型污染: 跳过 __proto__ 等危险属性
             for (var k in key) {
-                if (key.hasOwnProperty(k) && k !== '__proto__' && k !== 'constructor' && k !== 'prototype') {
+                if (Object.prototype.hasOwnProperty.call(key, k) && k !== '__proto__' && k !== 'constructor' && k !== 'prototype') {
                     this._data[k] = key[k];
                 }
             }

@@ -209,7 +209,7 @@ var SettingsUI = {
         var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
         var timeoutTimer = setTimeout(function () {
             if (controller) {
-                try { controller.abort(); } catch (e) { /* ignore */ }
+                try { controller.abort(); } catch (e) { console.debug('[Settings] 中止控制器失败:', e); }
             }
         }, 15000);
 

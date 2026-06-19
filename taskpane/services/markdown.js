@@ -27,6 +27,8 @@ var KwMarkdown = (function () {
     function buildRenderer() {
         var renderer;
         try {
+            // marked 4.x: marked.Renderer 是构造函数
+            // marked 5.x+: 使用 marked.Renderer 或 options.renderer
             renderer = window.marked.Renderer ? new window.marked.Renderer() : null;
         } catch (e) {
             console.warn('[KwMarkdown] Renderer constructor failed:', e);
@@ -34,17 +36,30 @@ var KwMarkdown = (function () {
         }
         if (!renderer) return null;
 
-        renderer.code = function (code, language) {
-            if (language === 'mermaid') {
+        // marked 4.x: renderer.code 接收 (code, language) 两个参数
+        // marked 5.x+: 接收对象参数 { text, lang, escaped }
+        var originalCode = renderer.code;
+        renderer.code = function (codeOrObj, language) {
+            // 兼容 marked 5.x+ 的对象参数格式
+            var code, lang;
+            if (typeof codeOrObj === 'object' && codeOrObj !== null) {
+                code = codeOrObj.text || '';
+                lang = codeOrObj.lang || '';
+            } else {
+                code = codeOrObj || '';
+                lang = language || '';
+            }
+
+            if (lang === 'mermaid') {
                 return '<div class="mermaid">' + KwUtils.escapeHtml(code) + '</div>';
             }
-            if (language === 'svg' || language === 'html') {
+            if (lang === 'svg' || lang === 'html') {
                 return '<div class="raw-preview"><pre><code>' + KwUtils.escapeHtml(code) + '</code></pre></div>';
             }
             var highlighted = code;
             try {
-                if (language && window.hljs && window.hljs.getLanguage && window.hljs.getLanguage(language)) {
-                    highlighted = window.hljs.highlight(code, { language: language }).value;
+                if (lang && window.hljs && window.hljs.getLanguage && window.hljs.getLanguage(lang)) {
+                    highlighted = window.hljs.highlight(code, { language: lang }).value;
                 } else if (window.hljs && window.hljs.highlightAuto) {
                     highlighted = window.hljs.highlightAuto(code).value;
                 } else {
@@ -53,7 +68,7 @@ var KwMarkdown = (function () {
             } catch (e) {
                 highlighted = KwUtils.escapeHtml(code);
             }
-            var safeLanguage = KwUtils.escapeAttr(language || 'text');
+            var safeLanguage = KwUtils.escapeAttr(lang || 'text');
             return '<div class="code-block-wrapper">' +
                 '<div class="code-block-header"><span class="code-lang">' + safeLanguage + '</span>' +
                 '<button class="copy-code-btn" data-kw-action="copy-code">复制</button></div>' +
@@ -61,10 +76,25 @@ var KwMarkdown = (function () {
                 '</div>';
         };
 
-        renderer.image = function (href, title, text) {
+        // marked 4.x: renderer.image 接收 (href, title, text)
+        // marked 5.x+: 接收对象参数 { href, title, text }
+        var originalImage = renderer.image;
+        renderer.image = function (hrefOrObj, title, text) {
+            // 兼容 marked 5.x+ 的对象参数格式
+            var href, titleText, altText;
+            if (typeof hrefOrObj === 'object' && hrefOrObj !== null) {
+                href = hrefOrObj.href || '';
+                titleText = hrefOrObj.title || '';
+                altText = hrefOrObj.text || '';
+            } else {
+                href = hrefOrObj || '';
+                titleText = title || '';
+                altText = text || '';
+            }
+
             var safeHref = _kwSecurityAvailable() ? window.KwSecurity.sanitizeUrl(href) : '';
             if (!safeHref) return '';
-            return '<img src="' + KwUtils.escapeAttr(safeHref) + '" alt="' + KwUtils.escapeAttr(text || '') + '" title="' + KwUtils.escapeAttr(title || '') + '">';
+            return '<img src="' + KwUtils.escapeAttr(safeHref) + '" alt="' + KwUtils.escapeAttr(altText) + '" title="' + KwUtils.escapeAttr(titleText) + '">';
         };
 
         return renderer;

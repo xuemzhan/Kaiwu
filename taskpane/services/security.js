@@ -46,10 +46,16 @@ var KwSecurity = {
         if (
             lowered.indexOf('javascript:') === 0 ||
             lowered.indexOf('vbscript:') === 0 ||
-            lowered.indexOf('data:') === 0 ||
             lowered.indexOf('blob:') === 0
         ) {
             return '';
+        }
+        // 仅阻止 data:text/html 类型的 data URI，允许图片等其他类型
+        if (lowered.indexOf('data:') === 0) {
+            if (lowered.indexOf('data:text/html') === 0 || lowered.indexOf('data:text/xhtml') === 0) {
+                return '';
+            }
+            return text;
         }
         if (/^(https?:|mailto:|#|\/|\.\.?\/)/i.test(text)) return text;
         return '';

@@ -38,8 +38,13 @@ window.__WPS_BRIDGE__ = {
     },
 
     // 插入文本到文档 (Writer/PDF)
-    insertText: function (text) {
+    insertText: function (text, maxLength) {
+        maxLength = maxLength || 10000; // 默认最大 10,000 字符
         try {
+            if (typeof text === 'string' && text.length > maxLength) {
+                console.warn('[Bridge] 插入文本超长，已截断: ' + text.length + ' -> ' + maxLength);
+                text = text.substring(0, maxLength);
+            }
             if (this.isWPSEnv() && window.Application.ActiveDocument) {
                 window.Application.ActiveDocument.Application.Selection.Text = text;
                 return true;
@@ -124,24 +129,24 @@ window.__WPS_BRIDGE__ = {
     },
 
     // 读取整个文档内容 (用于问答/摘要)
-    readFullContent: function () {
+    // 增加最大长度限制，防止超大文档导致 API 超时
+    readFullContent: function (maxLength) {
+        maxLength = maxLength || 50000; // 默认最大 50,000 字符
         try {
             var type = this.getComponentType();
+            var text = '';
             if (type === 'wps' && window.Application.ActiveDocument) {
-                return window.Application.ActiveDocument.Content.Text || '';
-            }
-            if (type === 'pdf' && window.Application.ActiveDocument) {
+                text = window.Application.ActiveDocument.Content.Text || '';
+            } else if (type === 'pdf' && window.Application.ActiveDocument) {
                 // PDF读取 - 简化方案: 读取前若干页文本
-                return window.Application.ActiveDocument.Content.Text || '';
-            }
-            if (type === 'et' && window.Application.ActiveWorkbook) {
+                text = window.Application.ActiveDocument.Content.Text || '';
+            } else if (type === 'et' && window.Application.ActiveWorkbook) {
                 // ET: 读取活动工作表已使用区域
                 var sheet = window.Application.ActiveWorkbook.ActiveSheet;
                 if (sheet && sheet.UsedRange) {
-                    return sheet.UsedRange.Text || '';
+                    text = sheet.UsedRange.Text || '';
                 }
-            }
-            if (type === 'wpp' && window.Application.ActivePresentation) {
+            } else if (type === 'wpp' && window.Application.ActivePresentation) {
                 // WPP: 读取所有幻灯片文本
                 try {
                     var pres = window.Application.ActivePresentation;
@@ -155,9 +160,16 @@ window.__WPS_BRIDGE__ = {
                             }
                         }
                     }
-                    return all.join('\n');
+                    text = all.join('\n');
                 } catch (e) { /* ignore */ }
             }
+
+            // 截断超长文本
+            if (text.length > maxLength) {
+                console.warn('[Bridge] 文档内容超长，已截断: ' + text.length + ' -> ' + maxLength);
+                text = text.substring(0, maxLength) + '\n\n[... 文档内容过长，已截断 ...]';
+            }
+            return text;
         } catch (e) {
             console.warn('[Bridge] readFullContent失败:', e);
         }

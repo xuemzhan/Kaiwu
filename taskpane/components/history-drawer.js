@@ -183,8 +183,8 @@ var HistoryDrawer = {
         for (var i = 0; i < keys.length; i++) {
             var k = keys[i];
             if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
-            if (newCard.hasOwnProperty(k)) merged[k] = newCard[k];
-            else if (oldCard.hasOwnProperty(k)) merged[k] = oldCard[k];
+            if (Object.prototype.hasOwnProperty.call(newCard, k)) merged[k] = newCard[k];
+            else if (Object.prototype.hasOwnProperty.call(oldCard, k)) merged[k] = oldCard[k];
         }
         merged.updatedAt = Date.now();
         return merged;

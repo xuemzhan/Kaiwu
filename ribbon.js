@@ -36,12 +36,17 @@ function _initWakeWord() {
             });
             window.WakeWordManager.start();
         }
-    } catch (e) { /* ignore */ }
+    } catch (e) { console.debug('[Ribbon] WakeWord 初始化失败:', e); }
 }
 
 function GetUrlPath() {
-    var e = document.location.toString();
-    return -1 !== (e = decodeURI(e)).indexOf('/') && (e = e.substring(0, e.lastIndexOf('/'))), e;
+    var url = document.location.toString();
+    url = decodeURI(url);
+    var lastSlash = url.lastIndexOf('/');
+    if (lastSlash !== -1) {
+        return url.substring(0, lastSlash);
+    }
+    return url;
 }
 
 /** Read selected text safely. Returns '' if not in WPS or no selection. */
@@ -55,7 +60,7 @@ function readSelectionText() {
             || (app.ActiveWorkbook && app.ActiveWorkbook.Application && app.ActiveWorkbook.Application.Selection)
             || (app.ActiveWorkbook && app.ActiveWorkbook.Selection);
         if (sel && sel.Text) return String(sel.Text).replace(/\r$/, '').trim();
-    } catch (e) { /* ignore */ }
+    } catch (e) { console.debug('[Ribbon] 读取选区文本失败:', e); }
     return '';
 }
 
@@ -68,11 +73,11 @@ function OnAddinLoad(ribbonUI) {
                 if (window.Application && window.Application.PluginStorage) {
                     window.Application.PluginStorage.setItem('component_type', _currentComponent);
                 }
-            } catch (e) { /* ignore */ }
+            } catch (e) { console.debug('[Ribbon] 同步组件类型失败:', e); }
         }
         // D16: ribbon 上下文主动绑定 ComponentDetector 自动失效 (新文档 / 切换组件时).
         if (typeof ComponentDetector !== 'undefined' && ComponentDetector.bindAutoReset) {
-            try { ComponentDetector.bindAutoReset(); } catch (e3) { /* ignore */ }
+            try { ComponentDetector.bindAutoReset(); } catch (e3) { console.debug('[Ribbon] 绑定组件检测失败:', e3); }
         }
         // 监听选区 / 文档变化, 主动失效 ribbon 缓存 (D13 配套)
         try {
@@ -82,11 +87,11 @@ function OnAddinLoad(ribbonUI) {
                 window.Application.ApiEvent.AddApiEventListener('DocumentOpen', onSel);
                 window.Application.ApiEvent.AddApiEventListener('NewDocument', onSel);
             }
-        } catch (e4) { /* ignore */ }
+        } catch (e4) { console.debug('[Ribbon] 注册事件监听失败:', e4); }
 
         try {
             if (ribbonUI && typeof ribbonUI.Invalidate === 'function') ribbonUI.Invalidate();
-        } catch (e2) { /* ignore */ }
+        } catch (e2) { console.debug('[Ribbon] 刷新 Ribbon 失败:', e2); }
         _initWakeWord();
         return true;
     } catch (error) {
@@ -118,22 +123,22 @@ var TaskPaneManager = {
         var tsId = null;
         try {
             tsId = window.Application.PluginStorage.getItem('taskpane_id');
-        } catch (e) { /* ignore */ }
+        } catch (e) { console.debug('[TaskPane] 获取 TaskPane ID 失败:', e); }
 
         if (tsId) {
             try {
                 var pane = window.Application.GetTaskPane(tsId);
                 if (pane) return pane;
-            } catch (e2) { /* create new */ }
+            } catch (e2) { console.debug('[TaskPane] 获取 TaskPane 失败:', e2); }
         }
 
         var newPane = window.Application.CreateTaskPane(this.TASKPANE_URL);
         try {
             newPane.Visible = false;
-        } catch (e4) { /* ignore */ }
+        } catch (e4) { console.debug('[TaskPane] 设置初始可见性失败:', e4); }
         try {
             window.Application.PluginStorage.setItem('taskpane_id', newPane.ID);
-        } catch (e3) { /* ignore */ }
+        } catch (e3) { console.debug('[TaskPane] 保存 TaskPane ID 失败:', e3); }
         return newPane;
     },
 
@@ -171,7 +176,7 @@ var TaskPaneManager = {
             // 2. 没有有效宽度 → 尝试恢复上次保存的用户宽度
             var saved = this._loadUserWidth();
             pane.Width = saved || this.WIDTH;
-        } catch (e) { /* ignore */ }
+        } catch (e) { console.debug('[TaskPane] 停靠 TaskPane 失败:', e); }
     },
 
     /**
@@ -189,7 +194,7 @@ var TaskPaneManager = {
             if (window.Application && window.Application.PluginStorage) {
                 window.Application.PluginStorage.setItem(this.WIDTH_KEY, String(w));
             }
-        } catch (e) { /* ignore */ }
+        } catch (e) { console.debug('[TaskPane] 保存宽度失败:', e); }
     },
 
     _loadUserWidth: function () {
@@ -199,14 +204,14 @@ var TaskPaneManager = {
                 var w = parseInt(v, 10);
                 if (w && w >= 200 && w <= 2000) return w;
             }
-        } catch (e) { /* ignore */ }
+        } catch (e) { console.debug('[TaskPane] 加载宽度失败:', e); }
         return null;
     },
 
     _saveVisible: function (visible) {
         try {
             window.Application.PluginStorage.setItem('taskpane_visible', visible ? '1' : '0');
-        } catch (e) { /* ignore */ }
+        } catch (e) { console.debug('[TaskPane] 保存可见性失败:', e); }
     }
 };
 
@@ -261,7 +266,7 @@ var FloatingAssistantManager = {
                 var v = parseInt(window.Application.PluginStorage.getItem(key) || '0', 10);
                 if (v >= (min || 1) && v <= (max || 99999)) return v;
             }
-        } catch (e) { /* ignore */ }
+        } catch (e) { console.debug('[Floating] 加载尺寸失败:', e); }
         return null;
     },
 
@@ -275,13 +280,19 @@ var FloatingAssistantManager = {
                     return true;
                 }
             }
-        } catch (e) { /* ignore */ }
+        } catch (e) { console.debug('[Floating] 检查重复打开失败:', e); }
         return false;
     },
 
     _saveContext: function (source, actionId) {
         var context = collectWriterContext();
         try {
+            // 清理超过 5 分钟的旧选区文本，防止敏感数据长时间驻留
+            var lastOpenedAt = parseInt(window.Application.PluginStorage.getItem('floating_opened_at') || '0', 10);
+            if (lastOpenedAt && (Date.now() - lastOpenedAt) > 300000) {
+                window.Application.PluginStorage.setItem('floating_selected_text', '');
+            }
+
             window.Application.PluginStorage.setItem('floating_source', source);
             window.Application.PluginStorage.setItem('floating_action', actionId || '');
             window.Application.PluginStorage.setItem('floating_selected_text', context.selectedText || '');
@@ -289,7 +300,7 @@ var FloatingAssistantManager = {
             window.Application.PluginStorage.setItem('floating_opened_at', String(Date.now()));
             window.Application.PluginStorage.setItem('pending_action', actionId || '');
             window.Application.PluginStorage.setItem('pending_source', source || 'floating');
-        } catch (e) { /* ignore */ }
+        } catch (e) { console.debug('[Floating] 保存上下文失败:', e); }
     }
 };
 
@@ -308,7 +319,7 @@ function collectWriterContext() {
                 end: typeof range.End === 'number' ? range.End : null
             };
         }
-    } catch (e) { /* ignore */ }
+    } catch (e) { console.debug('[Ribbon] 收集 Writer 上下文失败:', e); }
     return result;
 }
 
