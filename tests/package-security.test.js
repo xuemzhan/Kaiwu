@@ -43,3 +43,37 @@ test('taskpane/env.js contains injected API key (for runtime)', () => {
     const content = fs.readFileSync(envJsPath, 'utf8');
     assert.ok(content.includes('__ENV_API_KEY__'), 'env.js should contain injected API key');
 });
+
+test('package includes README-安装说明.md', () => {
+    const PUBLISH_DIR = path.join(__dirname, '..', 'wps-addon-publish');
+    if (!fs.existsSync(PUBLISH_DIR)) {
+        console.log('        (publish directory not found, skipping test - run npm run build first)');
+        return;
+    }
+    const readmePath = path.join(PUBLISH_DIR, 'README-安装说明.md');
+    assert.ok(fs.existsSync(readmePath), 'README-安装说明.md must exist in publish directory');
+
+    const content = fs.readFileSync(readmePath, 'utf8');
+    assert.ok(content.includes('开悟'), 'README-安装说明.md should contain plugin name');
+    assert.ok(content.includes('安装'), 'README-安装说明.md should contain installation instructions');
+});
+
+test('bat files are written with UTF-8 BOM', () => {
+    const PUBLISH_DIR = path.join(__dirname, '..', 'wps-addon-publish');
+    if (!fs.existsSync(PUBLISH_DIR)) {
+        console.log('        (publish directory not found, skipping test - run npm run build first)');
+        return;
+    }
+    const batFiles = ['install.bat', 'uninstall.bat', 'verify.bat'];
+    for (const batFile of batFiles) {
+        const batPath = path.join(PUBLISH_DIR, batFile);
+        if (!fs.existsSync(batPath)) {
+            console.log('        (' + batFile + ' not found, skipping)');
+            continue;
+        }
+        const content = fs.readFileSync(batPath);
+        assert.equal(content[0], 0xEF, batFile + ': first byte should be 0xEF (UTF-8 BOM)');
+        assert.equal(content[1], 0xBB, batFile + ': second byte should be 0xBB (UTF-8 BOM)');
+        assert.equal(content[2], 0xBF, batFile + ': third byte should be 0xBF (UTF-8 BOM)');
+    }
+});
