@@ -36,7 +36,13 @@ var Config = {
         stream: true,
         // 思考模型 (如 MiniMax M3, DeepSeek R1, o1) 会返回 reasoning_content
         // (思考过程) + content (最终回复). 默认剥离思考部分, 仅向用户展示 content.
-        stripReasoning: true
+        stripReasoning: true,
+        // opencode 模式配置
+        mode: 'standard',
+        opencodeUrl: 'http://127.0.0.1:4096',
+        opencodeUsername: 'opencode',
+        opencodePassword: '',
+        opencodeAgent: 'plan'
     },
 
     // 模型名中包含这些关键词时, 默认 stripReasoning 为 true
@@ -47,6 +53,13 @@ var Config = {
         if (!key) return '';
         if (key.length <= 8) return '****';
         return key.substring(0, 4) + '****' + key.substring(key.length - 4);
+    },
+
+    // Password 脱敏: 始终显示 **** 以保护密码
+    _maskPassword: function (pwd) {
+        if (!pwd) return '';
+        if (pwd.length <= 4) return '****';
+        return '****';
     },
 
     // 各组件对应的系统提示词
