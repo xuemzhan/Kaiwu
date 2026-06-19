@@ -54,6 +54,19 @@ var SettingsUI = {
         }
 
         body.innerHTML = '' +
+            '<fieldset class="kw-settings-section">' +
+            '  <legend>AI 提供方</legend>' +
+            '  <div class="kw-form-row">' +
+            '    <label class="kw-radio">' +
+            '      <input type="radio" name="aiMode" value="standard" id="aiModeStandard">' +
+            '      <span>标准模式 (OpenAI 兼容 API)</span>' +
+            '    </label>' +
+            '    <label class="kw-radio">' +
+            '      <input type="radio" name="aiMode" value="opencode" id="aiModeOpencode">' +
+            '      <span>OpenCode 模式 (本地 opencode-cli)</span>' +
+            '    </label>' +
+            '  </div>' +
+            '</fieldset>' +
             '<div class="form-group">' +
             '  <label class="form-label">API 地址 (Base URL)</label>' +
             '  <input id="settingBaseUrl" class="form-input" type="text" value="' + KwUtils.escapeAttr(config.apiBaseUrl) + '" placeholder="https://api.minimaxi.com/v1">' +
@@ -80,6 +93,34 @@ var SettingsUI = {
             '  <label class="form-label">最大 Token 数</label>' +
             '  <input id="settingMaxTokens" class="form-input" type="number" value="' + config.maxTokens + '" min="256" max="32768" step="256">' +
             '</div>' +
+            '<fieldset class="kw-settings-section">' +
+            '  <legend>OpenCode 模式</legend>' +
+            '  <div class="form-group">' +
+            '    <label class="form-label">服务器地址</label>' +
+            '    <input id="opencodeUrlInput" class="form-input" type="text" value="' + KwUtils.escapeAttr(config.opencodeUrl || '') + '" placeholder="http://127.0.0.1:4096">' +
+            '  </div>' +
+            '  <div class="form-group">' +
+            '    <label class="form-label">用户名</label>' +
+            '    <input id="opencodeUsernameInput" class="form-input" type="text" value="' + KwUtils.escapeAttr(config.opencodeUsername || '') + '" placeholder="opencode">' +
+            '  </div>' +
+            '  <div class="form-group">' +
+            '    <label class="form-label">密码</label>' +
+            '    <input id="opencodePasswordInput" class="form-input" type="password" value="' + KwUtils.escapeAttr(config.opencodePassword || '') + '" placeholder="opencode server password">' +
+            '    <button type="button" id="opencodeTogglePassword" class="btn btn-sm" style="margin-top:4px;">显示</button>' +
+            '  </div>' +
+            '  <div class="form-group">' +
+            '    <button type="button" id="opencodeTestBtn" class="btn">测试连接</button>' +
+            '    <span id="opencodeTestResult" class="kw-test-result"></span>' +
+            '  </div>' +
+            '  <div class="kw-form-row" id="opencodeAgentRow" style="display:none">' +
+            '    <label class="form-label">默认 Agent</label>' +
+            '    <select id="opencodeAgentSelect" class="form-input">' +
+            '      <option value="plan">plan (只读, 安全)</option>' +
+            '      <option value="build">build (可执行命令, 需谨慎)</option>' +
+            '    </select>' +
+            '    <span class="kw-hint">⚠️ build agent 可执行 bash 和编辑文件</span>' +
+            '  </div>' +
+            '</fieldset>' +
             '<div class="form-actions">' +
             '  <button id="btnSaveSettings" class="btn btn-primary">💾 保存</button>' +
             '  <button id="btnResetConfig" class="btn btn-sm" style="margin-left:8px;">↺ 重置默认</button>' +
@@ -180,6 +221,113 @@ var SettingsUI = {
         document.getElementById('settingTemp').addEventListener('input', function () {
             document.getElementById('tempValue').textContent = this.value;
         });
+
+        // OpenCode settings binding
+        this._bindOpencodeSettings();
+
+        // Mode switcher binding
+        this._bindModeSwitcher();
+    },
+
+    _bindModeSwitcher: function() {
+        var config = Config.getAll();
+        var standardRadio = document.getElementById('aiModeStandard');
+        var opencodeRadio = document.getElementById('aiModeOpencode');
+
+        if (config.mode === 'opencode' && opencodeRadio) {
+            opencodeRadio.checked = true;
+        } else if (standardRadio) {
+            standardRadio.checked = true;
+        }
+
+        var self = this;
+        if (standardRadio) {
+            standardRadio.addEventListener('change', function() {
+                if (standardRadio.checked) {
+                    Config.set('mode', 'standard');
+                    if (typeof KwToast !== 'undefined') {
+                        KwToast.show('已切换到标准模式');
+                    }
+                    if (typeof self._onModeChange === 'function') {
+                        self._onModeChange('standard');
+                    }
+                }
+            });
+        }
+        if (opencodeRadio) {
+            opencodeRadio.addEventListener('change', function() {
+                if (opencodeRadio.checked) {
+                    Config.set('mode', 'opencode');
+                    if (typeof KwToast !== 'undefined') {
+                        KwToast.show('已切换到 OpenCode 模式');
+                    }
+                    if (typeof self._onModeChange === 'function') {
+                        self._onModeChange('opencode');
+                    }
+                }
+            });
+        }
+    },
+
+    _bindOpencodeSettings: function() {
+        var config = Config.getAll();
+        var urlInput = document.getElementById('opencodeUrlInput');
+        var usernameInput = document.getElementById('opencodeUsernameInput');
+        var passwordInput = document.getElementById('opencodePasswordInput');
+        var toggleBtn = document.getElementById('opencodeTogglePassword');
+        var testBtn = document.getElementById('opencodeTestBtn');
+        var testResult = document.getElementById('opencodeTestResult');
+
+        if (urlInput) urlInput.value = config.opencodeUrl || '';
+        if (usernameInput) usernameInput.value = config.opencodeUsername || '';
+        if (passwordInput) passwordInput.value = config.opencodePassword || '';
+
+        if (toggleBtn && passwordInput) {
+            toggleBtn.addEventListener('click', function() {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    toggleBtn.textContent = '隐藏';
+                } else {
+                    passwordInput.type = 'password';
+                    toggleBtn.textContent = '显示';
+                }
+            });
+        }
+
+        if (testBtn) {
+            testBtn.addEventListener('click', function() {
+                if (testResult) {
+                    testResult.textContent = '测试中...';
+                    testResult.className = 'kw-test-result kw-test-pending';
+                }
+                var url = (urlInput ? urlInput.value.trim() : '') || 'http://127.0.0.1:4096';
+                var username = usernameInput ? usernameInput.value.trim() : '';
+                var password = passwordInput ? passwordInput.value.trim() : '';
+
+                fetch(url + '/api/health', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(username + ':' + password)
+                    }
+                })
+                .then(function(response) {
+                    if (response.ok) {
+                        if (testResult) {
+                            testResult.textContent = '✓ 连接成功';
+                            testResult.className = 'kw-test-result kw-test-success';
+                        }
+                    } else {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                })
+                .catch(function(err) {
+                    if (testResult) {
+                        testResult.textContent = '✗ ' + (err.message || '连接失败');
+                        testResult.className = 'kw-test-result kw-test-error';
+                    }
+                });
+            });
+        }
     },
 
     /**

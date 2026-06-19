@@ -871,6 +871,25 @@ body {
     cursor: not-allowed;
 }
 
+.kw-btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: #666;
+}
+
+.kw-btn-icon:hover {
+    background: #f0f0f0;
+}
+
+.kw-btn-icon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* ========== 遮罩层 ========== */
 .overlay {
     position: fixed;
@@ -1476,4 +1495,48 @@ select.form-input {
 
 .kw-first-run-content .kw-btn-secondary:hover {
     background: var(--bg);
+}
+
+/* ========== OpenCode 设置区域 ========== */
+.kw-settings-section {
+    margin: 16px 0;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+}
+
+.kw-settings-section legend {
+    font-weight: bold;
+    padding: 0 8px;
+}
+
+.kw-test-result {
+    margin-left: 8px;
+    font-size: 0.9em;
+}
+
+.kw-test-success {
+    color: #28a745;
+}
+
+.kw-test-error {
+    color: #dc3545;
+}
+
+.kw-test-pending {
+    color: #666;
+}
+
+.kw-radio {
+    display: block;
+    margin: 8px 0;
+    cursor: pointer;
+}
+
+.kw-radio input {
+    margin-right: 8px;
+}
+
+.kw-form-row {
+    margin: 8px 0;
 }
