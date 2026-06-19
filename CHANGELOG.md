@@ -5,6 +5,36 @@ All notable changes to **Kaiwu (开悟)** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-06-19
+
+### ✨ New Features
+- **OpenCode mode**: Route all AI requests through local opencode-cli server
+- **Per-document sessions**: Each WPS document has its own persistent opencode session
+- **Action mapping**: All 20+ Kaiwu actions (write, polish, translate, etc.) work via opencode
+- **Agent selection**: Choose between plan (read-only) and build (with confirmation) agents
+- **Mode switcher**: Switch between standard and OpenCode modes in settings
+- **Connection status**: Real-time status indicator in sidebar
+- **Connection retry**: Auto-retry with exponential backoff (1s, 2s, 4s, 8s, max 30s)
+- **Auto-fallback**: When opencode is unavailable, seamlessly fall back to standard mode
+- **Session cleanup**: Automatic cleanup on document close; periodic prune of old sessions
+
+### 🔒 Security
+- **Auth handler**: HTTP Basic Auth with password masking in logs
+- **Session isolation**: Each document has isolated session state
+
+### 🛠 Code Quality
+- **Factory pattern**: AIServiceFactory selects service based on config.mode
+- **HTTP client**: Robust HTTP wrapper with timeout, auth, error handling
+- **SSE streaming**: Native EventSource-style streaming for real-time responses
+- **Error classification**: Consistent error types (AuthError, NotFoundError, etc.)
+
+### 🧪 Testing
+- **+~50 new tests** for opencode integration (455 total)
+
+### 📚 Documentation
+- **OpenCode setup guide**: In README-安装说明.md
+- **Interface contract**: docs/opencode-integration.md
+
 ## [0.3.0] — 2026-06-19
 
 ### ✨ New Features
