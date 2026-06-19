@@ -229,7 +229,30 @@ var OpenCodeAIService = {
     },
 
     testConnection: function (onSuccess, onError) {
-        onError && onError('Not implemented');
+        var self = this;
+        var config = Config.getAll();
+        var baseUrl = (config.opencodeUrl || 'http://127.0.0.1:4096').replace(/\/+$/, '');
+        var url = baseUrl + '/api/health';
+        var authHeader = this._buildAuthHeader();
+
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': authHeader
+            }
+        })
+        .then(function(response) {
+            if (response.ok) {
+                onSuccess && onSuccess({ status: 'connected', url: baseUrl });
+            } else if (response.status === 401 || response.status === 403) {
+                onError && onError({ message: '认证失败，请检查用户名和密码' });
+            } else {
+                onError && onError({ message: '连接失败 (HTTP ' + response.status + ')' });
+            }
+        })
+        .catch(function(err) {
+            onError && onError({ message: err.message || '无法连接到服务器，请检查 opencode 是否运行' });
+        });
     },
 
     mapModifyAction: function (actionId, text, context) {

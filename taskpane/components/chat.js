@@ -33,6 +33,7 @@ var ChatUI = {
         this._startContextTimeout();
         this._updateContextBar();
         this._checkPendingAction();
+        this._bindRetryButton();
         if (typeof HistoryDrawer !== 'undefined') HistoryDrawer.init();
         // 轮询: taskpane 隐藏时自动暂停, 避免无效 WPS COM 调用
         this._actionCheckTimer = setInterval(this._checkPendingAction.bind(this), 1000);
@@ -861,6 +862,56 @@ var ChatUI = {
         var container = document.getElementById('chatContainer');
         if (container) {
             container.scrollTop = container.scrollHeight;
+        }
+    },
+
+    _bindRetryButton: function() {
+        var self = this;
+        var retryBtn = document.getElementById('opencodeRetryBtn');
+        if (!retryBtn) return;
+
+        retryBtn.addEventListener('click', function() {
+            self._updateOpencodeStatus('connecting', '正在重试连接...');
+            retryBtn.disabled = true;
+
+            if (typeof OpenCodeAIService === 'undefined') {
+                self._updateOpencodeStatus('disconnected', 'OpenCode 服务未加载');
+                retryBtn.disabled = false;
+                return;
+            }
+
+            OpenCodeAIService.testConnection(
+                function(info) {
+                    self._updateOpencodeStatus('connected', '已连接: ' + (Config.get('opencodeUrl') || 'http://127.0.0.1:4096'));
+                    retryBtn.style.display = 'none';
+                    retryBtn.disabled = false;
+                    KwToast.show('✓ OpenCode 连接成功');
+                },
+                function(err) {
+                    self._updateOpencodeStatus('disconnected', err.message || '连接失败');
+                    retryBtn.disabled = false;
+                    KwToast.show('✗ 连接失败: ' + (err.message || '请检查 opencode 是否运行'));
+                }
+            );
+        });
+    },
+
+    _updateOpencodeStatus: function(status, message) {
+        var retryBtn = document.getElementById('opencodeRetryBtn');
+        if (!retryBtn) return;
+
+        var config = Config.getAll();
+        if (config.mode !== 'opencode') {
+            retryBtn.style.display = 'none';
+            return;
+        }
+
+        if (status === 'disconnected') {
+            retryBtn.style.display = '';
+        } else if (status === 'connected') {
+            retryBtn.style.display = 'none';
+        } else if (status === 'connecting') {
+            retryBtn.style.display = '';
         }
     }
 };

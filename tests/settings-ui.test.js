@@ -213,3 +213,57 @@ describe('SettingsUI Edge Cases', () => {
         assert.doesNotThrow(() => SettingsUI.show());
     });
 });
+
+describe('SettingsUI Mode Switcher', () => {
+    test('renders mode radio buttons', () => {
+        const { window, SettingsUI, Config } = makeSettingsEnv();
+        Config.init();
+        SettingsUI.show();
+        assert.ok(window.document.getElementById('aiModeStandard'));
+        assert.ok(window.document.getElementById('aiModeOpencode'));
+    });
+
+    test('current mode is reflected in radio selection', () => {
+        const { window, SettingsUI, Config } = makeSettingsEnv();
+        Config.init();
+        Config.set('mode', 'opencode');
+        SettingsUI.show();
+        const standardRadio = window.document.getElementById('aiModeStandard');
+        const opencodeRadio = window.document.getElementById('aiModeOpencode');
+        assert.equal(standardRadio.checked, false);
+        assert.equal(opencodeRadio.checked, true);
+    });
+
+    test('default mode is standard when not set', () => {
+        const { window, SettingsUI, Config } = makeSettingsEnv();
+        Config.init();
+        Config.set('mode', 'standard');
+        SettingsUI.show();
+        const standardRadio = window.document.getElementById('aiModeStandard');
+        const opencodeRadio = window.document.getElementById('aiModeOpencode');
+        assert.equal(standardRadio.checked, true);
+        assert.equal(opencodeRadio.checked, false);
+    });
+
+    test('switching to opencode mode updates Config.mode', () => {
+        const { window, SettingsUI, Config } = makeSettingsEnv();
+        Config.init();
+        Config.set('mode', 'standard');
+        SettingsUI.show();
+        const opencodeRadio = window.document.getElementById('aiModeOpencode');
+        opencodeRadio.checked = true;
+        opencodeRadio.dispatchEvent(new window.Event('change'));
+        assert.equal(Config.get('mode'), 'opencode');
+    });
+
+    test('switching to standard mode updates Config.mode', () => {
+        const { window, SettingsUI, Config } = makeSettingsEnv();
+        Config.init();
+        Config.set('mode', 'opencode');
+        SettingsUI.show();
+        const standardRadio = window.document.getElementById('aiModeStandard');
+        standardRadio.checked = true;
+        standardRadio.dispatchEvent(new window.Event('change'));
+        assert.equal(Config.get('mode'), 'standard');
+    });
+});
