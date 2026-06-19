@@ -30,7 +30,13 @@
       - 极简: 只有输入区 (textarea + 4 按钮), 没有任何品牌 / 标题
       - 弹出层 (AI 指令菜单 / 结果) 全部以 position: fixed 浮在 WPS 文档上
       - 不再 resize 对话框 (大小固定), 让内容层自然滑出
+      - 左上角品牌标记 (16x16): 用于标识浮动对话框归属, 不干扰核心交互
     -->
+
+    <div class="kw-floating-brand" title="开悟 AI 助手">
+        <img src="../images/kaiwu.svg" width="16" height="16" alt="开悟" onerror="this.onerror=null;this.style.display='none';this.nextSibling && (this.nextSibling.style.display='inline');">
+        <span style="display:none;font-size:10px;color:var(--kw-muted);">开悟</span>
+    </div>
 
     <main class="kw-composer" id="kwShell">
         <textarea id="kwPrompt" class="kw-prompt" placeholder="输入你想生成的内容，例如：写一份项目周报" rows="1"></textarea>

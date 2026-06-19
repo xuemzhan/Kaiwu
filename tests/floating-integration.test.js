@@ -10,6 +10,10 @@ const assert = require('node:assert/strict');
 const { makeEnv, loadScripts, mockVendorLibs, triggerDOMContentLoaded } = require('./_setup');
 
 const FLOATING_DOM = `
+<div class="kw-floating-brand" title="开悟 AI 助手">
+    <img src="../images/kaiwu.svg" width="16" height="16" alt="开悟">
+    <span style="display:none;font-size:10px;color:#8b8f95;">开悟</span>
+</div>
 <main class="kw-composer" id="kwShell">
     <textarea id="kwPrompt" class="kw-prompt"></textarea>
     <div class="kw-toolbar">
@@ -480,6 +484,42 @@ test('floating: result panel is position: fixed (overlay above WPS)', () => {
     const result = env.window.document.getElementById('kwResult');
     const z = env.window.getComputedStyle(result).zIndex;
     assert.ok(parseInt(z) >= 9999, 'result panel should be on top, got: ' + z);
+});
+
+test('floating dialog has brand mark element', () => {
+    const env = makeEnv();
+    env.window.document.body.innerHTML = FLOATING_DOM;
+    const brand = env.window.document.querySelector('.kw-floating-brand');
+    assert.ok(brand, 'brand mark element should exist');
+    assert.equal(brand.getAttribute('title'), '开悟 AI 助手', 'brand should have correct title attribute');
+});
+
+test('floating brand mark has correct structure', () => {
+    const env = makeEnv();
+    env.window.document.body.innerHTML = FLOATING_DOM;
+    const brand = env.window.document.querySelector('.kw-floating-brand');
+    const img = brand.querySelector('img');
+    assert.ok(img, 'brand should contain an img element');
+    assert.equal(img.getAttribute('src'), '../images/kaiwu.svg', 'brand image should reference kaiwu.svg');
+    assert.equal(img.getAttribute('width'), '16', 'brand image should be 16px wide');
+    assert.equal(img.getAttribute('height'), '16', 'brand image should be 16px tall');
+    assert.equal(img.getAttribute('alt'), '开悟', 'brand image should have alt text');
+});
+
+test('floating brand mark is positioned correctly', () => {
+    const env = makeEnv();
+    env.window.document.body.innerHTML = FLOATING_DOM;
+    const styleEl = env.window.document.createElement('style');
+    styleEl.textContent = require('fs').readFileSync(
+        require('path').resolve(__dirname, '..', 'floating', 'styles', 'floating.css'),
+        'utf8'
+    );
+    env.window.document.head.appendChild(styleEl);
+    const brand = env.window.document.querySelector('.kw-floating-brand');
+    const style = env.window.getComputedStyle(brand);
+    assert.equal(style.position, 'absolute', 'brand should be positioned absolutely');
+    assert.ok(parseInt(style.top) >= 0, 'brand should have top position set');
+    assert.ok(parseInt(style.left) >= 0, 'brand should have left position set');
 });
 
 test('floating: AI command panel respects vertical viewport bounds', async () => {

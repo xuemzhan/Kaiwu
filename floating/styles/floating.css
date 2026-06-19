@@ -24,6 +24,30 @@
     --kw-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
 }
 
+/* =============================================================
+ * 浮动对话框品牌标记 (左上角)
+ * 小型不干扰, hover 提示
+ * ============================================================= */
+.kw-floating-brand {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    opacity: 0.5;
+    cursor: help;
+    z-index: 10;
+    transition: opacity 0.15s ease;
+}
+
+.kw-floating-brand:hover {
+    opacity: 1.0;
+}
+
+.kw-floating-brand img {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
 * { box-sizing: border-box; }
 
 html, body {
