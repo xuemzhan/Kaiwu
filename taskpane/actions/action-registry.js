@@ -146,7 +146,78 @@ var ActionRegistry = {
             output: 'insert',
             promptKey: 'doc_summary',
             temperature: 0.3,
-            maxHistoryMessages: 4  // 全文总结通常不需要聊天上下文
+            maxHistoryMessages: 4
+        },
+        legal: {
+            id: 'legal',
+            label: '法律助手',
+            category: 'specialized',
+            input: 'user',
+            output: 'result',
+            promptKey: 'legal',
+            placeholder: '请输入法律问题，例如：合同纠纷的诉讼时效是多久？',
+            temperature: 0.3
+        },
+        gen_image: {
+            id: 'gen_image',
+            label: 'AI 生成图片',
+            category: 'specialized',
+            input: 'user',
+            output: 'result',
+            promptKey: 'gen_image',
+            placeholder: '描述你想生成的图片，例如：一只在月光下奔跑的狼',
+            temperature: 0.7
+        },
+        summary_image: {
+            id: 'summary_image',
+            label: 'AI 总结生图',
+            category: 'document',
+            input: 'document',
+            output: 'result',
+            promptKey: 'summary_image',
+            temperature: 0.5
+        },
+        talk_doc: {
+            id: 'talk_doc',
+            label: 'AI 讲文档',
+            category: 'document',
+            input: 'document',
+            output: 'result',
+            promptKey: 'talk_doc',
+            temperature: 0.5,
+            maxTokens: 2000
+        },
+        deep_think: {
+            id: 'deep_think',
+            label: '深度思考',
+            category: 'modify',
+            input: 'selection',
+            output: 'replaceable',
+            promptKey: 'deep_think',
+            requireSelection: false,
+            temperature: 0.7,
+            maxTokens: 4000
+        },
+        menu_deep_think: {
+            id: 'menu_deep_think',
+            label: '深度思考',
+            category: 'modify',
+            input: 'selection',
+            output: 'replaceable',
+            promptKey: 'deep_think',
+            requireSelection: false,
+            temperature: 0.7,
+            maxTokens: 4000
+        },
+        doc_to_ppt: {
+            id: 'doc_to_ppt',
+            label: '文档生成PPT',
+            category: 'document',
+            input: 'document',
+            output: 'result',
+            promptKey: 'doc_to_ppt',
+            temperature: 0.5,
+            maxTokens: 3000
         }
     },
 

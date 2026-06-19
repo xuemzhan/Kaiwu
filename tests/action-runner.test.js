@@ -210,3 +210,51 @@ test('ActionRunner: imitate action uses selection + user input', () => {
     PromptTemplates.buildMessages = origBuildTpl;
     ResultCard.create = origCreate;
 });
+
+test('ActionRunner: talk_doc action uses document input', () => {
+    const { window, ctx, ActionRunner, Config, PromptTemplates, ResultCard } = loadRunner();
+    Config.init();
+    Config.set('apiKey', 'sk-test');
+    window.Application.ActiveDocument = {
+        Content: { Text: '完整文档内容' }
+    };
+    let builtMessages = null;
+    const origBuildTpl = PromptTemplates.buildMessages;
+    PromptTemplates.buildMessages = function (key, ctx) {
+        builtMessages = ctx;
+        return origBuildTpl.call(PromptTemplates, key, ctx);
+    };
+    let cardCreated = null;
+    const origCreate = ResultCard.create;
+    ResultCard.create = function (opts) {
+        cardCreated = origCreate.call(ResultCard, opts);
+        return cardCreated;
+    };
+    ctx.fetch = () => Promise.resolve({
+        ok: true,
+        body: new ReadableStream({
+            start(controller) {
+                controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"讲解脚本"}}]}\ndata: [DONE]\n'));
+                controller.close();
+            }
+        })
+    });
+    ResultCard.complete = () => {};
+    ActionRunner.run('talk_doc');
+    assert.ok(builtMessages, 'buildMessages should be called');
+    assert.equal(builtMessages.input, '完整文档内容');
+    assert.equal(builtMessages.input, '完整文档内容');
+    PromptTemplates.buildMessages = origBuildTpl;
+    ResultCard.create = origCreate;
+});
+
+test('ActionRunner: deep_think action increases maxTokens', () => {
+    const { window, ActionRegistry } = loadRunner();
+    const action = ActionRegistry.get('deep_think');
+    assert.ok(action);
+    assert.equal(action.maxTokens, 4000);
+    assert.equal(action.temperature, 0.7);
+    const menuAction = ActionRegistry.get('menu_deep_think');
+    assert.ok(menuAction);
+    assert.equal(menuAction.maxTokens, 4000);
+});

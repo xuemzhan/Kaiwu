@@ -79,3 +79,63 @@ test('ActionRegistry: every action has required fields', () => {
         assert.ok(a.promptKey, 'missing promptKey: ' + a.id);
     });
 });
+
+test('ActionRegistry: has talk_doc', () => {
+    const reg = loadReg();
+    const action = reg.get('talk_doc');
+    assert.ok(action, 'talk_doc action should be registered');
+    assert.equal(action.label, 'AI 讲文档');
+    assert.equal(action.category, 'document');
+    assert.equal(action.input, 'document');
+    assert.equal(action.output, 'result');
+    assert.equal(action.maxTokens, 2000);
+});
+
+test('ActionRegistry: has deep_think', () => {
+    const reg = loadReg();
+    const action = reg.get('deep_think');
+    assert.ok(action, 'deep_think action should be registered');
+    assert.equal(action.label, '深度思考');
+    assert.equal(action.maxTokens, 4000);
+    assert.equal(action.temperature, 0.7);
+});
+
+test('ActionRegistry: has menu_deep_think', () => {
+    const reg = loadReg();
+    const action = reg.get('menu_deep_think');
+    assert.ok(action, 'menu_deep_think action should be registered');
+    assert.equal(action.label, '深度思考');
+    assert.equal(action.promptKey, 'deep_think');
+});
+
+test('action-registry has legal', () => {
+    const reg = loadReg();
+    const action = reg.get('legal');
+    assert.ok(action, 'legal action should be registered');
+    assert.equal(action.label, '法律助手');
+});
+
+test('action-registry has gen_image', () => {
+    const reg = loadReg();
+    const action = reg.get('gen_image');
+    assert.ok(action, 'gen_image action should be registered');
+});
+
+test('action-registry has summary_image', () => {
+    const reg = loadReg();
+    const action = reg.get('summary_image');
+    assert.ok(action, 'summary_image action should be registered');
+});
+
+test('action-registry has doc_to_ppt', () => {
+    const reg = loadReg();
+    const action = reg.get('doc_to_ppt');
+    assert.ok(action, 'doc_to_ppt action should be registered');
+    assert.equal(action.label, '文档生成PPT');
+    assert.equal(action.category, 'document');
+    assert.equal(action.input, 'document');
+    assert.equal(action.output, 'result');
+    assert.equal(action.promptKey, 'doc_to_ppt');
+    assert.equal(action.temperature, 0.5);
+    assert.equal(action.maxTokens, 3000);
+});
