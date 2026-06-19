@@ -733,3 +733,201 @@ test('OpenCodeAIService: mapSpecializedAction handles null input', () => {
     const result = OpenCodeAIService.mapSpecializedAction('deep_think', null);
     assert.equal(result.system, '你是一个深度分析助手。请深入分析问题，逐步推理，详尽考虑各方面因素，给出全面而有深度的回答。请直接给出分析结果。');
 });
+
+test('AIServiceFactory: returns AIService in standard mode', () => {
+    const env = makeEnv();
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/ai.js', 'taskpane/services/ai-factory.js']);
+    const factory = env.window.AIServiceFactory;
+    const service = factory.create({ mode: 'standard' });
+    assert.equal(service, env.window.AIService);
+});
+
+test('AIServiceFactory: falls back to AIService when opencode unavailable', () => {
+    const env = makeEnv();
+    env.window.OpenCodeAIService = undefined;
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/ai.js', 'taskpane/services/ai-factory.js']);
+    const factory = env.window.AIServiceFactory;
+    const service = factory.create({ mode: 'opencode' });
+    assert.equal(service, env.window.AIService);
+});
+
+test('AIServiceFactory: falls back when OpenCodeAIService throws', () => {
+    const env = makeEnv();
+    env.window.OpenCodeAIService = {
+        testConnection: function(onSuccess, onError) {
+            onError({ message: 'connection failed' });
+        }
+    };
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/ai.js', 'taskpane/services/ai-factory.js']);
+    let toastCalled = false;
+    const origShow = env.window.KwToast.show;
+    env.window.KwToast.show = function(msg) { toastCalled = true; };
+    const factory = env.window.AIServiceFactory;
+    const service = factory.create({ mode: 'opencode' });
+    env.window.KwToast.show = origShow;
+    assert.equal(service, env.window.AIService, 'Should return standard AIService');
+    assert.equal(toastCalled, true, 'Should show fallback toast');
+});
+
+test('AIServiceFactory: returns OpenCodeAIService when available', () => {
+    const env = makeEnv();
+    env.window.OpenCodeAIService = {
+        testConnection: function(onSuccess, onError) {
+            onSuccess({ connected: true });
+        }
+    };
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/ai.js', 'taskpane/services/ai-factory.js']);
+    const factory = env.window.AIServiceFactory;
+    const service = factory.create({ mode: 'opencode' });
+    assert.equal(service, env.window.OpenCodeAIService);
+});
+
+test('AIServiceFactory: isOpencodeMode returns correct value', () => {
+    const env = makeEnv();
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/ai-factory.js']);
+    const factory = env.window.AIServiceFactory;
+    const Config = env.window.Config;
+
+    Config._data = null;
+    env.window.localStorage.setItem('wps_assistant_config', JSON.stringify({ mode: 'opencode' }));
+    assert.equal(factory.isOpencodeMode(), true);
+
+    Config._data = null;
+    env.window.localStorage.setItem('wps_assistant_config', JSON.stringify({ mode: 'standard' }));
+    assert.equal(factory.isOpencodeMode(), false);
+});
+
+test('AIServiceFactory: isOpencodeAvailable checks service availability', () => {
+    const env = makeEnv();
+    let callbackResult = null;
+    env.window.OpenCodeAIService = {
+        testConnection: function(onSuccess, onError) {
+            onSuccess({ connected: true });
+        }
+    };
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/ai-factory.js']);
+    const factory = env.window.AIServiceFactory;
+    factory.isOpencodeAvailable(
+        function(data) { callbackResult = data; },
+        function(err) { callbackResult = err; }
+    );
+    assert.ok(callbackResult !== null);
+});
+
+test('AIServiceFactory: isOpencodeAvailable handles undefined service', () => {
+    const env = makeEnv();
+    let errorCalled = false;
+    env.window.OpenCodeAIService = undefined;
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/ai-factory.js']);
+    const factory = env.window.AIServiceFactory;
+    factory.isOpencodeAvailable(
+        function() { },
+        function(err) { errorCalled = true; }
+    );
+    assert.equal(errorCalled, true);
+});
+
+test('OpenCodeAIService: _reconnect uses exponential backoff', async () => {
+    const delays = [];
+    let callCount = 0;
+    const fetchMock = async () => {
+        callCount++;
+        delays.push(Date.now());
+        return { ok: false, status: 500, text: async () => '{}' };
+    };
+    const { OpenCodeAIService, Config } = loadServiceWithMock(fetchMock);
+    Config.init();
+
+    const timeoutMs = 45000;
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Test timeout')), timeoutMs));
+
+    const reconnectPromise = new Promise((resolve, reject) => {
+        OpenCodeAIService._reconnect(
+            () => reject(new Error('should not succeed')),
+            (err) => {
+                assert.equal(callCount, 5, 'should attempt 5 times');
+                if (delays.length >= 2) {
+                    const d1 = delays[1] - delays[0];
+                    const d2 = delays[2] - delays[1];
+                    const d3 = delays[3] - delays[2];
+                    const d4 = delays[4] - delays[3];
+                    assert.ok(d1 >= 500, 'first delay should be >= 500ms, got: ' + d1);
+                    assert.ok(d2 > d1, 'second delay should be greater than first');
+                    assert.ok(d3 > d2, 'third delay should be greater than second');
+                    assert.ok(d4 > d3, 'fourth delay should be greater than third');
+                }
+                resolve();
+            }
+        );
+    });
+
+    await Promise.race([reconnectPromise, timeout]);
+});
+
+test('OpenCodeAIService: _reconnect stops after max attempts', async () => {
+    let callCount = 0;
+    const fetchMock = async () => {
+        callCount++;
+        return { ok: false, status: 500, text: async () => '{}' };
+    };
+    const { OpenCodeAIService, Config } = loadServiceWithMock(fetchMock);
+    Config.init();
+
+    const timeoutMs = 45000;
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Test timeout')), timeoutMs));
+
+    const reconnectPromise = new Promise((resolve, reject) => {
+        OpenCodeAIService._reconnect(
+            () => reject(new Error('should not succeed')),
+            (err) => {
+                assert.equal(callCount, 5, 'should attempt exactly 5 times before stopping');
+                resolve();
+            }
+        );
+    });
+
+    await Promise.race([reconnectPromise, timeout]);
+});
+
+test('OpenCodeAIService: _reconnect succeeds on first attempt', async () => {
+    let callCount = 0;
+    const fetchMock = async () => {
+        callCount++;
+        return { ok: true, json: async () => ({ status: 'ok' }) };
+    };
+    const { OpenCodeAIService, Config } = loadServiceWithMock(fetchMock);
+    Config.init();
+
+    await new Promise((resolve, reject) => {
+        OpenCodeAIService._reconnect(
+            (info) => {
+                assert.equal(callCount, 1, 'should succeed on first attempt');
+                assert.equal(info.status, 'connected');
+                resolve();
+            },
+            (err) => reject(new Error('should not fail: ' + err.message))
+        );
+    });
+});
+
+test('OpenCodeAIService: cancelReconnect clears timer and resets attempts', async () => {
+    let callCount = 0;
+    const fetchMock = async () => {
+        callCount++;
+        return { ok: false, status: 500, text: async () => '{}' };
+    };
+    const { OpenCodeAIService, Config } = loadServiceWithMock(fetchMock);
+    Config.init();
+
+    OpenCodeAIService._reconnect(
+        () => {},
+        () => {}
+    );
+
+    await new Promise(r => setTimeout(r, 50));
+    OpenCodeAIService.cancelReconnect();
+
+    const currentAttempts = OpenCodeAIService._reconnectAttempts;
+    assert.equal(currentAttempts, 0, 'attempts should be reset after cancel');
+    assert.equal(OpenCodeAIService._reconnectTimer, null, 'timer should be null after cancel');
+});
