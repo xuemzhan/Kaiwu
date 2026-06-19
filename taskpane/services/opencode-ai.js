@@ -7,6 +7,9 @@ var OpenCodeAIService = {
     _DEFAULT_TIMEOUT_MS: 60000,
     _RETRYABLE_STATUS: 'retryable',
     _currentAbort: null,
+    _reconnectAttempts: 0,
+    _maxReconnectAttempts: 5,
+    _reconnectTimer: null,
 
     _buildAuthHeader: function () {
         var config = Config.getAll();
@@ -253,6 +256,42 @@ var OpenCodeAIService = {
         .catch(function(err) {
             onError && onError({ message: err.message || '无法连接到服务器，请检查 opencode 是否运行' });
         });
+    },
+
+    _reconnect: function (onSuccess, onFailure) {
+        var self = this;
+        self._reconnectAttempts = 0;
+
+        function attempt() {
+            self._reconnectAttempts++;
+            var delay = Math.min(30000, 1000 * Math.pow(2, self._reconnectAttempts - 1));
+
+            self._reconnectTimer = setTimeout(function () {
+                self.testConnection(
+                    function (info) {
+                        self._reconnectAttempts = 0;
+                        onSuccess && onSuccess(info);
+                    },
+                    function (err) {
+                        if (self._reconnectAttempts >= self._maxReconnectAttempts) {
+                            onFailure && onFailure(err);
+                            return;
+                        }
+                        attempt();
+                    }
+                );
+            }, delay);
+        }
+
+        attempt();
+    },
+
+    cancelReconnect: function () {
+        if (this._reconnectTimer) {
+            clearTimeout(this._reconnectTimer);
+            this._reconnectTimer = null;
+        }
+        this._reconnectAttempts = 0;
     },
 
     mapModifyAction: function (actionId, text, context) {

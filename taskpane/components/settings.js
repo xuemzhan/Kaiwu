@@ -328,6 +328,41 @@ var SettingsUI = {
                 });
             });
         }
+
+        this._bindAgentPreference();
+    },
+
+    _bindAgentPreference: function() {
+        var config = Config.getAll();
+        var agentRow = document.getElementById('opencodeAgentRow');
+        var agentSelect = document.getElementById('opencodeAgentSelect');
+
+        if (agentRow) {
+            if (config.mode === 'opencode') {
+                agentRow.style.display = '';
+            } else {
+                agentRow.style.display = 'none';
+            }
+        }
+
+        if (agentSelect) {
+            agentSelect.value = config.opencodeAgent || 'plan';
+
+            var self = this;
+            agentSelect.addEventListener('change', function() {
+                var newAgent = agentSelect.value;
+                if (newAgent === 'build') {
+                    if (!confirm('⚠️ 警告：build agent 可以执行 bash 命令和编辑文件。\n\n如果您不知道这是什么，请保持 plan agent。\n\n确定要使用 build agent 吗？')) {
+                        agentSelect.value = 'plan';
+                        return;
+                    }
+                }
+                Config.set('opencodeAgent', newAgent);
+                if (typeof KwToast !== 'undefined') {
+                    KwToast.show('默认 Agent 已设置为: ' + newAgent);
+                }
+            });
+        }
     },
 
     /**

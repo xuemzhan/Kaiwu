@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**版本: 0.2.0**
+**版本: 0.4.0**
 
 基于 AI 大模型的 WPS 写作辅助工具
 
@@ -40,7 +40,7 @@
 
 包内已内置默认 API Key (在 `.env` 文件中)。如果需要更换:
 
-- **方法一**: 编辑 `kaiwu_0.2.0\.env`, 填入新的 `VITE_DEFAULT_API_KEY` 等, 然后重启 WPS
+- **方法一**: 编辑 `kaiwu_0.4.0\.env`, 填入新的 `VITE_DEFAULT_API_KEY` 等, 然后重启 WPS
 - **方法二**: 在 WPS 侧边栏点击 ⚙️ 设置, 实时修改并保存 (推荐, 无需重启)
 
 当前默认配置:
@@ -54,7 +54,7 @@ VITE_DEFAULT_API_KEY  = sk-test-...
 ## 目录结构
 
 ```
-kaiwu_0.2.0/
+kaiwu_0.4.0/
 ├── .env                        # API 默认配置 (可改)
 ├── ribbon.xml                  # WPS 功能区定义
 ├── ribbon.js                   # 功能区事件
@@ -82,7 +82,7 @@ kaiwu_0.2.0/
 插件文件被复制到:
 
 ```
-%APPDATA%\kingsoft\wps\jsaddons\kaiwu_0.2.0\
+%APPDATA%\kingsoft\wps\jsaddons\kaiwu_0.4.0\
 %APPDATA%\kingsoft\wps\jsaddons\publish.xml
 ```
 
@@ -109,64 +109,6 @@ A: 先运行 uninstall.bat 卸载旧版 (会自动清除 authaddin.json 缓存),
 
 ---
 
-## OpenCode 模式（可选高级功能）
-
-OpenCode 模式允许您使用本地 opencode-cli 服务器来处理所有 AI 请求，具有以下优势：
-
-- 统一管理多个 AI 模型
-- 持久化会话（每个文档一个会话）
-- 支持高级 agent 能力
-
-### 前置条件
-
-1. 安装 [opencode-cli](https://github.com/sst/opencode)
-   ```bash
-   # 使用 npm 全局安装
-   npm install -g @opencode-ai/cli
-   ```
-
-2. 配置 opencode 认证
-   ```bash
-   opencode auth login
-   ```
-
-3. 启动 opencode 服务器（启用 CORS）
-   ```bash
-   opencode serve --port 4096 --cors http://localhost
-   ```
-
-### 在 Kaiwu 中启用 OpenCode 模式
-
-1. 打开 WPS Writer，加载 Kaiwu
-2. 点击 ⚙️ 设置
-3. 选择 "AI 提供方" → "OpenCode 模式"
-4. 填写：
-   - 服务器地址：`http://127.0.0.1:4096`
-   - 用户名：`opencode`（默认）
-   - 密码：您的 opencode 服务器密码
-5. 点击 "测试连接" 验证
-6. 保存设置
-
-### 故障排除
-
-**连接失败？**
-
-- 确认 opencode 正在运行：`curl http://127.0.0.1:4096/session`
-- 检查防火墙是否阻止了 4096 端口
-- 确认 opencode 启动时加了 `--cors` 参数
-
-**AI 调用失败？**
-
-- 确认 opencode 配置了有效的 API key
-- 在终端运行 `opencode models` 查看可用模型
-
-**会话无法创建？**
-
-- 重启 opencode 服务器
-- 在 Kaiwu 设置中点击 "重试连接"
-
----
-
 <div align="center">
-打包于 2026-06-19 05:06:49
+打包于 2026-06-19 08:07:01
 </div>

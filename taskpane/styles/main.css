@@ -1581,3 +1581,9 @@ select.form-input {
 .kw-form-row {
     margin: 8px 0;
 }
+
+.kw-hint {
+    font-size: 0.85em;
+    color: #666;
+    margin-left: 8px;
+}
