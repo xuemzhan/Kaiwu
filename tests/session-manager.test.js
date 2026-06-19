@@ -5,9 +5,8 @@ const { makeEnv, loadScripts, mockVendorLibs } = require('./_setup');
 test('SessionManager: create generates session ID with correct format', async () => {
     const env = makeEnv();
     mockVendorLibs(env.window);
-    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/session-manager.js']);
-
     env.window.fetch = async () => ({ ok: true, json: async () => ({ id: 'ses-123', title: 'Test' }) });
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/session-manager.js']);
 
     const sm = env.window.SessionManager;
     let result = null;
@@ -39,9 +38,8 @@ test('SessionManager: get returns null for unknown document', async () => {
 test('SessionManager: get returns stored session', async () => {
     const env = makeEnv();
     mockVendorLibs(env.window);
-    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/session-manager.js']);
-
     env.window.fetch = async () => ({ ok: true, json: async () => ({ id: 'ses-456', title: 'Test2' }) });
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/session-manager.js']);
 
     const sm = env.window.SessionManager;
 
@@ -60,9 +58,8 @@ test('SessionManager: get returns stored session', async () => {
 test('SessionManager: clear removes session', async () => {
     const env = makeEnv();
     mockVendorLibs(env.window);
-    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/session-manager.js']);
-
     env.window.fetch = async () => ({ ok: true, json: async () => ({ id: 'ses-789', title: 'Test3' }) });
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/session-manager.js']);
 
     const sm = env.window.SessionManager;
 
@@ -81,8 +78,6 @@ test('SessionManager: clear removes session', async () => {
 test('SessionManager: cleanup removes document session', async () => {
     const env = makeEnv();
     mockVendorLibs(env.window);
-    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/session-manager.js']);
-
     let deleteCalled = false;
     env.window.fetch = async (url, options) => {
         if (options && options.method === 'DELETE') {
@@ -91,6 +86,7 @@ test('SessionManager: cleanup removes document session', async () => {
         }
         return { ok: true, json: async () => ({ id: 'ses-cleanup-1', title: 'Cleanup Test' }) };
     };
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/session-manager.js']);
 
     const sm = env.window.SessionManager;
 
@@ -119,8 +115,6 @@ test('SessionManager: cleanup removes document session', async () => {
 test('SessionManager: prune removes old sessions', async () => {
     const env = makeEnv();
     mockVendorLibs(env.window);
-    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/session-manager.js']);
-
     let deleteCount = 0;
     env.window.fetch = async (url, options) => {
         if (options && options.method === 'DELETE') {
@@ -129,6 +123,7 @@ test('SessionManager: prune removes old sessions', async () => {
         }
         return { ok: true, json: async () => ({ id: 'ses-prune-1', title: 'Prune Test' }) };
     };
+    loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/session-manager.js']);
 
     const sm = env.window.SessionManager;
 
@@ -167,7 +162,6 @@ test('SessionManager: abort calls correct endpoint', async () => {
         }
         return { ok: true, json: async () => ({ id: 'ses-test', title: 'Test' }) };
     };
-
     loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/session-manager.js']);
 
     const sm = env.window.SessionManager;
