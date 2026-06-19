@@ -481,3 +481,44 @@ test('floating: result panel is position: fixed (overlay above WPS)', () => {
     const z = env.window.getComputedStyle(result).zIndex;
     assert.ok(parseInt(z) >= 9999, 'result panel should be on top, got: ' + z);
 });
+
+test('floating: AI command panel respects vertical viewport bounds', async () => {
+    const env = makeEnv();
+    env.window.document.body.innerHTML = FLOATING_DOM;
+    loadFloating(env.window);
+    triggerDOMContentLoaded(env.window);
+    const composer = env.window.document.querySelector('.kw-composer');
+    const panel = env.window.document.getElementById('kwAiCmdPanel');
+    composer.getBoundingClientRect = () => ({ bottom: 500, left: 100 });
+    panel.getBoundingClientRect = () => ({ width: 300, height: 150 });
+    Object.defineProperty(env.window, 'innerHeight', { value: 600, writable: true });
+    Object.defineProperty(env.window, 'innerWidth', { value: 800, writable: true });
+    const aiCmdBtn = env.window.document.getElementById('kwAiCmd');
+    aiCmdBtn.click();
+    await new Promise(r => setTimeout(r, 50));
+    const top = parseInt(panel.style.top);
+    const left = parseInt(panel.style.left);
+    assert.ok(!isNaN(top), 'panel top should be set');
+    assert.ok(top >= 8 && top <= 600 - 150 - 8, 'panel top should be clamped within viewport, got: ' + top);
+    assert.ok(left >= 8 && left <= 800 - 300 - 8, 'panel left should be clamped within viewport, got: ' + left);
+});
+
+test('floating: result panel has minimum width', async () => {
+    const env = makeEnv();
+    env.window.document.body.innerHTML = FLOATING_DOM;
+    loadFloating(env.window);
+    triggerDOMContentLoaded(env.window);
+    const composer = env.window.document.querySelector('.kw-composer');
+    const panel = env.window.document.getElementById('kwResult');
+    composer.getBoundingClientRect = () => ({ bottom: 100, left: 10 });
+    panel.getBoundingClientRect = () => ({ width: 200, height: 300 });
+    Object.defineProperty(env.window, 'innerHeight', { value: 600, writable: true });
+    Object.defineProperty(env.window, 'innerWidth', { value: 400, writable: true });
+    panel.hidden = false;
+    const showResultPanel = env.window._kwShowResultPanel;
+    showResultPanel();
+    await new Promise(r => setTimeout(r, 50));
+    const width = parseInt(panel.style.width);
+    assert.ok(!isNaN(width), 'panel width should be set');
+    assert.ok(width >= 320, 'result panel width should be at least 320px, got: ' + width);
+});

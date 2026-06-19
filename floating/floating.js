@@ -304,13 +304,15 @@
         var composer = document.querySelector('.kw-composer');
         if (!panel || !composer) return;
         var cRect = composer.getBoundingClientRect();
-        var top = Math.round(cRect.bottom + 4);
+        var panelRect = panel.getBoundingClientRect();
+        var maxLeft = Math.max(8, window.innerWidth - panelRect.width - 8);
+        var maxTop = Math.max(8, window.innerHeight - panelRect.height - 8);
         var left = Math.round(cRect.left);
-        var maxLeft = window.innerWidth - 320 - 8;
-        if (left > maxLeft) left = maxLeft;
-        if (left < 8) left = 8;
-        panel.style.top = top + 'px';
+        var top = Math.round(cRect.bottom + 4);
+        left = Math.min(Math.max(8, left), maxLeft);
+        top = Math.min(Math.max(8, top), maxTop);
         panel.style.left = left + 'px';
+        panel.style.top = top + 'px';
     }
 
     function positionResultPanel() {
@@ -319,13 +321,18 @@
         if (!panel || !composer) return;
         if (panel.hidden) return;
         var cRect = composer.getBoundingClientRect();
-        var top = Math.round(cRect.bottom + 4);
+        var minWidth = 320;
+        var panelWidth = 540;
+        panel.style.width = Math.max(minWidth, panelWidth) + 'px';
+        var pRect = panel.getBoundingClientRect();
+        var maxLeft = Math.max(8, window.innerWidth - pRect.width - 8);
+        var maxTop = Math.max(8, window.innerHeight - pRect.height - 8);
         var left = Math.round(cRect.left);
-        var maxLeft = window.innerWidth - 540 - 8;
-        if (left > maxLeft) left = maxLeft;
-        if (left < 8) left = 8;
-        panel.style.top = top + 'px';
+        var top = Math.round(cRect.bottom + 4);
+        left = Math.min(Math.max(8, left), maxLeft);
+        top = Math.min(Math.max(8, top), maxTop);
         panel.style.left = left + 'px';
+        panel.style.top = top + 'px';
     }
 
     function showResultPanel() {
