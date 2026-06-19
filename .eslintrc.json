@@ -20,6 +20,8 @@
     "ChatUI": "readonly",
     "ChatManager": "readonly",
     "AIService": "readonly",
+    "AIServiceFactory": "readonly",
+    "OpenCodeAIService": "readonly",
     "ComponentDetector": "readonly",
     "ActionRegistry": "readonly",
     "ActionRunner": "readonly",
