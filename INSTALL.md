@@ -28,6 +28,41 @@
 - 已克隆项目并 `npm install`
 - 已有 AI 服务的 API Key
 
+#### 可选前置条件：OpenCode 模式
+
+如果您想使用 OpenCode 模式（本地 AI 服务），需要额外安装：
+
+1. **opencode-cli**
+   ```bash
+   npm install -g @opencode-ai/cli
+   ```
+
+2. **配置 API Key**
+   ```bash
+   opencode auth login
+   ```
+
+3. **启动 opencode 服务器**
+   ```bash
+   # Windows PowerShell
+   opencode serve --port 4096 --cors http://localhost
+   ```
+
+4. **CORS 配置（开发环境）**
+
+   如果 opencode 服务运行在不同的端口，需要在 `.env` 中配置 CORS 允许的源：
+
+   ```env
+   VITE_OPENCODE_URL=http://localhost:4096
+   ```
+
+   或者在启动 opencode 时指定 CORS 参数：
+   ```bash
+   opencode serve --port 4096 --cors http://localhost:5173
+   ```
+
+   **注意**：opencode 模式是可选的。如果不安装，Kaiwu 将使用标准模式（需要您自己配置 OpenAI 兼容的 API key）。
+
 ### 1.2 一次性配置 `.env`
 
 将 `.env.template` 复制为 `.env`，填入真实 API Key：
