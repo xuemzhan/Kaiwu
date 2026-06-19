@@ -1,0 +1,48 @@
+{
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2020": true
+  },
+  "globals": {
+    "wps": "readonly",
+    "wpsApp": "readonly",
+    "Application": "readonly",
+    "wpsEbs": "readonly",
+    "wpsEt": "readonly",
+    "wpsWpp": "readonly",
+    "wpsPdf": "readonly",
+    "KwUtils": "readonly",
+    "KwToast": "readonly",
+    "KwMarkdown": "readonly",
+    "KwSecurity": "readonly",
+    "Config": "readonly",
+    "ChatUI": "readonly",
+    "ChatManager": "readonly",
+    "AIService": "readonly",
+    "ComponentDetector": "readonly",
+    "ActionRegistry": "readonly",
+    "ActionRunner": "readonly",
+    "PromptTemplates": "readonly",
+    "WriterAdapter": "readonly",
+    "HistoryDrawer": "readonly",
+    "MessageRenderer": "readonly",
+    "ResultCard": "readonly",
+    "ResultPanel": "readonly",
+    "SettingsUI": "readonly",
+    "marked": "readonly",
+    "hljs": "readonly",
+    "mermaid": "readonly"
+  },
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "script"
+  },
+  "rules": {
+    "no-undef": "error",
+    "no-unused-vars": ["warn", { "args": "none" }],
+    "no-console": "off",
+    "prefer-const": "warn",
+    "eqeqeq": ["error", "smart"]
+  }
+}

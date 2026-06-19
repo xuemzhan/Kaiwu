@@ -1,0 +1,5 @@
+node_modules/
+taskpane/vendor/
+wps-addon-build/
+wps-addon-publish/
+*.min.js

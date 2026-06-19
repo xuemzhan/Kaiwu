@@ -14,6 +14,8 @@
   },
   "homepage": "https://github.com/xuemzhan/Kaiwu#readme",
   "scripts": {
+    "lint": "eslint taskpane/ scripts/ tests/ --max-warnings 100",
+    "lint:fix": "eslint taskpane/ scripts/ tests/ --fix",
     "assets": "node scripts/copy-assets.js",
     "env": "node scripts/init-env.js",
     "sync": "node scripts/sync-build.js",
@@ -37,6 +39,7 @@
     "mermaid": "^10.6.1"
   },
   "devDependencies": {
+    "eslint": "^8.57.1",
     "jsdom": "^29.1.1",
     "playwright-core": "^1.60.0",
     "wpsjs": "^2.2.0"
