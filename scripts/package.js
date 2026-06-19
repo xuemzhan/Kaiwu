@@ -157,6 +157,17 @@ function toCRLF(text) {
     return text.replace(/\r?\n/g, '\r\n');
 }
 
+function writeBatFile(batPath, content) {
+    const utf8Content = Buffer.from(content, 'utf8');
+    const bom = Buffer.from([0xEF, 0xBB, 0xBF]);
+    try {
+        fs.writeFileSync(batPath, Buffer.concat([bom, utf8Content]));
+    } catch (fallbackErr) {
+        console.warn('        [WARN] UTF-8 BOM write failed (' + fallbackErr.message + '), falling back to GBK');
+        fs.writeFileSync(batPath, iconv.encode(content, 'gbk'));
+    }
+}
+
 function copyDirFiltered(src, dest, excludes) {
     if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
     for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
@@ -634,21 +645,12 @@ function build() {
     console.log('[package] 生成 install.bat / uninstall.bat / verify.bat...');
     // CRITICAL: bat 文件必须满足两个 Windows 兼容性要求:
     //  1. CRLF 换行 (LF-only 会让多行 for /d 循环解析错乱)
-    //  2. GBK 编码保存 (Windows zh-CN 默认 codepage 是 936/GBK, UTF-8 文件里的
-    //     中文会被错误解读为 "寮€鎮焈" 之类乱码, if exist 检查失败)
-    // 综合: 内部用 UTF-8 字符串构造脚本, 输出前 toCRLF + iconv GBK.
-    fs.writeFileSync(
-        path.join(PUBLISH_DIR, 'install.bat'),
-        iconv.encode(toCRLF(generateInstallBat()), 'gbk')
-    );
-    fs.writeFileSync(
-        path.join(PUBLISH_DIR, 'uninstall.bat'),
-        iconv.encode(toCRLF(generateUninstallBat()), 'gbk')
-    );
-    fs.writeFileSync(
-        path.join(PUBLISH_DIR, 'verify.bat'),
-        iconv.encode(toCRLF(generateVerifyBat()), 'gbk')
-    );
+    //  2. UTF-8 with BOM 编码 (兼容中文/英文 Windows, 自动识别)
+    //     UTF-8 BOM 让 Windows 正确识别文件编码, 避免乱码
+    //     备用: GBK (仅在 UTF-8 BOM 写入失败时 fallback)
+    writeBatFile(path.join(PUBLISH_DIR, 'install.bat'), toCRLF(generateInstallBat()));
+    writeBatFile(path.join(PUBLISH_DIR, 'uninstall.bat'), toCRLF(generateUninstallBat()));
+    writeBatFile(path.join(PUBLISH_DIR, 'verify.bat'), toCRLF(generateVerifyBat()));
 
     console.log('[package] 生成 README 安装说明...');
     fs.writeFileSync(path.join(PUBLISH_DIR, 'README-安装说明.md'), generateReadme(envVars), 'utf8');

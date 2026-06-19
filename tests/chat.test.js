@@ -170,7 +170,7 @@ test('ChatManager: setCurrent updates current id', () => {
 
 // ==================== 首次运行引导测试 ====================
 // 创建独立的 FirstRunManager 用于测试 (不依赖完整 app.js)
-function createTestFirstRunManager(Config) {
+function createTestFirstRunManager(Config, localStorage) {
     return {
         _dismissedKey: 'kw_first_run_dismissed',
         isApiKeyConfigured: function () {
@@ -199,7 +199,7 @@ test('FirstRunManager: isApiKeyConfigured returns false when apiKey is empty', (
     const env = makeEnv();
     loadScripts(env.window, 'taskpane/services/config.js');
     env.window.Config.init();
-    const fm = createTestFirstRunManager(env.window.Config);
+    const fm = createTestFirstRunManager(env.window.Config, env.window.localStorage);
     const isConfigured = fm.isApiKeyConfigured();
     assert.equal(isConfigured, false);
 });
@@ -208,7 +208,7 @@ test('FirstRunManager: isApiKeyConfigured returns false when apiKey is placehold
     const env = makeEnv();
     loadScripts(env.window, 'taskpane/services/config.js');
     env.window.Config.set('apiKey', 'PLEASE_REPLACE_THIS_KEY');
-    const fm = createTestFirstRunManager(env.window.Config);
+    const fm = createTestFirstRunManager(env.window.Config, env.window.localStorage);
     const isConfigured = fm.isApiKeyConfigured();
     assert.equal(isConfigured, false);
 });
@@ -217,7 +217,7 @@ test('FirstRunManager: isApiKeyConfigured returns false when apiKey is placehold
     const env = makeEnv();
     loadScripts(env.window, 'taskpane/services/config.js');
     env.window.Config.set('apiKey', 'sk-PLEASE_REPLACE');
-    const fm = createTestFirstRunManager(env.window.Config);
+    const fm = createTestFirstRunManager(env.window.Config, env.window.localStorage);
     const isConfigured = fm.isApiKeyConfigured();
     assert.equal(isConfigured, false);
 });
@@ -226,7 +226,7 @@ test('FirstRunManager: isApiKeyConfigured returns false when apiKey is placehold
     const env = makeEnv();
     loadScripts(env.window, 'taskpane/services/config.js');
     env.window.Config.set('apiKey', 'YOUR_API_KEY_HERE');
-    const fm = createTestFirstRunManager(env.window.Config);
+    const fm = createTestFirstRunManager(env.window.Config, env.window.localStorage);
     const isConfigured = fm.isApiKeyConfigured();
     assert.equal(isConfigured, false);
 });
@@ -235,7 +235,7 @@ test('FirstRunManager: isApiKeyConfigured returns true when apiKey is valid', ()
     const env = makeEnv();
     loadScripts(env.window, 'taskpane/services/config.js');
     env.window.Config.set('apiKey', 'sk-abc123xyz');
-    const fm = createTestFirstRunManager(env.window.Config);
+    const fm = createTestFirstRunManager(env.window.Config, env.window.localStorage);
     const isConfigured = fm.isApiKeyConfigured();
     assert.equal(isConfigured, true);
 });
@@ -244,7 +244,7 @@ test('FirstRunManager: check returns true and shows overlay when no API key', ()
     const env = makeEnv();
     loadScripts(env.window, 'taskpane/services/config.js');
     env.window.Config.set('apiKey', '');
-    const fm = createTestFirstRunManager(env.window.Config);
+    const fm = createTestFirstRunManager(env.window.Config, env.window.localStorage);
     const result = fm.check();
     assert.equal(result, true);
 });
@@ -253,7 +253,7 @@ test('FirstRunManager: check returns false when API key is configured', () => {
     const env = makeEnv();
     loadScripts(env.window, 'taskpane/services/config.js');
     env.window.Config.set('apiKey', 'sk-validkey123');
-    const fm = createTestFirstRunManager(env.window.Config);
+    const fm = createTestFirstRunManager(env.window.Config, env.window.localStorage);
     const result = fm.check();
     assert.equal(result, false);
 });
@@ -263,7 +263,7 @@ test('FirstRunManager: check does not show overlay if previously dismissed', () 
     loadScripts(env.window, 'taskpane/services/config.js');
     env.window.Config.set('apiKey', '');
     env.window.localStorage.setItem('kw_first_run_dismissed', '1');
-    const fm = createTestFirstRunManager(env.window.Config);
+    const fm = createTestFirstRunManager(env.window.Config, env.window.localStorage);
     const result = fm.check();
     assert.equal(result, false);
 });
@@ -274,7 +274,7 @@ test('FirstRunManager: check returns true when dismissed key is cleared', () => 
     env.window.Config.set('apiKey', '');
     env.window.localStorage.setItem('kw_first_run_dismissed', '1');
     env.window.localStorage.removeItem('kw_first_run_dismissed');
-    const fm = createTestFirstRunManager(env.window.Config);
+    const fm = createTestFirstRunManager(env.window.Config, env.window.localStorage);
     const result = fm.check();
     assert.equal(result, true);
 });

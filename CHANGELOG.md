@@ -5,9 +5,48 @@ All notable changes to **Kaiwu (开悟)** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] — 2026-06-19
 
-_No unreleased changes._
+### ✨ New Features
+- **8 missing ribbon actions implemented**:
+  - AI 讲文档 (talkDoc) - Convert document to narration script
+  - 深度思考 (deepThink) - Deep reasoning mode with 2x tokens
+  - 法律助手 (legal) - Legal assistant with specialized prompts
+  - AI 生成图片 (genImage) - AI image description generation
+  - AI 总结生图 (summaryImage) - Document summary visualization
+  - 文档生成PPT (docToPpt) - Document to PPT outline
+- **First-run API key prompt**: Welcome overlay for unconfigured API keys
+- **Floating dialog branding**: Added 开悟 AI 助手 brand mark
+- **Context bar timeout**: 3s timeout shows "未连接到 WPS Writer"
+- **Selection-required visual indication**: Disabled state for actions needing text selection
+- **Floating dialog boundary checks**: Vertical viewport clamping
+
+### 🔒 Security
+- **API key leak fix**: Release package no longer includes .env with real keys
+- **bat file encoding**: Switched from GBK to UTF-8 with BOM for cross-locale support
+
+### 🛠 Code Quality
+- **ESLint**: Added .eslintrc.json with browser globals and WPS-specific rules
+- **Prettier**: Added .prettierrc.json and .prettierignore
+- **Coverage reporting**: Added c8 with 80% line/75% branch thresholds
+
+### 🧪 Testing
+- **+91 new tests** (330 → 421):
+  - Settings UI component tests (15)
+  - Chat UI component tests (17)
+  - App initialization tests (13)
+  - Keyboard shortcut tests (10)
+  - Package security tests
+  - Screenshot existence tests
+  - First-run detection tests
+
+### 📚 Documentation
+- **Real screenshots**: Added ribbon.png, sidebar.png, result.png
+- **README-安装说明.md**: End-user Chinese installation guide
+- **GPO APPDATA fix**: Corrected PowerShell example for SYSTEM context
+
+### 🔧 Build
+- **bat encoding**: UTF-8 with BOM for international Windows support
 
 ---
 
