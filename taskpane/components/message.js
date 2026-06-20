@@ -44,7 +44,7 @@ var MessageRenderer = {
             '<div class="message message-assistant' + streamingClass + '" data-mid="' + this._idFor(content) + '">' +
             '  <div class="assistant-meta">' +
             '    <div class="assistant-avatar">' +
-            '      <img src="styles/robot-icon.svg" alt="开悟" width="28" height="28">' +
+            '      <svg width="28" height="28" viewBox="0 0 36 36" fill="none" aria-label="开悟"><circle cx="18" cy="18" r="16" fill="#EAF3FF" stroke="#1F7CFF" stroke-width="1.5"/><rect x="9" y="11" width="18" height="15" rx="5" fill="#1F2937"/><rect x="13" y="16" width="4" height="4" rx="2" fill="#1F7CFF"/><rect x="19" y="16" width="4" height="4" rx="2" fill="#1F7CFF"/><line x1="13" y1="27" x2="23" y2="27" stroke="#1F7CFF" stroke-width="1.4" stroke-linecap="round"/></svg>' +
             '    </div>' +
             '    <span class="assistant-name">开悟</span>' +
             '    <span class="ai-badge small">AI</span>' +
