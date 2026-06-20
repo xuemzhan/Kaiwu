@@ -6,7 +6,7 @@ var ResultCard = {
     _latestId: null,
     _renderTimer: null,
 
-    create: function (options) {
+    create: function (options, opts) {
         var id = 'result_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
         var card = {
             id: id,
@@ -21,7 +21,9 @@ var ResultCard = {
         };
         this._cards[id] = card;
         this._latestId = id;
-        this.render();
+        if (!opts || opts.render !== false) {
+            this.render();
+        }
         return card;
     },
 

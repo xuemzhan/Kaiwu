@@ -48,7 +48,7 @@ var ActionRunner = {
             actionLabel: action.label,
             sourceType: inputInfo.sourceType,
             sourceText: inputInfo.input
-        });
+        }, { render: false });
         ResultCard.update(card.id, { status: 'streaming' });
 
         var mountEl = this._resolveMountEl();
