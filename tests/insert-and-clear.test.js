@@ -72,7 +72,9 @@ test('insert: result card header has a primary 插入到文档 button with icon'
     // 底部操作栏也有 "插入文档" 按钮 (新版本通过 data-kw-action 绑定)
     assert.ok(html.indexOf('data-kw-action="insert"') !== -1,
         'should have insert action binding via data-kw-action');
-    assert.ok(html.indexOf('>插入文档<') !== -1, 'should have bottom insert button labeled 插入文档');
+    // r2: 底部按钮改为 icon-only, 通过 title 属性识别 (用户要求 "插入光标")
+    assert.ok(html.indexOf('title="插入光标"') !== -1,
+        'should have bottom insert button titled 插入光标');
 });
 
 test('insert: clicking 插入到文档 calls WriterAdapter.insertAtCursor', async () => {
@@ -133,8 +135,9 @@ test('clear: card header has a 清除此条 button with danger styling', () => {
     ResultPanel.mount(ResultCard._cards[card.id], mount);
     const clearBtn = mount.querySelector('.result-icon-btn-danger[title="清除此条"]');
     assert.ok(clearBtn, 'should have a danger 清除此条 icon button in header');
-    // 底部操作栏也有 "清除" 文字按钮
-    assert.ok(mount.innerHTML.indexOf('>清除<') !== -1, 'should have bottom clear button');
+    // 底部操作栏也有 删除 按钮 (r2: 用户要求改为删除按钮, icon-only, 通过 title 识别)
+    assert.ok(mount.innerHTML.indexOf('title="删除"') !== -1,
+        'should have bottom delete button titled 删除');
 });
 
 test('clear: clicking 清除 removes the card from DOM, history, and storage', () => {
