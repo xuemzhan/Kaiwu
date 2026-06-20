@@ -211,15 +211,14 @@ var ResultPanel = {
             headerHtml +
             '  <div class="result-content markdown-body">' + contentHtml + '</div>' +
             '  <div class="result-actions">' +
-            '    <button class="btn btn-primary btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="replace">'
-              + this._icons.replace + '<span>替换原文</span></button>' +
-            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="insert">'
-              + this._icons.insert + '<span>插入文档</span></button>' +
-            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="copy">'
-              + this._icons.copy + '<span>复制</span></button>' +
-            '    <span class="result-actions-spacer"></span>' +
-            '    <button class="btn btn-sm btn-link" ' + (card.status ? '' : 'disabled') + ' data-kw-action="clear">'
-              + this._icons.clear + '<span>清除</span></button>' +
+            '    <button class="result-icon-btn result-icon-btn-primary" title="替换原文" ' + (canApply ? '' : 'disabled') + ' data-kw-action="replace">'
+              + this._icons.replace + '</button>' +
+            '    <button class="result-icon-btn" title="插入光标" ' + (canApply ? '' : 'disabled') + ' data-kw-action="insert">'
+              + this._icons.insert + '</button>' +
+            '    <button class="result-icon-btn" title="复制" ' + (canApply ? '' : 'disabled') + ' data-kw-action="copy">'
+              + this._icons.copy + '</button>' +
+            '    <button class="result-icon-btn result-icon-btn-danger" title="删除" data-kw-action="clear">'
+              + this._icons.clear + '</button>' +
             '  </div>' +
             '</section>';
     },
