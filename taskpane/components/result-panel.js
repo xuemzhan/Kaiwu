@@ -149,7 +149,28 @@ var ResultPanel = {
 
         // 非流式 / 强制全量: 整张重渲染
         mountEl.innerHTML = this._renderCard(card, options);
+        this._bindClickDelegation(mountEl);
         this._postRender();
+    },
+
+    _bindClickDelegation: function (mountEl) {
+        if (!mountEl || mountEl.__kwResultDelegated) return;
+        mountEl.__kwResultDelegated = true;
+        var self = this;
+        mountEl.addEventListener('click', function (e) {
+            var target = e.target;
+            if (!target || !target.closest) return;
+            var btn = target.closest('[data-kw-action]');
+            if (!btn) return;
+            var act = btn.getAttribute('data-kw-action');
+            if (!act) return;
+            if (act === 'replace') self.replaceOriginal();
+            else if (act === 'insert') self.insertAtCursor();
+            else if (act === 'copy') self.copy();
+            else if (act === 'clear') self.clear();
+            else if (act === 'regenerate') self.regenerate();
+            else if (act === 'abort') self.abort();
+        });
     },
 
     _renderCard: function (card, options) {
