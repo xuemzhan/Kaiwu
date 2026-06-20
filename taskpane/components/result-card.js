@@ -72,6 +72,9 @@ var ResultCard = {
             ? '<div class="result-error">' + KwUtils.escapeHtml(card.error) + '</div>'
             : this._renderMarkdown(card.resultText || '正在准备...');
         var canApply = card.status === 'done' && !!card.resultText;
+        var icons = (typeof ResultPanel !== 'undefined' && ResultPanel._icons) ? ResultPanel._icons : {
+            replace: '↻', insert: '↵', copy: '⎘', clear: '✕'
+        };
         return '' +
             '<section class="result-card" data-card-id="' + KwUtils.escapeAttr(card.id) + '">' +
             '  <div class="result-card-header">' +
@@ -79,13 +82,14 @@ var ResultCard = {
             '      <div class="result-title">' + KwUtils.escapeHtml(card.actionLabel) + '</div>' +
             '      <div class="result-meta">' + KwUtils.escapeHtml(this._sourceLabel(card)) + ' · ' + statusText + '</div>' +
             '    </div>' +
-            '    <button class="result-icon-btn" title="重新生成" data-kw-action="regenerate" data-card-id="' + KwUtils.escapeAttr(card.id) + '">↻</button>' +
+            '    <button class="result-icon-btn" title="重新生成" data-kw-action="regenerate" data-card-id="' + KwUtils.escapeAttr(card.id) + '">' + icons.regenerate + '</button>' +
             '  </div>' +
             '  <div class="result-content markdown-body">' + content + '</div>' +
             '  <div class="result-actions">' +
-            '    <button class="btn btn-primary btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="replace-original" data-card-id="' + KwUtils.escapeAttr(card.id) + '">替换原文</button>' +
-            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="insert-at-cursor" data-card-id="' + KwUtils.escapeAttr(card.id) + '">插入光标</button>' +
-            '    <button class="btn btn-sm" ' + (canApply ? '' : 'disabled') + ' data-kw-action="copy-result" data-card-id="' + KwUtils.escapeAttr(card.id) + '">复制</button>' +
+            '    <button class="result-icon-btn result-icon-btn-primary" title="替换原文" ' + (canApply ? '' : 'disabled') + ' data-kw-action="replace" data-card-id="' + KwUtils.escapeAttr(card.id) + '">' + icons.replace + '</button>' +
+            '    <button class="result-icon-btn" title="插入光标" ' + (canApply ? '' : 'disabled') + ' data-kw-action="insert" data-card-id="' + KwUtils.escapeAttr(card.id) + '">' + icons.insert + '</button>' +
+            '    <button class="result-icon-btn" title="复制" ' + (canApply ? '' : 'disabled') + ' data-kw-action="copy" data-card-id="' + KwUtils.escapeAttr(card.id) + '">' + icons.copy + '</button>' +
+            '    <button class="result-icon-btn result-icon-btn-danger" title="删除" data-kw-action="clear" data-card-id="' + KwUtils.escapeAttr(card.id) + '">' + icons.clear + '</button>' +
             '  </div>' +
             '</section>';
     },
@@ -149,6 +153,16 @@ var ResultCard = {
         var self = this;
         this._renderTimer = setTimeout(function () {
             self._renderTimer = null;
+            if (typeof ResultPanel !== 'undefined' && ResultPanel._activeMount && ResultPanel._activeCard) {
+                var card = self._cards[ResultPanel._activeCard.id];
+                if (card) {
+                    ResultPanel.update(card, ResultPanel._activeMount, {
+                        streaming: card.status === 'streaming',
+                        forceFull: true
+                    });
+                }
+                return;
+            }
             self.render();
         }, 80);
     },
