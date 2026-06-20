@@ -42,7 +42,13 @@ var MessageRenderer = {
 
         return '' +
             '<div class="message message-assistant' + streamingClass + '" data-mid="' + this._idFor(content) + '">' +
-            '  <div class="message-label">AI</div>' +
+            '  <div class="assistant-meta">' +
+            '    <div class="assistant-avatar">' +
+            '      <img src="styles/robot-icon.svg" alt="开悟" width="32" height="32">' +
+            '    </div>' +
+            '    <span class="assistant-name">开悟</span>' +
+            '    <span class="ai-badge small">AI</span>' +
+            '  </div>' +
             '  <div class="message-bubble assistant-bubble markdown-body' + caretClass + '" data-content="' + KwUtils.escapeAttr(mainContent) + '">' +
             '    <div class="message-body-content">' + renderedContent + '</div>' +
             '    <div class="message-actions">' +

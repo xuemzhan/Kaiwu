@@ -50,24 +50,30 @@
     <div id="app">
         <!-- 头部 -->
         <header id="appHeader">
-            <div class="header-left">
-                <span class="header-title">🤖 开悟</span>
-                <div id="opencodeStatusDot" class="kw-oc-status kw-oc-status-unknown" title="OpenCode 状态: 未知" style="display:none">
-                    <span class="kw-oc-status-dot"></span>
+            <div class="brand">
+                <div class="brand-logo">
+                    <img src="styles/robot-icon.svg" alt="开悟" width="36" height="36">
                 </div>
+                <div class="brand-title">开悟</div>
+                <div class="ai-badge">AI</div>
             </div>
             <div class="header-right">
-                <button id="btnExportChats" class="header-btn" title="导出对话" aria-label="导出对话">⬇</button>
-                <button id="btnImportChats" class="header-btn" title="导入对话" aria-label="导入对话">⬆</button>
+                <button id="btnExportChats" class="header-btn" title="导出对话" aria-label="导出对话">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="currentColor"/></svg>
+                </button>
+                <button id="btnImportChats" class="header-btn" title="导入对话" aria-label="导入对话">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" fill="currentColor"/></svg>
+                </button>
                 <input id="importFileInput" type="file" accept="application/json" style="display:none;">
                 <button id="btnHistory" class="header-btn" title="历史记录" aria-label="历史记录">
-                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                        <path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
-                <button id="btnNewChat" class="header-btn" title="新对话" aria-label="新对话">✏️</button>
-                <button id="btnSettings" class="header-btn" title="设置" aria-label="设置">⚙️</button>
+                <button id="btnNewChat" class="header-btn" title="新对话" aria-label="新对话">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
+                </button>
+                <button id="btnSettings" class="header-btn" title="设置" aria-label="设置">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M19.14 12.94a7.07 7.07 0 000-1.88l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.04 7.04 0 00-1.62-.94l-.36-2.54a.48.48 0 00-.48-.41h-3.84a.48.48 0 00-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87a.48.48 0 00.12.61l2.03 1.58a7.07 7.07 0 000 1.88l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.37 1.03.7 1.62.94l.36 2.54c.05.24.26.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 00-.12-.61l-2.03-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z" fill="currentColor"/></svg>
+                </button>
             </div>
         </header>
 
@@ -80,10 +86,13 @@
             </div>
         </div>
 
-        <div id="contextBar" class="context-bar">
-            <div class="context-title">文字助手</div>
-            <div class="context-meta" id="contextMeta">正在读取文档状态...</div>
-        </div>
+        <section id="contextBar" class="context-bar">
+            <h1 class="context-title">文字助手</h1>
+            <div class="context-meta" id="contextMeta">文字文稿1 · 未选中文本 · MiniMax-M3</div>
+            <button class="doc-btn" title="文档">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm4 18H6V4h7v5h5v11z" fill="currentColor"/></svg>
+            </button>
+        </section>
 
         <!--
           顶部场景栏: 分类标签 + 场景芯片
@@ -96,11 +105,13 @@
                 <button class="scenario-tab" data-category="modify" role="tab" aria-selected="false">修改</button>
                 <button class="scenario-tab" data-category="document" role="tab" aria-selected="false">文档</button>
             </div>
-            <div class="scenario-chips" data-category="writing">
-                <button class="scenario-chip" data-action-id="write">帮我写</button>
+            <section class="scenario-chips" data-category="writing">
+                <button class="scenario-chip is-active" data-action-id="write">帮我写</button>
                 <button class="scenario-chip" data-action-id="imitate" data-requires-selection>仿写</button>
                 <button class="scenario-chip" data-action-id="cowrite">伴写</button>
-            </div>
+                <button class="scenario-chip" data-action-id="polish">润色</button>
+                <button class="scenario-chip" data-action-id="more">更多</button>
+            </section>
             <div class="scenario-chips" data-category="modify" hidden>
                 <button class="scenario-chip" data-action-id="polish_quick">快速润色</button>
                 <button class="scenario-chip" data-action-id="polish_formal">更正式</button>
@@ -127,9 +138,36 @@
         <!-- 对话列表 -->
         <div id="chatContainer" class="chat-container">
             <div class="welcome-message">
-                <h3>👋 欢迎使用开悟</h3>
-                <p>选中文档中的文字，或直接输入问题开始对话。</p>
-                <p class="welcome-tip">💡 提示：在文档中选中文字后，点击功能区按钮可进行润色、续写、翻译等操作。</p>
+                <h3>你好！👋 我是开悟，你的 AI 写作助手，很高兴见到你！</h3>
+                <p>我可以帮你处理各种文档和写作相关的任务，比如：</p>
+                <ul class="feature-list">
+                    <li>
+                        <span class="feature-icon blue">✎</span>
+                        <strong>写作优化</strong>
+                        <span>润色文章、提升表达、改善结构</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon purple">◎</span>
+                        <strong>翻译</strong>
+                        <span>中英 / 多语言互译</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon green">▤</span>
+                        <strong>摘要生成</strong>
+                        <span>提炼长文要点、生成摘要</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon orange">✦</span>
+                        <strong>内容创作</strong>
+                        <span>起草文章、邮件、报告等</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon blue">⌕</span>
+                        <strong>文本分析</strong>
+                        <span>语法检查、风格建议等</span>
+                    </li>
+                </ul>
+                <p>有什么我可以帮你的吗？ 😊</p>
                 <p class="welcome-model" id="welcomeModel"></p>
             </div>
         </div>
@@ -137,7 +175,7 @@
         <!-- 输入区域 -->
         <div class="input-container">
             <div class="input-wrapper">
-                <textarea id="inputBox" class="input-box" rows="3" placeholder="输入消息，Ctrl+Enter 发送..."></textarea>
+                <textarea id="inputBox" class="input-box" rows="3" placeholder="输入你想生成的内容，例如：写一份项目周报"></textarea>
             </div>
             <div class="input-counter" id="inputCounter"></div>
             <div class="input-toolbar">
@@ -145,8 +183,10 @@
                     <button id="btnClear" class="btn btn-sm" title="清空当前对话 (Ctrl+L)">🗑️ 清空</button>
                 </div>
                 <div class="toolbar-right">
-                    <span id="modelIndicator" class="model-indicator"></span>
-                    <button id="opencodeRetryBtn" class="kw-btn-icon" title="重试连接" style="display:none">↻</button>
+                    <button class="model-indicator" title="模型选择">
+                        <img src="styles/robot-icon.svg" alt="模型" width="24" height="24">
+                        <span>MiniMax-M3</span>
+                    </button>
                     <button id="btnAbort" class="btn btn-sm btn-abort" style="display:none;" title="停止生成 (Esc)">⏹ 停止</button>
                     <button id="btnSend" class="btn btn-primary">发送</button>
                 </div>
