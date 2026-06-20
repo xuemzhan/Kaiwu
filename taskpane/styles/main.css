@@ -260,7 +260,9 @@ body {
 .scenario-tab.is-active::after {
     content: "";
     position: absolute;
+    left: 50%;
     bottom: 0;
+    transform: translateX(-50%);
     width: 56%;
     height: 2.5px;
     border-radius: 3px 3px 0 0;
