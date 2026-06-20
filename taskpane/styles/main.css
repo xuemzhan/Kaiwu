@@ -79,7 +79,7 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 0 18px;
-    height: 64px;
+    height: 52px;
     background: var(--bg-card);
     border-bottom: 1px solid var(--color-border-light);
     flex-shrink: 0;
@@ -175,21 +175,21 @@ body {
 
 /* ========== Writer context and scenario actions ========== */
 .context-bar {
-    padding: 22px 24px 24px;
+    padding: 14px 18px 16px;
     border-bottom: 1px solid var(--color-border-light);
     position: relative;
     flex-shrink: 0;
 }
 
 .context-title {
-    font-size: 26px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--color-text-main);
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 .context-meta {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -204,7 +204,7 @@ body {
 .doc-btn {
     position: absolute;
     right: 24px;
-    top: 28px;
+    top: 18px;
     width: 34px;
     height: 34px;
     border: 1px solid var(--color-border);
@@ -241,7 +241,7 @@ body {
     padding: 0 8px;
     border: none;
     background: transparent;
-    color: var(--color-text-secondary);
+    color: var(--color-text-main);
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
@@ -261,8 +261,8 @@ body {
     content: "";
     position: absolute;
     bottom: 0;
-    width: 72%;
-    height: 3px;
+    width: 56%;
+    height: 2.5px;
     border-radius: 3px 3px 0 0;
     background: var(--color-primary);
 }
@@ -326,10 +326,10 @@ body {
 .result-container {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 10px 14px;
     background: var(--bg);
-    max-height: 36vh;
+    max-height: min(50vh, 400px);
     overflow-y: auto;
     flex-shrink: 0;
 }
@@ -430,8 +430,8 @@ body {
 }
 
 .result-content {
-    padding: 12px;
-    max-height: 260px;
+    padding: 14px 16px;
+    max-height: 180px;
     overflow-y: auto;
 }
 
@@ -443,6 +443,9 @@ body {
     background: #fafafa;
     align-items: center;
     flex-wrap: wrap;
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
 }
 
 .result-actions .btn {
@@ -541,19 +544,20 @@ body {
 /* ========== 欢迎信息 ========== */
 .welcome-message {
     text-align: center;
-    padding: 40px 20px;
+    padding: 24px 16px;
     color: var(--color-text-secondary);
 }
 
 .welcome-message h3 {
-    font-size: 18px;
-    margin-bottom: 12px;
+    font-size: 16px;
+    margin-bottom: 8px;
     color: var(--color-text-main);
 }
 
 .welcome-message p {
     margin-bottom: 8px;
     font-size: 13px;
+    line-height: 1.6;
 }
 
 .welcome-tip {
@@ -575,19 +579,21 @@ body {
 
 .feature-list li {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 10px 0;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 8px 0;
 }
 
 .feature-list strong {
-    min-width: 72px;
+    min-width: 64px;
     font-weight: 700;
+    font-size: 13px;
     color: var(--color-text-main);
 }
 
 .feature-list span:last-child {
     color: var(--color-text-secondary);
+    font-size: 12px;
 }
 
 .feature-icon {
@@ -660,14 +666,14 @@ body {
 
 .assistant-bubble {
     margin-top: 10px;
-    padding: 22px 24px;
+    padding: 14px 16px;
     background: #ffffff;
     border: 1px solid var(--color-border);
     border-radius: 16px;
     box-shadow: 0 4px 14px rgba(16, 24, 40, 0.05);
     color: var(--color-text-main);
-    font-size: 15px;
-    line-height: 1.8;
+    font-size: 14px;
+    line-height: 1.7;
 }
 
 .message-time {
@@ -727,12 +733,12 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .assistant-avatar {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
 }
 
 .assistant-avatar img {
@@ -742,7 +748,7 @@ body {
 }
 
 .assistant-name {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--color-text-main);
 }
@@ -951,7 +957,7 @@ body {
 /* ========== 输入区域 ========== */
 .input-container {
     flex-shrink: 0;
-    padding: 14px 18px 10px;
+    padding: 10px 14px 8px;
     background: #ffffff;
     border-top: 1px solid var(--color-border-light);
 }
@@ -962,18 +968,18 @@ body {
 
 .input-box {
     width: 100%;
-    min-height: 78px;
+    min-height: 60px;
     resize: none;
     border: 1px solid #cfd9e8;
     border-radius: 14px;
-    padding: 16px 44px 16px 16px;
+    padding: 10px 12px;
     font-family: var(--font);
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.6;
     color: var(--color-text-main);
     outline: none;
     box-shadow: 0 3px 10px rgba(16, 24, 40, 0.04);
-    max-height: 150px;
+    max-height: 120px;
     transition: border-color 0.15s, box-shadow 0.15s;
     background: var(--bg-card);
 }
@@ -1007,27 +1013,27 @@ body {
 }
 
 .model-indicator {
-    height: 36px;
-    padding: 0 12px;
+    height: 32px;
+    padding: 0 10px;
     border-radius: 12px;
     border: 1px solid var(--color-border);
     background: #ffffff;
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--color-text-main);
 }
 
 /* ========== 按钮 ========== */
 .btn {
-    padding: 8px 16px;
+    padding: 6px 14px;
     border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--bg-card);
     cursor: pointer;
     font-family: var(--font);
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text);
     transition: all 0.15s;
     white-space: nowrap;
