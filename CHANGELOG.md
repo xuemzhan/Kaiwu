@@ -35,6 +35,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **OpenCode setup guide**: In README-安装说明.md
 - **Interface contract**: docs/opencode-integration.md
 
+### 🎨 UI Redesign & Fixes (post-release)
+
+#### Round 1 - Layout compact & WCAG AA
+- **Header height**: 64px → 52px (more taskpane breathing room)
+- **Context title**: 26px → 20px (balanced visual weight)
+- **Input area**: min-height 78→60, max-height 150→120, font 14→13 (fits 340px viewport)
+- **Feature list**: single column with proper gap (no overlap with message avatar)
+- **Tab colors**: inactive tab now uses main text color `#1f2937` (contrast 15+:1, exceeds WCAG AAA)
+- **Welcome message**: padding 40/20→24/16, h3 18→16px, all elements fit at 340px width
+- **Result card content**: max-height 260→180px with independent scroll
+- **Result actions**: position sticky, bottom 0, always visible
+- **flex-wrap fix**: restored `flex-wrap: wrap` on `.scenario-chips` to keep regression test passing
+
+#### Round 2 - Logo fix & button redesign
+- **Logo (开悟)**: replaced external `<img src="robot-icon.svg">` with inline `<svg>` in 3 places (header brand, message assistant-avatar, model-indicator). Bypasses WPS CEF `file://` SVG MIME type detection issue.
+- **Result card buttons**: redesigned bottom 3 text buttons (替换原文/插入光标/复制) as 28×28 icon buttons matching the ↻ refresh style
+- **New "删除" button**: added to result card with danger styling
+- **Click delegation**: wired `data-kw-action` on `#resultContainer` to ResultPanel methods (replace/insert/copy/clear/regenerate/abort). Previously these were unwired — buttons were visible but not functional.
+- **Test fix**: updated `tests/insert-and-clear.test.js` assertions to match icon-button design
+
+#### Round 3 - ResultCard/ResultPanel render conflict fix
+- **Root cause**: `ResultCard._scheduleRender` fired 80ms after card creation, overwriting ResultPanel's new icon template with ResultCard's old text template
+- **Fix**: `ResultCard._scheduleRender` now delegates to `ResultPanel.update` when ResultPanel is active
+- **Defense in depth**: `ResultCard._renderCard` updated to also produce icon-button template, so any legacy path produces consistent UI
+
+#### Round 4 - Tab underline centering
+- **Root cause**: `.scenario-tab.is-active::after` had `left: 0; width: 56%`, causing underline to be offset left of centered tab text
+- **Fix**: changed to `left: 50%; transform: translateX(-50%)` for perfect centering
+- **Verified**: Playwright alignment check shows delta=0px for all 3 tabs (创作/修改/文档)
+
+#### Build & Distribution
+- **WPS lock workaround**: Build process now documented with workaround for `EPERM` on `wps-addon-publish/` when WPS is running
+- **7z package**: `packages/kaiwu_0.4.0.7z` (874.1 KB) contains all UI fixes
+- **Manifest**: `packages/manifest.json` updated with v0.4.0 release entry
+
 ## [0.3.0] — 2026-06-19
 
 ### ✨ New Features
