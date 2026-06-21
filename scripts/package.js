@@ -516,6 +516,43 @@ function generateDisableNativeAiBat() {
     return lines.join('\n');
 }
 
+function generateEnableNativeAiBat() {
+    var lines = [];
+    lines.push('@echo off');
+    lines.push('rem ============================================================');
+    lines.push('rem  Enable WPS native AI / Daoke (Docer) features');
+    lines.push('rem  This script removes registry keys to restore WPS AI entry points');
+    lines.push('rem ============================================================');
+    lines.push('setlocal EnableExtensions');
+    lines.push('title Kaiwu WPS Addon - Enable Native AI');
+    lines.push('echo.');
+    lines.push('echo  ============================================');
+    lines.push('echo    Enable WPS Native AI / Daoke');
+    lines.push('echo  ============================================');
+    lines.push('echo.');
+    lines.push('');
+    lines.push('echo  Current status (best effort, may fail):');
+    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService 2>nul || echo     [INFO] CloudService not set');
+    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI 2>nul || echo     [INFO] EnableAI not set');
+    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled 2>nul || echo     [INFO] DocerEnabled not set');
+    lines.push('echo.');
+    lines.push('');
+    lines.push('echo  Enabling WPS native AI / Daoke...');
+    lines.push('reg delete "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService /f 2>nul');
+    lines.push('if %ERRORLEVEL% EQU 0 (echo  [OK] CloudService removed) else (echo  [OK] CloudService removed (or was not set)');
+    lines.push('reg delete "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI /f 2>nul');
+    lines.push('if %ERRORLEVEL% EQU 0 (echo  [OK] EnableAI removed) else (echo  [OK] EnableAI removed (or was not set)');
+    lines.push('reg delete "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled /f 2>nul');
+    lines.push('if %ERRORLEVEL% EQU 0 (echo  [OK] DocerEnabled removed) else (echo  [OK] DocerEnabled removed (or was not set)');
+    lines.push('echo.');
+    lines.push('echo  [OK] WPS native AI / Daoke re-enabled');
+    lines.push('echo.');
+    lines.push('echo  Please restart WPS for changes to take effect.');
+    lines.push('echo.');
+    lines.push('pause');
+    return lines.join('\n');
+}
+
 function generateReadme(envVars) {
     return (
         '# 开悟 — WPS AI 写作助手\n' +
