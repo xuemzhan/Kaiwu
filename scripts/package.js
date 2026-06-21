@@ -909,4 +909,16 @@ async function main() {
     }
 }
 
-main();
+module.exports = {
+    generateDisableNativeAiBat,
+    generateEnableNativeAiBat,
+    generateVerifyBat,
+    generateInstallBat,
+    generateUninstallBat,
+    generateReadme,
+    generatePublishXml
+};
+
+if (require.main === module) {
+    main();
+}
