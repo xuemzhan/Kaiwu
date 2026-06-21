@@ -1801,3 +1801,18 @@ select.form-input {
         padding: 10px 12px;
     }
 }
+
+/* WPS native AI / Daoke status dot in header */
+.kw-status-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    padding: 2px;
+    border-radius: 50%;
+    cursor: help;
+    vertical-align: middle;
+}
+.kw-status-dot-unsupported { color: #999; }
+.kw-status-dot-enabled    { color: #28a745; }
+.kw-status-dot-disabled   { color: #dc3545; }

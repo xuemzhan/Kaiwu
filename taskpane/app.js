@@ -319,6 +319,20 @@ document.addEventListener('DOMContentLoaded', function () {
     // 10. Start periodic session prune timer
     AppSessionManager._startSessionPruneTimer();
 
+    // 11. Wire the static WPS native AI / Daoke status dot
+    (function initWpsNativeAiStatus() {
+        try {
+            if (typeof window.WPSNativeAIStatus === 'undefined') return;
+            var status = window.WPSNativeAIStatus.getStatus();
+            var dot = document.getElementById('kwWpsNativeAiStatus');
+            if (dot && status) {
+                dot.title = '原生 WPS AI / 稻壳 状态 (静态指示器): ' + status.hint;
+                dot.classList.remove('kw-status-dot-unsupported', 'kw-status-dot-enabled', 'kw-status-dot-disabled');
+                dot.classList.add('kw-status-dot-' + status.source);
+            }
+        } catch (e) { /* graceful degradation */ }
+    })();
+
     console.log('[开悟] 初始化完成');
 });
 

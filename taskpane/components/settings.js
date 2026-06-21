@@ -55,6 +55,17 @@ var SettingsUI = {
 
         body.innerHTML = '' +
             '<fieldset class="kw-settings-section">' +
+            '  <legend>原生 WPS AI / 稻壳</legend>' +
+            '  <div class="kw-form-row">' +
+            '    <p class="kw-hint" id="kwWpsNativeAiHint">' +
+            '      加载项运行在 WPS CEF 沙盒中, 无法直接读取 HKCU 注册表. ' +
+            '      请运行包内的 <code>disable-wps-native-ai.bat</code> 或 ' +
+            '      <code>enable-wps-native-ai.bat</code> 切换原生 WPS AI / 稻壳 的可见性, 然后重启 WPS 生效. ' +
+            '      可执行 <code>verify.bat</code> 检查当前状态.' +
+            '    </p>' +
+            '  </div>' +
+            '</fieldset>' +
+            '<fieldset class="kw-settings-section">' +
             '  <legend>AI 提供方</legend>' +
             '  <div class="kw-form-row">' +
             '    <label class="kw-radio">' +
