@@ -77,6 +77,21 @@ kaiwu_0.4.0/
     └── styles/
 ```
 
+## 原生 WPS AI / 稻壳 独立管理
+
+本包附带 3 个独立脚本用于管理 WPS 原生 AI / 稻壳 (Daoke) 功能的可见性:
+
+| 脚本 | 作用 |
+|------|------|
+| `disable-wps-native-ai.bat` | 隐藏 WPS AI 助手入口、稻壳模板/插件入口 |
+| `enable-wps-native-ai.bat` | 恢复 WPS AI 助手入口、稻壳模板/插件入口 |
+| `verify.bat` | 安装验证 (已包含原生 AI 状态检查) |
+
+**使用场景**:
+- 如果你不想被 WPS 原生 AI 分散注意力, 可以运行 `disable-wps-native-ai.bat` 隐藏入口
+- 运行后需要**重启 WPS** 才能生效
+- 再次运行 `enable-wps-native-ai.bat` 即可恢复
+
 ## 安装位置
 
 插件文件被复制到:
@@ -110,5 +125,5 @@ A: 先运行 uninstall.bat 卸载旧版 (会自动清除 authaddin.json 缓存),
 ---
 
 <div align="center">
-打包于 2026-06-19 08:07:01
+打包于 2026-06-21 00:55:39
 </div>
