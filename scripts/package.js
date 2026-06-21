@@ -55,6 +55,12 @@ const VERSION = wpsjsConfig.version || packageMeta.version;
 const PACKAGE_DIR_ASCII = 'kaiwu_' + VERSION;
 const ADDON_NAME_ASCII = 'kaiwu';
 
+const WPS_NATIVE_AI_REGISTRY = [
+    { key: 'CloudService', value: 0, desc: 'WPS Cloud Service (includes AI assistant entry)' },
+    { key: 'EnableAI', value: 0, desc: 'Native AI assistant enable switch' },
+    { key: 'DocerEnabled', value: 0, desc: 'Daoke (Docer) template/plugin entry' }
+];
+
 // 排除目录/文件 (不要塞进发行包)
 const EXCLUDE = new Set([
     'node_modules',
@@ -471,6 +477,43 @@ function generateUninstallBat() {
         'echo.\n' +
         'pause\n'
     );
+}
+
+function generateDisableNativeAiBat() {
+    var lines = [];
+    lines.push('@echo off');
+    lines.push('rem ============================================================');
+    lines.push('rem  Disable WPS native AI / Daoke (Docer) features');
+    lines.push('rem  This script sets registry keys to hide WPS AI entry points');
+    lines.push('rem ============================================================');
+    lines.push('setlocal EnableExtensions');
+    lines.push('title Kaiwu WPS Addon - Disable Native AI');
+    lines.push('echo.');
+    lines.push('echo  ============================================');
+    lines.push('echo    Disable WPS Native AI / Daoke');
+    lines.push('echo  ============================================');
+    lines.push('echo.');
+    lines.push('');
+    lines.push('echo  Current status (best effort, may fail):');
+    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService 2>nul || echo     [INFO] CloudService not set');
+    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI 2>nul || echo     [INFO] EnableAI not set');
+    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled 2>nul || echo     [INFO] DocerEnabled not set');
+    lines.push('echo.');
+    lines.push('');
+    lines.push('echo  Disabling WPS native AI / Daoke...');
+    lines.push('reg add "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService /t REG_DWORD /d 0 /f >nul 2>nul');
+    lines.push('if %ERRORLEVEL% EQU 0 echo  [OK] CloudService=0');
+    lines.push('reg add "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI /t REG_DWORD /d 0 /f >nul 2>nul');
+    lines.push('if %ERRORLEVEL% EQU 0 echo  [OK] EnableAI=0');
+    lines.push('reg add "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled /t REG_DWORD /d 0 /f >nul 2>nul');
+    lines.push('if %ERRORLEVEL% EQU 0 echo  [OK] DocerEnabled=0');
+    lines.push('echo.');
+    lines.push('echo  [OK] WPS native AI / Daoke disabled');
+    lines.push('echo.');
+    lines.push('echo  Please restart WPS for changes to take effect.');
+    lines.push('echo.');
+    lines.push('pause');
+    return lines.join('\n');
 }
 
 function generateReadme(envVars) {
