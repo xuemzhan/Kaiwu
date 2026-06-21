@@ -671,6 +671,21 @@ function generateReadme(envVars) {
         '    └── styles/\n' +
         '```\n' +
         '\n' +
+        '## 原生 WPS AI / 稻壳 独立管理\n' +
+        '\n' +
+        '本包附带 3 个独立脚本用于管理 WPS 原生 AI / 稻壳 (Daoke) 功能的可见性:\n' +
+        '\n' +
+        '| 脚本 | 作用 |\n' +
+        '|------|------|\n' +
+        '| `disable-wps-native-ai.bat` | 隐藏 WPS AI 助手入口、稻壳模板/插件入口 |\n' +
+        '| `enable-wps-native-ai.bat` | 恢复 WPS AI 助手入口、稻壳模板/插件入口 |\n' +
+        '| `verify.bat` | 安装验证 (已包含原生 AI 状态检查) |\n' +
+        '\n' +
+        '**使用场景**:\n' +
+        '- 如果你不想被 WPS 原生 AI 分散注意力, 可以运行 `disable-wps-native-ai.bat` 隐藏入口\n' +
+        '- 运行后需要**重启 WPS** 才能生效\n' +
+        '- 再次运行 `enable-wps-native-ai.bat` 即可恢复\n' +
+        '\n' +
         '## 安装位置\n' +
         '\n' +
         '插件文件被复制到:\n' +
@@ -768,6 +783,8 @@ function build() {
     writeBatFile(path.join(PUBLISH_DIR, 'install.bat'), toCRLF(generateInstallBat()));
     writeBatFile(path.join(PUBLISH_DIR, 'uninstall.bat'), toCRLF(generateUninstallBat()));
     writeBatFile(path.join(PUBLISH_DIR, 'verify.bat'), toCRLF(generateVerifyBat()));
+    writeBatFile(path.join(PUBLISH_DIR, 'disable-wps-native-ai.bat'), toCRLF(generateDisableNativeAiBat()));
+    writeBatFile(path.join(PUBLISH_DIR, 'enable-wps-native-ai.bat'), toCRLF(generateEnableNativeAiBat()));
 
     console.log('[package] 生成 README 安装说明...');
     fs.writeFileSync(path.join(PUBLISH_DIR, 'README-安装说明.md'), generateReadme(envVars), 'utf8');
@@ -800,6 +817,9 @@ function packTo7z(stagingDir) {
         const inputs = [
             path.join(PUBLISH_DIR, 'install.bat'),
             path.join(PUBLISH_DIR, 'uninstall.bat'),
+            path.join(PUBLISH_DIR, 'verify.bat'),
+            path.join(PUBLISH_DIR, 'disable-wps-native-ai.bat'),
+            path.join(PUBLISH_DIR, 'enable-wps-native-ai.bat'),
             path.join(PUBLISH_DIR, 'publish.xml'),
             path.join(PUBLISH_DIR, 'README-安装说明.md'),
             stagingDir
