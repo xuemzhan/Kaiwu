@@ -397,6 +397,43 @@ function generateVerifyBat() {
         ') else (\n' +
         '    echo  [OK]     authaddin.json not present (WPS will rebuild on next start)\n' +
         ')\n' +
+        'echo  --- WPS native AI / Daoke status ---\n' +
+        'reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService 2>nul | findstr /C:"0x0" >nul 2>nul\n' +
+        'if !ERRORLEVEL! EQU 0 (\n' +
+        '    echo  [OK]     CloudService is disabled (0)\n' +
+        ') else (\n' +
+        '    reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService >nul 2>nul\n' +
+        '    if !ERRORLEVEL! EQU 0 (\n' +
+        '        echo  [WARN]   CloudService is enabled or missing\n' +
+        '        set ERRORS=1\n' +
+        '    ) else (\n' +
+        '        echo  [OK]     CloudService is not set (enabled by default)\n' +
+        '    )\n' +
+        ')\n' +
+        'reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI 2>nul | findstr /C:"0x0" >nul 2>nul\n' +
+        'if !ERRORLEVEL! EQU 0 (\n' +
+        '    echo  [OK]     EnableAI is disabled (0)\n' +
+        ') else (\n' +
+        '    reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI >nul 2>nul\n' +
+        '    if !ERRORLEVEL! EQU 0 (\n' +
+        '        echo  [WARN]   EnableAI is enabled or missing\n' +
+        '        set ERRORS=1\n' +
+        '    ) else (\n' +
+        '        echo  [OK]     EnableAI is not set (enabled by default)\n' +
+        '    )\n' +
+        ')\n' +
+        'reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled 2>nul | findstr /C:"0x0" >nul 2>nul\n' +
+        'if !ERRORLEVEL! EQU 0 (\n' +
+        '    echo  [OK]     DocerEnabled is disabled (0)\n' +
+        ') else (\n' +
+        '    reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled >nul 2>nul\n' +
+        '    if !ERRORLEVEL! EQU 0 (\n' +
+        '        echo  [WARN]   DocerEnabled is enabled or missing\n' +
+        '        set ERRORS=1\n' +
+        '    ) else (\n' +
+        '        echo  [OK]     DocerEnabled is not set (enabled by default)\n' +
+        '    )\n' +
+        ')\n' +
         '\n' +
         'echo.\n' +
         'if "%ERRORS%"=="0" (\n' +
