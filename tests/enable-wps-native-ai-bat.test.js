@@ -2,14 +2,28 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const pkg = require('../scripts/package.js');
 
-test('generateEnableNativeAiBat emits 3 reg delete lines for HKCU Office plugins', () => {
+test('generateEnableNativeAiBat contains UAC self-elevation', () => {
     const s = pkg.generateEnableNativeAiBat();
-    assert.ok(s.includes('reg delete "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService /f'),
-        'must include CloudService reg delete');
-    assert.ok(s.includes('reg delete "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI /f'),
-        'must include EnableAI reg delete');
-    assert.ok(s.includes('reg delete "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled /f'),
-        'must include DocerEnabled reg delete');
+    assert.ok(s.includes('net session'), 'must check admin via net session');
+    assert.ok(s.includes('RunAs'), 'must include -Verb RunAs for UAC elevation');
+});
+
+test('generateEnableNativeAiBat restores EnableAI and AutoStart to 1', () => {
+    const s = pkg.generateEnableNativeAiBat();
+    assert.ok(s.includes('EnableAI /t REG_DWORD /d 1'), 'must set EnableAI=1');
+    assert.ok(s.includes('AutoStart /t REG_DWORD /d 1'), 'must set AutoStart=1');
+});
+
+test('generateEnableNativeAiBat re-enables WPS Cloud Service', () => {
+    const s = pkg.generateEnableNativeAiBat();
+    assert.ok(s.includes('start=auto'), 'must set service start=auto');
+    assert.ok(s.includes('sc start'), 'must start the service');
+});
+
+test('generateEnableNativeAiBat restores file from backup', () => {
+    const s = pkg.generateEnableNativeAiBat();
+    assert.ok(s.includes('kaiwu-backup'), 'must reference backup files');
+    assert.ok(s.includes('move /Y'), 'must move backup to restore original');
 });
 
 test('generateEnableNativeAiBat has LF line endings (toCRLF applied on write)', () => {
@@ -20,11 +34,4 @@ test('generateEnableNativeAiBat has LF line endings (toCRLF applied on write)', 
 test('generateEnableNativeAiBat has no Chinese characters in body', () => {
     const s = pkg.generateEnableNativeAiBat();
     assert.ok(!/[\u4e00-\u9fff]/.test(s), 'bat body must be ASCII-only');
-});
-
-test('generateEnableNativeAiBat echoes OK per key', () => {
-    const s = pkg.generateEnableNativeAiBat();
-    assert.ok(s.includes('[OK] CloudService removed'), 'must echo CloudService removed');
-    assert.ok(s.includes('[OK] EnableAI removed'), 'must echo EnableAI removed');
-    assert.ok(s.includes('[OK] DocerEnabled removed'), 'must echo DocerEnabled removed');
 });

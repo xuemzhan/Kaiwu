@@ -174,6 +174,74 @@ function writeBatFile(batPath, content) {
     }
 }
 
+/**
+ * Detect all installed WPS Office versions on this machine.
+ * Returns [{version, installDir, cloudsvrPath, registryPath}, ...]
+ */
+function detectInstalledWpsVersions() {
+    var cp = require('child_process');
+    var versions = {};
+
+    // Method 1: Registry scan — enumerate subkeys under HKCU\Software\Kingsoft\WPS Office
+    try {
+        var regOutput = cp.execSync('reg query "HKCU\\Software\\Kingsoft\\WPS Office"', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+        var regLines = regOutput.split(/\r?\n/);
+        for (var i = 0; i < regLines.length; i++) {
+            var m = regLines[i].match(/HKEY_CURRENT_USER\\Software\\Kingsoft\\WPS Office\\(\S+)/);
+            if (m && /^\d/.test(m[1])) {
+                var ver = m[1];
+                if (!versions[ver]) {
+                    versions[ver] = { version: ver, registryPath: 'HKCU\\Software\\Kingsoft\\WPS Office\\' + ver };
+                }
+            }
+        }
+    } catch (e) { /* reg query failed or no WPS in registry */ }
+
+    // Method 2: Filesystem scan — ProgramFiles
+    var programFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
+    var pfBase = path.join(programFiles, 'WPS Office');
+    if (fs.existsSync(pfBase)) {
+        try {
+            var entries = fs.readdirSync(pfBase);
+            for (var i = 0; i < entries.length; i++) {
+                var csvr = path.join(pfBase, entries[i], 'office6', 'wpscloudsvr.exe');
+                if (fs.existsSync(csvr)) {
+                    if (!versions[entries[i]]) {
+                        versions[entries[i]] = { version: entries[i], installDir: path.join(pfBase, entries[i]), cloudsvrPath: csvr };
+                    } else {
+                        if (!versions[entries[i]].installDir) versions[entries[i]].installDir = path.join(pfBase, entries[i]);
+                        versions[entries[i]].cloudsvrPath = csvr;
+                    }
+                }
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    // Method 3: Filesystem scan — LocalAppData
+    var localAppData = process.env.LOCALAPPDATA || '';
+    if (localAppData) {
+        var laBase = path.join(localAppData, 'Kingsoft', 'WPS Office');
+        if (fs.existsSync(laBase)) {
+            try {
+                var laEntries = fs.readdirSync(laBase);
+                for (var i = 0; i < laEntries.length; i++) {
+                    var csvr = path.join(laBase, laEntries[i], 'office6', 'wpscloudsvr.exe');
+                    if (fs.existsSync(csvr)) {
+                        if (!versions[laEntries[i]]) {
+                            versions[laEntries[i]] = { version: laEntries[i], installDir: path.join(laBase, laEntries[i]), cloudsvrPath: csvr };
+                        } else {
+                            if (!versions[laEntries[i]].installDir) versions[laEntries[i]].installDir = path.join(laBase, laEntries[i]);
+                            if (!versions[laEntries[i]].cloudsvrPath) versions[laEntries[i]].cloudsvrPath = csvr;
+                        }
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
+    }
+
+    return Object.keys(versions).sort().map(function (k) { return versions[k]; });
+}
+
 function copyDirFiltered(src, dest, excludes) {
     if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
     for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
@@ -330,7 +398,7 @@ function generateInstallBat() {
 function generateVerifyBat() {
     return (
         '@echo off\n' +
-        'setlocal\n' +
+        'setlocal EnableExtensions EnableDelayedExpansion\n' +
         'title Kaiwu WPS Addon - Verify\n' +
         'echo.\n' +
         'echo  ============================================\n' +
@@ -397,52 +465,116 @@ function generateVerifyBat() {
         ') else (\n' +
         '    echo  [OK]     authaddin.json not present (WPS will rebuild on next start)\n' +
         ')\n' +
-        'echo  --- WPS native AI / Daoke status ---\n' +
-        'reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService 2>nul | findstr /C:"0x0" >nul 2>nul\n' +
-        'if !ERRORLEVEL! EQU 0 (\n' +
-        '    echo  [OK]     CloudService is disabled (0)\n' +
-        ') else (\n' +
-        '    reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService >nul 2>nul\n' +
-        '    if !ERRORLEVEL! EQU 0 (\n' +
-        '        echo  [WARN]   CloudService is enabled or missing\n' +
-        '        set ERRORS=1\n' +
-        '    ) else (\n' +
-        '        echo  [OK]     CloudService is not set (enabled by default)\n' +
-        '    )\n' +
-        ')\n' +
+        'echo  --- WPS native AI / Daoke layered status (v3) ---\n' +
+        'set "LAYER_ERRORS=0"\n' +
+        'rem -- HKCU registry (legacy path) --\n' +
         'reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI 2>nul | findstr /C:"0x0" >nul 2>nul\n' +
         'if !ERRORLEVEL! EQU 0 (\n' +
-        '    echo  [OK]     EnableAI is disabled (0)\n' +
+        '    echo  [OK]     HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins EnableAI=0\n' +
         ') else (\n' +
-        '    reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI >nul 2>nul\n' +
-        '    if !ERRORLEVEL! EQU 0 (\n' +
-        '        echo  [WARN]   EnableAI is enabled or missing\n' +
-        '        set ERRORS=1\n' +
-        '    ) else (\n' +
-        '        echo  [OK]     EnableAI is not set (enabled by default)\n' +
+        '    echo  [INFO]   HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins EnableAI not set to 0 (legacy path)\n' +
+        ')\n' +
+        'rem -- Per-version registry check (new path) --\n' +
+        'for /f "tokens=*" %%R in (\'reg query "HKCU\\Software\\Kingsoft\\WPS Office" 2^>nul\') do (\n' +
+        '    set "REG_LINE=%%R"\n' +
+        '    set "VER=!REG_LINE:HKEY_CURRENT_USER\\Software\\Kingsoft\\WPS Office\\=!"\n' +
+        '    if not "!VER!"=="!REG_LINE!" (\n' +
+        '        echo %%R | findstr /R "[0-9][0-9]" >nul\n' +
+        '        if !ERRORLEVEL! EQU 0 (\n' +
+        '            reg query "HKCU\\Software\\Kingsoft\\WPS Office\\!VER!\\CloudService" /v EnableAI 2>nul | findstr /C:"0x0" >nul 2>nul\n' +
+        '            if !ERRORLEVEL! EQU 0 (\n' +
+        '                echo  [OK]     !VER! EnableAI=0\n' +
+        '            ) else (\n' +
+        '                echo  [FAIL]   !VER! EnableAI is not 0\n' +
+        '                set LAYER_ERRORS=1\n' +
+        '            )\n' +
+        '            reg query "HKCU\\Software\\Kingsoft\\WPS Office\\!VER!\\CloudService" /v AutoStart 2>nul | findstr /C:"0x0" >nul 2>nul\n' +
+        '            if !ERRORLEVEL! EQU 0 (\n' +
+        '                echo  [OK]     !VER! AutoStart=0\n' +
+        '            ) else (\n' +
+        '                echo  [FAIL]   !VER! AutoStart is not 0\n' +
+        '                set LAYER_ERRORS=1\n' +
+        '            )\n' +
+        '        )\n' +
         '    )\n' +
         ')\n' +
-        'reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled 2>nul | findstr /C:"0x0" >nul 2>nul\n' +
+        'rem -- Service status --\n' +
+        'sc query wpscloudsvr 2>nul | findstr /C:"DISABLED" >nul 2>nul\n' +
         'if !ERRORLEVEL! EQU 0 (\n' +
-        '    echo  [OK]     DocerEnabled is disabled (0)\n' +
-        ') else (\n' +
-        '    reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled >nul 2>nul\n' +
+        '    sc query wpscloudsvr 2>nul | findstr /C:"STOPPED" >nul 2>nul\n' +
         '    if !ERRORLEVEL! EQU 0 (\n' +
-        '        echo  [WARN]   DocerEnabled is enabled or missing\n' +
-        '        set ERRORS=1\n' +
+        '        echo  [OK]     wpscloudsvr service is DISABLED + STOPPED\n' +
         '    ) else (\n' +
-        '        echo  [OK]     DocerEnabled is not set (enabled by default)\n' +
+        '        echo  [WARN]   wpscloudsvr service is DISABLED but not STOPPED\n' +
         '    )\n' +
+        ') else (\n' +
+        '    sc query wpscloudsvr >nul 2>nul\n' +
+        '    if !ERRORLEVEL! EQU 0 (\n' +
+        '        echo  [WARN]   wpscloudsvr service is not disabled\n' +
+        '        set LAYER_ERRORS=1\n' +
+        '    ) else (\n' +
+        '        echo  [INFO]   wpscloudsvr service not found\n' +
+        '    )\n' +
+        ')\n' +
+        'rem -- File placeholder status (AI files) --\n' +
+        'for /d %%V in ("%LOCALAPPDATA%\\kingsoft\\WPS Office\\*") do (\n' +
+        '    for /d %%D in ("%%V\\office6") do (\n' +
+        '        call :check_placeholder "%%~fD\\wpscloudlaunch.exe"\n' +
+        '        call :check_placeholder "%%~fD\\kaipredict.dll"\n' +
+        '        call :check_placeholder "%%~fD\\wpscloudsvrimp.dll"\n' +
+        '        call :check_placeholder "%%~fD\\kdocerjsapi.dll"\n' +
+        '        call :check_placeholder "%%~fD\\kdocerjsapilite.dll"\n' +
+        '        call :check_placeholder "%%~fD\\wpscloudsvr.exe"\n' +
+        '    )\n' +
+        ')\n' +
+        'for /d %%V in ("%ProgramFiles%\\Kingsoft\\WPS Office\\*") do (\n' +
+        '    for /d %%D in ("%%V\\office6") do (\n' +
+        '        call :check_placeholder "%%~fD\\wpscloudlaunch.exe"\n' +
+        '        call :check_placeholder "%%~fD\\kaipredict.dll"\n' +
+        '        call :check_placeholder "%%~fD\\wpscloudsvrimp.dll"\n' +
+        '        call :check_placeholder "%%~fD\\kdocerjsapi.dll"\n' +
+        '        call :check_placeholder "%%~fD\\kdocerjsapilite.dll"\n' +
+        '        call :check_placeholder "%%~fD\\wpscloudsvr.exe"\n' +
+        '    )\n' +
+        ')\n' +
+        'rem -- Process check --\n' +
+        'tasklist 2>nul | findstr /I "wpscloudlaunch" >nul 2>nul\n' +
+        'if !ERRORLEVEL! EQU 0 (\n' +
+        '    echo  [WARN]   wpscloudlaunch.exe is still running\n' +
+        '    set LAYER_ERRORS=1\n' +
+        ') else (\n' +
+        '    echo  [OK]     wpscloudlaunch.exe is not running\n' +
+        ')\n' +
+        'tasklist 2>nul | findstr /I "wpscloudsvr" >nul 2>nul\n' +
+        'if !ERRORLEVEL! EQU 0 (\n' +
+        '    echo  [INFO]   wpscloudsvr.exe is still running (may be service host)\n' +
+        ') else (\n' +
+        '    echo  [OK]     wpscloudsvr.exe is not running\n' +
         ')\n' +
         '\n' +
+        'goto :verify_end\n' +
+        '\n' +
+        ':check_placeholder\n' +
+        'set "CHK_PATH=%~1"\n' +
+        'if not exist "%CHK_PATH%" goto :eof\n' +
+        'for %%F in ("%CHK_PATH%") do (\n' +
+        '    if %%~zF EQU 0 (\n' +
+        '        echo  [OK]     %CHK_PATH% is 0-byte placeholder\n' +
+        '    ) else (\n' +
+        '        echo  [WARN]   %CHK_PATH% is %%~zF bytes (WPS upgrade may have restored it)\n' +
+        '    )\n' +
+        ')\n' +
+        'goto :eof\n' +
+        '\n' +
+        ':verify_end\n' +
         'echo.\n' +
-        'if "%ERRORS%"=="0" (\n' +
-        '    echo  All checks passed. If WPS still does not show the tab:\n' +
-        '    echo    1. Fully exit WPS (close all docs, system tray, Task Manager)\n' +
-        '    echo    2. Reopen WPS Writer\n' +
-        '    echo    3. Check WPS Office -^> Options -^> Trust Center -^> Add-ins\n' +
+        'if "%ERRORS%"=="0" if "%LAYER_ERRORS%"=="0" (\n' +
+        '    echo  All checks passed. If WPS still shows AI:\n' +
+        '    echo    1. Fully exit WPS (Task Manager -^> kill wps.exe)\n' +
+        '    echo    2. Re-run disable-wps-native-ai.bat as Administrator\n' +
+        '    echo    3. Reopen WPS Writer\n' +
         ') else (\n' +
-        '    echo  Some checks failed. Re-run install.bat as Administrator.\n' +
+        '    echo  Some checks failed. Re-run disable-wps-native-ai.bat as Administrator.\n' +
         ')\n' +
         'echo.\n' +
         'pause\n'
@@ -520,36 +652,156 @@ function generateDisableNativeAiBat() {
     var lines = [];
     lines.push('@echo off');
     lines.push('rem ============================================================');
-    lines.push('rem  Disable WPS native AI / Daoke (Docer) features');
-    lines.push('rem  This script sets registry keys to hide WPS AI entry points');
+    lines.push('rem  Disable WPS native AI / Daoke (Docer) - v3 REAL FIX');
+    lines.push('rem  Multi-layer: registry + service + DLL placeholder + process');
     lines.push('rem ============================================================');
-    lines.push('setlocal EnableExtensions');
-    lines.push('title Kaiwu WPS Addon - Disable Native AI');
+    lines.push('setlocal EnableExtensions EnableDelayedExpansion');
+    lines.push('title Kaiwu WPS Addon - Disable WPS Native AI v3');
+    lines.push('');
+    lines.push('rem --- UAC self-elevation ---');
+    lines.push('net session >nul 2>&1');
+    lines.push('if %ERRORLEVEL% NEQ 0 (');
+    lines.push('    echo  Requesting administrator privileges...');
+    lines.push('    powershell -Command "Start-Process cmd.exe -ArgumentList \'/c \\"%~f0\\"\' -Verb RunAs"');
+    lines.push('    exit /b');
+    lines.push(')');
+    lines.push('');
     lines.push('echo.');
     lines.push('echo  ============================================');
-    lines.push('echo    Disable WPS Native AI / Daoke');
+    lines.push('echo    Disable WPS Native AI / Daoke (v3)');
     lines.push('echo  ============================================');
     lines.push('echo.');
     lines.push('');
-    lines.push('echo  Current status (best effort, may fail):');
-    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService 2>nul || echo     [INFO] CloudService not set');
-    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI 2>nul || echo     [INFO] EnableAI not set');
-    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled 2>nul || echo     [INFO] DocerEnabled not set');
+    lines.push('rem ============================================================');
+    lines.push('rem  STAGE 0: Kill WPS processes FIRST (AI lives in wpsmain.dll)');
+    lines.push('rem ============================================================');
+    lines.push('echo  [Stage 0] Terminating WPS processes (so DLL replacements stick)...');
+    lines.push('taskkill /F /IM wps.exe /T >nul 2>nul');
+    lines.push('taskkill /F /IM wpscloudlaunch.exe /T >nul 2>nul');
+    lines.push('taskkill /F /IM wpscloudsvr.exe /T >nul 2>nul');
+    lines.push('timeout /t 2 /nobreak >nul 2>nul');
+    lines.push('echo    [OK] WPS processes terminated');
     lines.push('echo.');
     lines.push('');
-    lines.push('echo  Disabling WPS native AI / Daoke...');
+    lines.push('rem ============================================================');
+    lines.push('rem  STAGE 1: Registry - MULTIPLE paths (legacy + new)');
+    lines.push('rem ============================================================');
+    lines.push('echo  [Stage 1] Writing registry disable flags...');
+    lines.push('rem -- Legacy path (HKCU Office plugins) --');
     lines.push('reg add "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService /t REG_DWORD /d 0 /f >nul 2>nul');
-    lines.push('if %ERRORLEVEL% EQU 0 echo  [OK] CloudService=0');
     lines.push('reg add "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI /t REG_DWORD /d 0 /f >nul 2>nul');
-    lines.push('if %ERRORLEVEL% EQU 0 echo  [OK] EnableAI=0');
     lines.push('reg add "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled /t REG_DWORD /d 0 /f >nul 2>nul');
-    lines.push('if %ERRORLEVEL% EQU 0 echo  [OK] DocerEnabled=0');
+    lines.push('echo    [OK] HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins written');
+    lines.push('rem -- New path (per-version WPS Office) --');
+    lines.push('for /f "tokens=*" %%R in (' + "'reg query \"HKCU\\\\Software\\\\Kingsoft\\\\WPS Office\" 2^>nul'" + ') do (');
+    lines.push('    set "REG_LINE=%%R"');
+    lines.push('    set "VER=!REG_LINE:HKEY_CURRENT_USER\\Software\\Kingsoft\\WPS Office\\=!"');
+    lines.push('    if not "!VER!"=="!REG_LINE!" (');
+    lines.push('        echo %%R | findstr /R "[0-9][0-9]" >nul');
+    lines.push('        if !ERRORLEVEL! EQU 0 (');
+    lines.push('            reg add "HKCU\\Software\\Kingsoft\\WPS Office\\!VER!\\CloudService" /v EnableAI /t REG_DWORD /d 0 /f >nul 2>nul');
+    lines.push('            reg add "HKCU\\Software\\Kingsoft\\WPS Office\\!VER!\\CloudService" /v AutoStart /t REG_DWORD /d 0 /f >nul 2>nul');
+    lines.push('            echo    [OK] WPS Office \\!VER! written');
+    lines.push('        )');
+    lines.push('    )');
+    lines.push(')');
     lines.push('echo.');
-    lines.push('echo  [OK] WPS native AI / Daoke disabled');
+    lines.push('');
+    lines.push('rem ============================================================');
+    lines.push('rem  STAGE 2: Service - CORRECT service name is "wpscloudsvr"');
+    lines.push('rem ============================================================');
+    lines.push('echo  [Stage 2] Disabling wpscloudsvr service...');
+    lines.push('sc stop wpscloudsvr >nul 2>nul');
+    lines.push('sc config wpscloudsvr start=disabled >nul 2>nul');
+    lines.push('if !ERRORLEVEL! EQU 0 (echo    [OK] wpscloudsvr service disabled) else (echo    [WARN] wpscloudsvr service config failed - may not exist)');
+    lines.push('sc query wpscloudsvr >nul 2>nul');
+    lines.push('if !ERRORLEVEL! NEQ 0 echo    [INFO] wpscloudsvr service not found (using fallback file placeholder)');
     lines.push('echo.');
-    lines.push('echo  Please restart WPS for changes to take effect.');
+    lines.push('');
+    lines.push('rem ============================================================');
+    lines.push('rem  STAGE 3: DLL placeholder - ACTUAL AI files');
+    lines.push('rem  Target: wpscloudlaunch.exe + kaipredict.dll + wpscloudsvrimp.dll');
+    lines.push('rem          + kdocerjsapi.dll + kdocerjsapilite.dll');
+    lines.push('rem ============================================================');
+    lines.push('echo  [Stage 3] Replacing AI DLL files with 0-byte placeholders...');
+    lines.push('set "FILES_PLACEHOLDERED=0"');
+    lines.push('set "OFFICE6_PATH="');
+    lines.push('rem -- Find office6 dir for all installed versions --');
+    lines.push('for /d %%V in ("%LOCALAPPDATA%\\kingsoft\\WPS Office\\*") do (');
+    lines.push('    for /d %%D in ("%%V\\office6") do (');
+    lines.push('        set "OFFICE6_PATH=%%~fD"');
+    lines.push('        echo    Found: %%~fD');
+    lines.push('        call :placeholder "%%~fD\\wpscloudlaunch.exe"');
+    lines.push('        call :placeholder "%%~fD\\kaipredict.dll"');
+    lines.push('        call :placeholder "%%~fD\\wpscloudsvrimp.dll"');
+    lines.push('        call :placeholder "%%~fD\\kdocerjsapi.dll"');
+    lines.push('        call :placeholder "%%~fD\\kdocerjsapilite.dll"');
+    lines.push('        call :placeholder "%%~fD\\wpscloudsvr.exe"');
+    lines.push('    )');
+    lines.push(')');
+    lines.push('for /d %%V in ("%ProgramFiles%\\Kingsoft\\WPS Office\\*") do (');
+    lines.push('    for /d %%D in ("%%V\\office6") do (');
+    lines.push('        set "OFFICE6_PATH=%%~fD"');
+    lines.push('        echo    Found: %%~fD');
+    lines.push('        call :placeholder "%%~fD\\wpscloudlaunch.exe"');
+    lines.push('        call :placeholder "%%~fD\\kaipredict.dll"');
+    lines.push('        call :placeholder "%%~fD\\wpscloudsvrimp.dll"');
+    lines.push('        call :placeholder "%%~fD\\kdocerjsapi.dll"');
+    lines.push('        call :placeholder "%%~fD\\kdocerjsapilite.dll"');
+    lines.push('        call :placeholder "%%~fD\\wpscloudsvr.exe"');
+    lines.push('    )');
+    lines.push(')');
+    lines.push('echo    [OK] Placeholdered !FILES_PLACEHOLDERED! AI file(s)');
+    lines.push('echo.');
+    lines.push('');
+    lines.push('rem ============================================================');
+    lines.push('rem  STAGE 4: Verify - run inline check');
+    lines.push('rem ============================================================');
+    lines.push('echo  [Stage 4] Verifying...');
+    lines.push('tasklist 2>nul | findstr /I "wpscloudlaunch" >nul 2>nul');
+    lines.push('if !ERRORLEVEL! EQU 0 (echo    [WARN] wpscloudlaunch.exe still running) else (echo    [OK] wpscloudlaunch.exe not running)');
+    lines.push('sc query wpscloudsvr 2>nul | findstr /C:"DISABLED" >nul 2>nul');
+    lines.push('if !ERRORLEVEL! EQU 0 (echo    [OK] wpscloudsvr service is DISABLED) else (echo    [WARN] wpscloudsvr not disabled)');
+    lines.push('echo.');
+    lines.push('');
+    lines.push('rem ============================================================');
+    lines.push('rem  SUMMARY');
+    lines.push('rem ============================================================');
+    lines.push('echo  ============================================');
+    lines.push('echo    [OK] WPS native AI / Daoke disabled (v3)');
+    lines.push('echo    Restart WPS for changes to take effect.');
+    lines.push('echo    Run enable-wps-native-ai.bat to restore.');
+    lines.push('echo  ============================================');
     lines.push('echo.');
     lines.push('pause');
+    lines.push('exit /b 0');
+    lines.push('');
+    lines.push('rem ============================================================');
+    lines.push('rem  Subroutine: backup file and create 0-byte placeholder');
+    lines.push('rem ============================================================');
+    lines.push(':placeholder');
+    lines.push('set "TARGET=%~1"');
+    lines.push('if not exist "%TARGET%" (');
+    lines.push('    echo      [SKIP] Not found: %TARGET%');
+    lines.push('    goto :eof');
+    lines.push(')');
+    lines.push('if exist "%TARGET%.kaiwu-backup" (');
+    lines.push('    echo      [SKIP] Already placeholdered: %TARGET%');
+    lines.push('    goto :eof');
+    lines.push(')');
+    lines.push('copy /Y "%TARGET%" "%TARGET%.kaiwu-backup" >nul 2>nul');
+    lines.push('if !ERRORLEVEL! NEQ 0 (');
+    lines.push('    echo      [WARN] Backup failed: %TARGET%');
+    lines.push('    goto :eof');
+    lines.push(')');
+    lines.push('type nul > "%TARGET%"');
+    lines.push('if !ERRORLEVEL! EQU 0 (');
+    lines.push('    echo      [OK] Placeholdered: %TARGET%');
+    lines.push('    set /a FILES_PLACEHOLDERED+=1');
+    lines.push(') else (');
+    lines.push('    echo      [FAIL] Could not placeholder: %TARGET%');
+    lines.push(')');
+    lines.push('goto :eof');
     return lines.join('\n');
 }
 
@@ -557,36 +809,130 @@ function generateEnableNativeAiBat() {
     var lines = [];
     lines.push('@echo off');
     lines.push('rem ============================================================');
-    lines.push('rem  Enable WPS native AI / Daoke (Docer) features');
-    lines.push('rem  This script removes registry keys to restore WPS AI entry points');
+    lines.push('rem  Enable WPS native AI / Daoke (Docer) - v3 restore');
+    lines.push('rem  Restore registry + service + DLL files from backup');
     lines.push('rem ============================================================');
-    lines.push('setlocal EnableExtensions');
-    lines.push('title Kaiwu WPS Addon - Enable Native AI');
+    lines.push('setlocal EnableExtensions EnableDelayedExpansion');
+    lines.push('title Kaiwu WPS Addon - Enable WPS Native AI v3');
+    lines.push('');
+    lines.push('rem --- UAC self-elevation ---');
+    lines.push('net session >nul 2>&1');
+    lines.push('if %ERRORLEVEL% NEQ 0 (');
+    lines.push('    echo  Requesting administrator privileges...');
+    lines.push('    powershell -Command "Start-Process cmd.exe -ArgumentList \'/c \\"%~f0\\"\' -Verb RunAs"');
+    lines.push('    exit /b');
+    lines.push(')');
+    lines.push('');
     lines.push('echo.');
     lines.push('echo  ============================================');
-    lines.push('echo    Enable WPS Native AI / Daoke');
+    lines.push('echo    Enable WPS Native AI / Daoke (v3)');
     lines.push('echo  ============================================');
     lines.push('echo.');
     lines.push('');
-    lines.push('echo  Current status (best effort, may fail):');
-    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService 2>nul || echo     [INFO] CloudService not set');
-    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI 2>nul || echo     [INFO] EnableAI not set');
-    lines.push('reg query "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled 2>nul || echo     [INFO] DocerEnabled not set');
+    lines.push('rem ============================================================');
+    lines.push('rem  STAGE 0: Kill WPS processes FIRST (so file restores are not locked)');
+    lines.push('rem ============================================================');
+    lines.push('echo  [Stage 0] Terminating WPS processes...');
+    lines.push('taskkill /F /IM wps.exe /T >nul 2>nul');
+    lines.push('taskkill /F /IM wpscloudlaunch.exe /T >nul 2>nul');
+    lines.push('taskkill /F /IM wpscloudsvr.exe /T >nul 2>nul');
+    lines.push('timeout /t 2 /nobreak >nul 2>nul');
+    lines.push('echo    [OK] WPS processes terminated');
     lines.push('echo.');
     lines.push('');
-    lines.push('echo  Enabling WPS native AI / Daoke...');
-    lines.push('reg delete "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService /f 2>nul');
-    lines.push('if %ERRORLEVEL% EQU 0 (echo  [OK] CloudService removed) else (echo  [OK] CloudService removed (or was not set)');
-    lines.push('reg delete "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI /f 2>nul');
-    lines.push('if %ERRORLEVEL% EQU 0 (echo  [OK] EnableAI removed) else (echo  [OK] EnableAI removed (or was not set)');
-    lines.push('reg delete "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled /f 2>nul');
-    lines.push('if %ERRORLEVEL% EQU 0 (echo  [OK] DocerEnabled removed) else (echo  [OK] DocerEnabled removed (or was not set)');
+    lines.push('rem ============================================================');
+    lines.push('rem  STAGE 1: Restore Registry (set EnableAI=1 / AutoStart=1)');
+    lines.push('rem ============================================================');
+    lines.push('echo  [Stage 1] Restoring registry enable flags...');
+    lines.push('rem -- Legacy path (HKCU Office plugins) --');
+    lines.push('reg add "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v CloudService /t REG_DWORD /d 1 /f >nul 2>nul');
+    lines.push('reg add "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v EnableAI /t REG_DWORD /d 1 /f >nul 2>nul');
+    lines.push('reg add "HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins" /v DocerEnabled /t REG_DWORD /d 1 /f >nul 2>nul');
+    lines.push('echo    [OK] HKCU\\Software\\Kingsoft\\Office\\6.0\\plugins restored');
+    lines.push('rem -- New path (per-version) --');
+    lines.push('for /f "tokens=*" %%R in (' + "'reg query \"HKCU\\\\Software\\\\Kingsoft\\\\WPS Office\" 2^>nul'" + ') do (');
+    lines.push('    set "REG_LINE=%%R"');
+    lines.push('    set "VER=!REG_LINE:HKEY_CURRENT_USER\\Software\\Kingsoft\\WPS Office\\=!"');
+    lines.push('    if not "!VER!"=="!REG_LINE!" (');
+    lines.push('        echo %%R | findstr /R "[0-9][0-9]" >nul');
+    lines.push('        if !ERRORLEVEL! EQU 0 (');
+    lines.push('            reg add "HKCU\\Software\\Kingsoft\\WPS Office\\!VER!\\CloudService" /v EnableAI /t REG_DWORD /d 1 /f >nul 2>nul');
+    lines.push('            reg add "HKCU\\Software\\Kingsoft\\WPS Office\\!VER!\\CloudService" /v AutoStart /t REG_DWORD /d 1 /f >nul 2>nul');
+    lines.push('            echo    [OK] WPS Office \\!VER! restored');
+    lines.push('        )');
+    lines.push('    )');
+    lines.push(')');
     lines.push('echo.');
-    lines.push('echo  [OK] WPS native AI / Daoke re-enabled');
+    lines.push('');
+    lines.push('rem ============================================================');
+    lines.push('rem  STAGE 2: Restore Service (wpscloudsvr)');
+    lines.push('rem ============================================================');
+    lines.push('echo  [Stage 2] Restoring wpscloudsvr service...');
+    lines.push('sc config wpscloudsvr start=auto >nul 2>nul');
+    lines.push('if !ERRORLEVEL! EQU 0 (echo    [OK] wpscloudsvr service set to auto) else (echo    [WARN] wpscloudsvr service config failed)');
+    lines.push('sc start wpscloudsvr >nul 2>nul');
+    lines.push('if !ERRORLEVEL! EQU 0 (echo    [OK] wpscloudsvr service started) else (echo    [INFO] wpscloudsvr start failed or already running)');
     lines.push('echo.');
-    lines.push('echo  Please restart WPS for changes to take effect.');
+    lines.push('');
+    lines.push('rem ============================================================');
+    lines.push('rem  STAGE 3: Restore AI files from .kaiwu-backup');
+    lines.push('rem ============================================================');
+    lines.push('echo  [Stage 3] Restoring AI files from .kaiwu-backup...');
+    lines.push('set "FILES_RESTORED=0"');
+    lines.push('set "FILES_MISSING=0"');
+    lines.push('for /d %%V in ("%LOCALAPPDATA%\\kingsoft\\WPS Office\\*") do (');
+    lines.push('    for /d %%D in ("%%V\\office6") do (');
+    lines.push('        echo    Scanning: %%~fD');
+    lines.push('        call :restore "%%~fD\\wpscloudlaunch.exe"');
+    lines.push('        call :restore "%%~fD\\kaipredict.dll"');
+    lines.push('        call :restore "%%~fD\\wpscloudsvrimp.dll"');
+    lines.push('        call :restore "%%~fD\\kdocerjsapi.dll"');
+    lines.push('        call :restore "%%~fD\\kdocerjsapilite.dll"');
+    lines.push('        call :restore "%%~fD\\wpscloudsvr.exe"');
+    lines.push('    )');
+    lines.push(')');
+    lines.push('for /d %%V in ("%ProgramFiles%\\Kingsoft\\WPS Office\\*") do (');
+    lines.push('    for /d %%D in ("%%V\\office6") do (');
+    lines.push('        echo    Scanning: %%~fD');
+    lines.push('        call :restore "%%~fD\\wpscloudlaunch.exe"');
+    lines.push('        call :restore "%%~fD\\kaipredict.dll"');
+    lines.push('        call :restore "%%~fD\\wpscloudsvrimp.dll"');
+    lines.push('        call :restore "%%~fD\\kdocerjsapi.dll"');
+    lines.push('        call :restore "%%~fD\\kdocerjsapilite.dll"');
+    lines.push('        call :restore "%%~fD\\wpscloudsvr.exe"');
+    lines.push('    )');
+    lines.push(')');
+    lines.push('echo    [OK] Restored !FILES_RESTORED! file^(s^), !FILES_MISSING! missing backups');
+    lines.push('echo.');
+    lines.push('');
+    lines.push('rem ============================================================');
+    lines.push('rem  SUMMARY');
+    lines.push('rem ============================================================');
+    lines.push('echo  ============================================');
+    lines.push('echo    [OK] WPS native AI / Daoke re-enabled (v3)');
+    lines.push('echo    Restart WPS for changes to take effect.');
+    lines.push('echo  ============================================');
     lines.push('echo.');
     lines.push('pause');
+    lines.push('exit /b 0');
+    lines.push('');
+    lines.push('rem ============================================================');
+    lines.push('rem  Subroutine: restore file from .kaiwu-backup');
+    lines.push('rem ============================================================');
+    lines.push(':restore');
+    lines.push('set "TARGET=%~1"');
+    lines.push('if not exist "%TARGET%.kaiwu-backup" (');
+    lines.push('    set /a FILES_MISSING+=1');
+    lines.push('    goto :eof');
+    lines.push(')');
+    lines.push('move /Y "%TARGET%.kaiwu-backup" "%TARGET%" >nul 2>nul');
+    lines.push('if !ERRORLEVEL! EQU 0 (');
+    lines.push('    echo      [OK] Restored: %TARGET%');
+    lines.push('    set /a FILES_RESTORED+=1');
+    lines.push(') else (');
+    lines.push('    echo      [FAIL] Restore failed: %TARGET%');
+    lines.push(')');
+    lines.push('goto :eof');
     return lines.join('\n');
 }
 
@@ -671,20 +1017,24 @@ function generateReadme(envVars) {
         '    └── styles/\n' +
         '```\n' +
         '\n' +
-        '## 原生 WPS AI / 稻壳 独立管理\n' +
+        '## 原生 WPS AI / 稻壳 独立管理 (v2 多版本 3 层防御)\n' +
         '\n' +
-        '本包附带 3 个独立脚本用于管理 WPS 原生 AI / 稻壳 (Daoke) 功能的可见性:\n' +
+        '本包附带 v2 升级版脚本, 对每个检测到的 WPS 版本执行 **3 层防御**:\n' +
+        '\n' +
+        '1. **注册表层 (HKCU)**: `CloudService\\EnableAI=0` + `AutoStart=0`, 阻止 AI 功能加载\n' +
+        '2. **服务层**: `sc stop` + `sc config start=disabled` 禁用 WPS Cloud Service\n' +
+        '3. **文件占位层**: 将 `wpscloudsvr.exe` 替换为 0 字节占位文件, 破坏 LoadLibraryExW 注入\n' +
         '\n' +
         '| 脚本 | 作用 |\n' +
         '|------|------|\n' +
-        '| `disable-wps-native-ai.bat` | 隐藏 WPS AI 助手入口、稻壳模板/插件入口 |\n' +
-        '| `enable-wps-native-ai.bat` | 恢复 WPS AI 助手入口、稻壳模板/插件入口 |\n' +
-        '| `verify.bat` | 安装验证 (已包含原生 AI 状态检查) |\n' +
+        '| `disable-wps-native-ai.bat` | 禁用 WPS AI 助手 (需管理员权限, 自动 UAC 提权) |\n' +
+        '| `enable-wps-native-ai.bat` | 恢复 WPS AI 助手 (从 .kaiwu-backup 还原) |\n' +
+        '| `verify.bat` | 安装验证 (含 3 层状态检查) |\n' +
         '\n' +
         '**使用场景**:\n' +
-        '- 如果你不想被 WPS 原生 AI 分散注意力, 可以运行 `disable-wps-native-ai.bat` 隐藏入口\n' +
+        '- 双击 `disable-wps-native-ai.bat` 禁用 (支持 WPS 11.x/12.x 多版本并存)\n' +
         '- 运行后需要**重启 WPS** 才能生效\n' +
-        '- 再次运行 `enable-wps-native-ai.bat` 即可恢复\n' +
+        '- 再次运行 `enable-wps-native-ai.bat` 即可完全恢复\n' +
         '\n' +
         '## 安装位置\n' +
         '\n' +
@@ -910,6 +1260,7 @@ async function main() {
 }
 
 module.exports = {
+    detectInstalledWpsVersions,
     generateDisableNativeAiBat,
     generateEnableNativeAiBat,
     generateVerifyBat,
