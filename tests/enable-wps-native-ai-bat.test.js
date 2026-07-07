@@ -26,6 +26,23 @@ test('generateEnableNativeAiBat restores file from backup', () => {
     assert.ok(s.includes('move /Y'), 'must move backup to restore original');
 });
 
+test('generateEnableNativeAiBat has user confirmation', () => {
+    const s = pkg.generateEnableNativeAiBat();
+    assert.ok(s.includes('CONFIRM'), 'must have user confirmation prompt');
+    assert.ok(s.includes('Do you want to continue'), 'must ask user to confirm');
+});
+
+test('generateEnableNativeAiBat has WPS process warning', () => {
+    const s = pkg.generateEnableNativeAiBat();
+    assert.ok(s.includes('WPS is currently running'), 'must warn about running WPS');
+    assert.ok(s.includes('save your work'), 'must remind user to save work');
+});
+
+test('generateEnableNativeAiBat has proper error handling', () => {
+    const s = pkg.generateEnableNativeAiBat();
+    assert.ok(s.includes('Restore failed'), 'must handle restore failure');
+});
+
 test('generateEnableNativeAiBat has LF line endings (toCRLF applied on write)', () => {
     const s = pkg.generateEnableNativeAiBat();
     assert.ok(s.includes('\n'), 'must use LF line endings');

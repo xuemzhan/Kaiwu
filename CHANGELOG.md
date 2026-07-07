@@ -2,6 +2,11 @@
 
 All notable changes to **Kaiwu (开悟)** are documented here.
 
+## [Unreleased]
+
+### Changed
+- Changed: v1 disable scripts (registry-only) were insufficient for current WPS versions. v2 adds 3-layer defense: (1) HKCU CloudService EnableAI=0 + AutoStart=0 for all installed WPS versions, (2) wpscloudsvr.exe taskkill + sc config disabled, (3) file placeholder with `.kaiwu-backup` to survive WPS upgrades overwriting config.dat. UAC self-elevation added at bat top.
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 

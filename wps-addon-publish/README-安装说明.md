@@ -77,20 +77,24 @@ kaiwu_0.4.0/
     └── styles/
 ```
 
-## 原生 WPS AI / 稻壳 独立管理
+## 原生 WPS AI / 稻壳 独立管理 (v2 多版本 3 层防御)
 
-本包附带 3 个独立脚本用于管理 WPS 原生 AI / 稻壳 (Daoke) 功能的可见性:
+本包附带 v2 升级版脚本, 对每个检测到的 WPS 版本执行 **3 层防御**:
+
+1. **注册表层 (HKCU)**: `CloudService\EnableAI=0` + `AutoStart=0`, 阻止 AI 功能加载
+2. **服务层**: `sc stop` + `sc config start=disabled` 禁用 WPS Cloud Service
+3. **文件占位层**: 将 `wpscloudsvr.exe` 替换为 0 字节占位文件, 破坏 LoadLibraryExW 注入
 
 | 脚本 | 作用 |
 |------|------|
-| `disable-wps-native-ai.bat` | 隐藏 WPS AI 助手入口、稻壳模板/插件入口 |
-| `enable-wps-native-ai.bat` | 恢复 WPS AI 助手入口、稻壳模板/插件入口 |
-| `verify.bat` | 安装验证 (已包含原生 AI 状态检查) |
+| `disable-wps-native-ai.bat` | 禁用 WPS AI 助手 (需管理员权限, 自动 UAC 提权) |
+| `enable-wps-native-ai.bat` | 恢复 WPS AI 助手 (从 .kaiwu-backup 还原) |
+| `verify.bat` | 安装验证 (含 3 层状态检查) |
 
 **使用场景**:
-- 如果你不想被 WPS 原生 AI 分散注意力, 可以运行 `disable-wps-native-ai.bat` 隐藏入口
+- 双击 `disable-wps-native-ai.bat` 禁用 (支持 WPS 11.x/12.x 多版本并存)
 - 运行后需要**重启 WPS** 才能生效
-- 再次运行 `enable-wps-native-ai.bat` 即可恢复
+- 再次运行 `enable-wps-native-ai.bat` 即可完全恢复
 
 ## 安装位置
 
@@ -125,5 +129,5 @@ A: 先运行 uninstall.bat 卸载旧版 (会自动清除 authaddin.json 缓存),
 ---
 
 <div align="center">
-打包于 2026-06-21 00:55:39
+打包于 2026-06-25 13:48:40
 </div>

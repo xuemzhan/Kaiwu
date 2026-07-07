@@ -34,6 +34,7 @@ Kaiwu (开悟) is a community-maintained WPS Office add-in that brings a full-fe
 | **Mindmap** | Auto-generate a Mermaid mindmap from the document |
 | **AI Layout** | Reformat a paper / official document according to common templates |
 | **Multi-model** | Switch between MiniMax / GPT / DeepSeek / custom endpoints at runtime |
+| **Native AI Control** | 3-layer defense (registry + service + file placeholder) with multi-version detection — disable/enable WPS built-in AI independently |
 
 ## Screenshots
 
