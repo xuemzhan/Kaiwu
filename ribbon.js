@@ -373,8 +373,8 @@ var RibbonActionMap = {
     btnLegal: 'write',
     btnHistory: 'write',
     btnMenuHistory: 'write',
-    btnDeepThink: 'write',
-    btnMenuDeepThink: 'write'
+    btnDeepThink: 'deep_think',
+    btnMenuDeepThink: 'deep_think'
 };
 
 function setPendingAction(actionId) {

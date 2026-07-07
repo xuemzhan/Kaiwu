@@ -308,12 +308,13 @@ var HistoryDrawer = {
     /**
      * 内容 hash: 用于判断是否需要重新生成 DOM. 流式期间仅 status / resultText 改变,
      * 我们把这些字段都纳入 hash, 但只在确实变化时才重建.
+     * 使用 updatedAt 代替 resultText.length, 更准确地反映数据变化.
      */
     _hashItems: function (items) {
         var parts = [];
         for (var i = 0; i < items.length; i++) {
             var it = items[i];
-            parts.push(it.id + ':' + it.status + ':' + (it.resultText || '').length);
+            parts.push(it.id + ':' + it.status + ':' + (it.updatedAt || 0));
         }
         return parts.join('|');
     },

@@ -42,7 +42,9 @@ var Config = {
         opencodeUrl: 'http://127.0.0.1:4096',
         opencodeUsername: 'opencode',
         opencodePassword: '',
-        opencodeAgent: 'plan'
+        opencodeAgent: 'plan',
+        // 用户自定义的推理模型关键词 (追加到内置模式)
+        customReasoningPatterns: []
     },
 
     // 模型名中包含这些关键词时, 默认 stripReasoning 为 true
@@ -184,11 +186,18 @@ var Config = {
     // 根据模型名判断是否应剥离思考过程.
     // 思考模型 (如 MiniMax M3, DeepSeek R1, OpenAI o1) 会同时返回
     // reasoning_content 和 content. 默认仅向用户呈现 content.
+    // 支持用户自定义推理模型关键词.
     isReasoningModel: function (modelName) {
         if (!modelName) return false;
         var lower = String(modelName).toLowerCase();
+        // 检查内置模式
         for (var i = 0; i < this._reasoningModelPatterns.length; i++) {
             if (lower.indexOf(this._reasoningModelPatterns[i]) !== -1) return true;
+        }
+        // 检查用户自定义模式
+        var customPatterns = (this._data && this._data.customReasoningPatterns) || [];
+        for (var j = 0; j < customPatterns.length; j++) {
+            if (lower.indexOf(String(customPatterns[j]).toLowerCase()) !== -1) return true;
         }
         return false;
     },

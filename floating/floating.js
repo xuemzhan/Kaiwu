@@ -408,6 +408,12 @@
     }
 
     function freeChat(promptText) {
+        if (typeof AIService === 'undefined') {
+            var answerEl = $('kwAnswer');
+            if (answerEl) answerEl.innerHTML = '<div class="kw-error">AI 服务未就绪</div>';
+            return;
+        }
+
         var contextParts = [];
         if (selectedText) contextParts.push('选中文字：\n' + selectedText);
         contextParts.push('用户问题：\n' + promptText);
@@ -420,10 +426,7 @@
         var answerEl = $('kwAnswer');
         if (answerEl) answerEl.innerHTML = '<div class="kw-loading">正在思考</div>';
         showResultPanel();
-        if (typeof AIService === 'undefined') {
-            if (answerEl) answerEl.innerHTML = '<div class="kw-error">AI 服务未就绪</div>';
-            return;
-        }
+
         // 流式阶段: 复用同一个 article 节点, 只更新 .answer-body 子节点, 避免闪烁
         var articleEl = answerEl.querySelector('.kw-answer');
         if (!articleEl) {
@@ -448,7 +451,7 @@
                 var actions = $('kwResultActions'); if (actions) actions.hidden = !fullContent;
             },
             function (error) {
-                answerEl.innerHTML = '<div class="kw-error">' + escapeHtml(error || '发生错误') + '</div>';
+                answerEl.innerHTML = '<div class="kw-error">' + KwUtils.escapeHtml(error || '发生错误') + '</div>';
                 var actions = $('kwResultActions'); if (actions) actions.hidden = true;
             }
         );

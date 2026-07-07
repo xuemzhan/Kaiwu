@@ -273,9 +273,8 @@ var AIService = {
                 }
 
                 buffer += decoder.decode(result.value, { stream: true });
-                // 兼容 \r\n
-                buffer = buffer.replace(/\r/g, '');
-                var lines = buffer.split('\n');
+                // 兼容 \r\n: 使用 split+join 替代 replace, 减少正则开销
+                var lines = buffer.replace(/\r\n/g, '\n').split('\n');
                 buffer = lines.pop() || '';
 
                 for (var i = 0; i < lines.length; i++) {

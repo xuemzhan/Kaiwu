@@ -4,6 +4,8 @@
  *
  * 优化点 (F2/F6): 在 action 上声明 temperature / maxTokens / maxHistoryMessages
  * 等覆盖项, AIService 在调用时会优先用 action 的覆盖, 没有再回退到 Config.
+ *
+ * 别名支持:  _aliases 映射 menu_xxx → xxx, 避免重复定义.
  */
 var ActionRegistry = {
     _actions: {
@@ -198,17 +200,7 @@ var ActionRegistry = {
             temperature: 0.7,
             maxTokens: 4000
         },
-        menu_deep_think: {
-            id: 'menu_deep_think',
-            label: '深度思考',
-            category: 'modify',
-            input: 'selection',
-            output: 'replaceable',
-            promptKey: 'deep_think',
-            requireSelection: false,
-            temperature: 0.7,
-            maxTokens: 4000
-        },
+        // menu_deep_think 是 deep_think 的别名, 在 ribbon.js 中映射
         doc_to_ppt: {
             id: 'doc_to_ppt',
             label: '文档生成PPT',
@@ -221,8 +213,18 @@ var ActionRegistry = {
         }
     },
 
+    // 别名映射: menu_xxx → xxx, 避免重复定义
+    _aliases: {
+        'menu_deep_think': 'deep_think'
+    },
+
     get: function (id) {
-        return this._actions[id] || null;
+        // 先查直接定义
+        if (this._actions[id]) return this._actions[id];
+        // 再查别名
+        var alias = this._aliases[id];
+        if (alias && this._actions[alias]) return this._actions[alias];
+        return null;
     },
 
     list: function () {

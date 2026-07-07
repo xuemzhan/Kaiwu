@@ -152,12 +152,20 @@ var ChatManager = {
         this._cache[id] = chat;
     },
 
-    // 内部：生成唯一ID (增加随机数位数和时间戳精度)
+    // 内部：生成唯一ID (增加碰撞检测)
     _generateId: function () {
-        var timestamp = Date.now();
-        // 使用 10 位随机数 (base36) 增加唯一性
-        var random = Math.random().toString(36).substring(2, 12);
-        return 'chat_' + timestamp + '_' + random;
+        var id;
+        var attempts = 0;
+        do {
+            var timestamp = Date.now();
+            // 使用 10 位随机数 (base36) 增加唯一性
+            var random = Math.random().toString(36).substring(2, 12);
+            id = 'chat_' + timestamp + '_' + random;
+            attempts++;
+            // 防止无限循环
+            if (attempts > 10) break;
+        } while (this._cache && this._cache[id]);
+        return id;
     },
 
     // 内部：加载所有对话 (优先走缓存)
