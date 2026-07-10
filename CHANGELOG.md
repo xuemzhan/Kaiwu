@@ -5,7 +5,24 @@ All notable changes to **Kaiwu (开悟)** are documented here.
 ## [Unreleased]
 
 ### Changed
-- Changed: v1 disable scripts (registry-only) were insufficient for current WPS versions. v2 adds 3-layer defense: (1) HKCU CloudService EnableAI=0 + AutoStart=0 for all installed WPS versions, (2) wpscloudsvr.exe taskkill + sc config disabled, (3) file placeholder with `.kaiwu-backup` to survive WPS upgrades overwriting config.dat. UAC self-elevation added at bat top.
+- **AIServiceFactory** now exposes two entry points:
+  - `create(config)` — synchronous, returns the service object immediately. Matches the contract documented in `docs/opencode-integration.md`. Does **not** perform any network check; the caller is expected to handle errors from the underlying service.
+  - `selectAsync(config, onSuccess, onError)` — asynchronous with a reachability test. When `config.mode === 'opencode'` and `OpenCodeAIService.testConnection` exists, this performs a `/api/health` GET; on success the callback receives `OpenCodeAIService`, on failure (server down / auth error / network error) it receives `AIService` after showing a toast. Use this from the Settings panel "Test Connection" button. For the normal request path, use `create()`.
+  - Downgrade from `OpenCodeAIService` to `AIService` is reported via `onSuccess(AIService)`, **not** `onError`. `onError` is reserved for the async path itself blowing up.
+- **`opencode-ai._request`** gained a `settled` guard and `fireSuccess`/`fireError` helpers. When `Promise.race` resolves with the losing branch's microtask after the race already settled (e.g. a slow fetch whose body parse rejects after the timeout fires), the previous version could double-fire `onError`. The new version guarantees onError-or-onSuccess but never both.
+  - `_logAuthInfo` is now silent by default; pass `options.verbose` to enable it (reduces per-request console noise).
+  - JSON parse errors on a 2xx response are now classified as a distinct `JSON parse error` (non-retryable) instead of being lumped into the generic `Network error` (retryable) bucket.
+- **Disable-WPS-native-AI bat scripts**: the optional DLL placeholder is now a short ASCII marker (`DISABLED_BY_KAIWU`) instead of a 0-byte file. WPS was attempting to PE-load the placeholder as a DLL and crashing on `not a valid Win32 application`; the marker has the wrong magic bytes so PE-load fails cleanly and the process keeps running. `enable-wps-native-ai.bat` behavior is unchanged (still restores from `.kaiwu-backup`).
+- v1 disable scripts (registry-only) were insufficient for current WPS versions. v2 adds 3-layer defense: (1) HKCU CloudService EnableAI=0 + AutoStart=0 for all installed WPS versions, (2) wpscloudsvr.exe taskkill + sc config disabled, (3) file placeholder with `.kaiwu-backup` to survive WPS upgrades overwriting config.dat. UAC self-elevation added at bat top.
+
+### Fixed
+- `AIServiceFactory.create` no longer returns `undefined` when the opencode branch fires (was introduced by an earlier attempt at async reachability testing; restored to the documented synchronous contract).
+- `opencode-ai._request` no longer leaks a 60s `setTimeout` per call after the response settles. The timer is now cleared in `fireSuccess` / `fireError` / `timeoutPromise.catch`.
+
+### Added
+- `npm run validate` — single command that runs `lint && format:check && test`. Use in pre-commit / pre-push hooks.
+- 3 new tests in `tests/opencode-ai.test.js` and 2 new tests in `tests/opencode-integration.test.js` covering the `create` / `selectAsync` split and the `create-must-not-invoke-fetch` contract.
+- `.gitattributes` locking line endings (`*.bat text eol=crlf`, `*.js text eol=lf`).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).

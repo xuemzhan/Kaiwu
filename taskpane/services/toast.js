@@ -11,37 +11,37 @@
  *       支持按 channel 在 taskpane / floating 各自保留独立节点.
  */
 var KwToast = (function () {
-    function ensureEl(channel) {
-        var id = 'kw-toast-' + (channel || 'default');
-        var el = document.getElementById(id);
-        if (el) return el;
-        if (!document.body) return null;
-        el = document.createElement('div');
-        el.id = id;
-        el.className = 'kw-toast';
-        document.body.appendChild(el);
-        return el;
-    }
+  function ensureEl(channel) {
+    var id = 'kw-toast-' + (channel || 'default');
+    var el = document.getElementById(id);
+    if (el) return el;
+    if (!document.body) return null;
+    el = document.createElement('div');
+    el.id = id;
+    el.className = 'kw-toast';
+    document.body.appendChild(el);
+    return el;
+  }
 
-    function show(msg, channel, durationMs) {
-        var el = ensureEl(channel);
-        if (!el) return;
-        el.textContent = String(msg == null ? '' : msg);
-        el.className = 'kw-toast kw-toast-show';
-        if (el._hideTimer) clearTimeout(el._hideTimer);
-        var dur = typeof durationMs === 'number' && durationMs > 0 ? durationMs : 2000;
-        el._hideTimer = setTimeout(function () {
-            el.className = 'kw-toast';
-        }, dur);
-    }
+  function show(msg, channel, durationMs) {
+    var el = ensureEl(channel);
+    if (!el) return;
+    el.textContent = String(msg == null ? '' : msg);
+    el.className = 'kw-toast kw-toast-show';
+    if (el._hideTimer) clearTimeout(el._hideTimer);
+    var dur = typeof durationMs === 'number' && durationMs > 0 ? durationMs : 2000;
+    el._hideTimer = setTimeout(function () {
+      el.className = 'kw-toast';
+    }, dur);
+  }
 
-    function error(msg, channel) {
-        show(msg, channel, 3500);
-    }
+  function error(msg, channel) {
+    show(msg, channel, 3500);
+  }
 
-    return { show: show, error: error };
+  return { show: show, error: error };
 })();
 
 if (typeof window !== 'undefined') {
-    window.KwToast = KwToast;
+  window.KwToast = KwToast;
 }

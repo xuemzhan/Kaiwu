@@ -2,11 +2,15 @@
 
 ## Overview
 
-OpenCodeAIService must implement the same interface as AIService to be interchangeable via AIServiceFactory. The factory selects between implementations based on `config.mode`:
+OpenCodeAIService must implement the same interface as AIService to be interchangeable via AIServiceFactory. The factory selects between implementations based on `config.mode`.
+
+Two entry points are exposed:
+
+### `create(config)` — synchronous
 
 ```javascript
 // taskpane/services/ai-factory.js
-AIServiceFactory.create = function(config) {
+AIServiceFactory.create = function (config) {
     config = config || Config.getAll();
     if (config.mode === 'opencode' && typeof OpenCodeAIService !== 'undefined') {
         return OpenCodeAIService;
@@ -14,6 +18,34 @@ AIServiceFactory.create = function(config) {
     return AIService;
 };
 ```
+
+Returns the service object immediately. No network call is made — the caller is
+expected to handle errors from the underlying service (auth failures, timeouts,
+etc.). This is the right entry point for the normal request path, because the
+factory can never know at this moment whether the remote opencode server is up;
+that determination has to be made when the service is actually used.
+
+### `selectAsync(config, onSuccess, onError)` — asynchronous with reachability test
+
+```javascript
+AIServiceFactory.selectAsync(
+    { mode: 'opencode' },
+    function (service) {
+        // service is OpenCodeAIService on success, AIService on fallback
+    },
+    function (err) {
+        // The async path itself failed (rare). A reachable-but-erroring opencode
+        // is reported via onSuccess(AIService), not here.
+    }
+);
+```
+
+When `config.mode === 'opencode'` and `OpenCodeAIService.testConnection` exists,
+this performs a `/api/health` GET against the opencode server. On success the
+callback receives `OpenCodeAIService`; on failure (server down, auth error,
+network error) it receives `AIService` after showing a toast. Use this from
+the Settings panel "Test Connection" button where the user expects a
+reachability verdict before they click Send.
 
 ## Interface Contract
 

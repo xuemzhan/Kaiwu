@@ -18,20 +18,23 @@ const envFile = process.argv[2] || path.resolve(__dirname, '..', '.env');
 const outFile = process.argv[3] || path.resolve(__dirname, '..', 'taskpane', 'env.js');
 
 if (!fs.existsSync(envFile)) {
-    console.warn('[init-env] .env 文件不存在, 跳过 (' + envFile + ')');
-    process.exit(0);
+  console.warn('[init-env] .env 文件不存在, 跳过 (' + envFile + ')');
+  process.exit(0);
 }
 
 const content = fs.readFileSync(envFile, 'utf8');
 const vars = {};
 content.split(/\r?\n/).forEach(function (line) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) return;
-    const eq = trimmed.indexOf('=');
-    if (eq <= 0) return;
-    const key = trimmed.substring(0, eq).trim();
-    const val = trimmed.substring(eq + 1).trim().replace(/^["']|["']$/g, '');
-    vars[key] = val;
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith('#')) return;
+  const eq = trimmed.indexOf('=');
+  if (eq <= 0) return;
+  const key = trimmed.substring(0, eq).trim();
+  const val = trimmed
+    .substring(eq + 1)
+    .trim()
+    .replace(/^["']|["']$/g, '');
+  vars[key] = val;
 });
 
 const apiKey = vars['VITE_DEFAULT_API_KEY'] || '';
@@ -40,17 +43,23 @@ const model = vars['VITE_DEFAULT_MODEL'] || '';
 
 // 防御性转义: 仅在单引号内出现时需要转义
 function jsSingleQuote(s) {
-    return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 const output =
-'/**\n' +
-' * env.js — 由 init-env 自动生成, 请勿手动修改.\n' +
-' * 从 .env 文件注入默认配置到前端全局作用域.\n' +
-' */\n' +
-'window.__ENV_API_KEY__ = \'' + jsSingleQuote(apiKey) + '\';\n' +
-'window.__ENV_API_BASE__ = \'' + jsSingleQuote(apiBase) + '\';\n' +
-'window.__ENV_MODEL__ = \'' + jsSingleQuote(model) + '\';\n';
+  '/**\n' +
+  ' * env.js — 由 init-env 自动生成, 请勿手动修改.\n' +
+  ' * 从 .env 文件注入默认配置到前端全局作用域.\n' +
+  ' */\n' +
+  "window.__ENV_API_KEY__ = '" +
+  jsSingleQuote(apiKey) +
+  "';\n" +
+  "window.__ENV_API_BASE__ = '" +
+  jsSingleQuote(apiBase) +
+  "';\n" +
+  "window.__ENV_MODEL__ = '" +
+  jsSingleQuote(model) +
+  "';\n";
 
 fs.mkdirSync(path.dirname(outFile), { recursive: true });
 fs.writeFileSync(outFile, output, { encoding: 'utf8' });

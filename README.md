@@ -114,12 +114,12 @@ wps-addon-publish/
 ├── verify.bat               # post-install diagnostic
 ├── publish.xml              # WPS plugin manifest
 ├── README-安装说明.md       # user-facing installation guide
-├── kaiwu_1.0.0/             # plugin source (ASCII dir name, see notes below)
-├── kaiwu_1.0.0.7z           # distributable archive
-└── kaiwu_1.0.0_installer.exe (optional)
+├── kaiwu_0.4.0/             # plugin source (ASCII dir name, see notes below)
+├── kaiwu_0.4.0.7z           # distributable archive
+└── kaiwu_0.4.0_installer.exe (optional)
 ```
 
-## Why is the directory named `kaiwu_1.0.0` and not `开悟_1.0.0`?
+## Why is the directory named `kaiwu_0.4.0` and not `开悟_0.4.0`?
 
 WPS resolves a plugin's install path as `{name}_{version}` where `name` comes from the `name` attribute in `publish.xml`. To keep the install script free of Chinese characters (which break under the GBK/UTF-8 codepage mismatches that `7zsd.sfx` runs under), we use the pinyin **kaiwu** as the registry name.
 
@@ -156,7 +156,7 @@ Kaiwu/
 │   ├── init-env.js            # .env → taskpane/env.js
 │   ├── copy-assets.js         # Dev-mode asset staging
 │   └── sync-build.js          # Stage the wpsjs build output
-└── tests/                     # Node --test suites (279 tests)
+└── tests/                     # Node --test suites (567 tests)
 ```
 
 ## How It Works
@@ -216,7 +216,7 @@ Edit `.env` and run `npm run build` again. The new value is baked into the packa
 npm test
 ```
 
-Runs the Node test runner over `tests/*.test.js` (279 tests covering ribbon, components, services, integration).
+Runs the Node test runner over `tests/*.test.js` (567 tests covering ribbon, components, services, integration).
 
 ## Troubleshooting
 

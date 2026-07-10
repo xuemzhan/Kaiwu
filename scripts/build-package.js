@@ -27,7 +27,7 @@ function cleanupBuildArtifacts(buildDir) {
     'screen-wps.png',
     'screen-wps-pid.png',
     'screen-after-wps-start.png',
-    'wps-window.png'
+    'wps-window.png',
   ];
   for (const name of names) {
     const target = path.join(buildDir, name);
