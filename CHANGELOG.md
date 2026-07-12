@@ -24,6 +24,7 @@ If you previously installed `kaiwu_0.4.0.7z`, please re-download from [Releases]
 ### Fixed
 - `AIServiceFactory.create` no longer returns `undefined` when the opencode branch fires (was introduced by an earlier attempt at async reachability testing; restored to the documented synchronous contract).
 - `opencode-ai._request` no longer leaks a 60s `setTimeout` per call after the response settles. The timer is now cleared in `fireSuccess` / `fireError` / `timeoutPromise.catch`.
+- **bat generators return CRLF directly** (Bug 5.1): The 5 bat generators in `scripts/package.js` (install, uninstall, verify, disable, enable) previously returned strings with LF-only line endings. Only the internal `writeBatFile()` helper applied `toCRLF()` at write time. This meant any code calling the generators directly (e.g. tests, or future production code) would get LF-only output, which is fragile for Windows cmd.exe. The fix wraps each generator's return value in `toCRLF()` so the returned string is already CRLF-terminated. Regression guarded by a new test in `tests/package-script.test.js`.
 
 ### Added
 - `npm run validate` — single command that runs `lint && format:check && test`. Use in pre-commit / pre-push hooks.

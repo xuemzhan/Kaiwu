@@ -129,5 +129,5 @@ A: 先运行 uninstall.bat 卸载旧版 (会自动清除 authaddin.json 缓存),
 ---
 
 <div align="center">
-打包于 2026-07-12 00:14:43
+打包于 2026-07-12 13:23:54
 </div>

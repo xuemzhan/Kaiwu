@@ -313,140 +313,140 @@ function generatePublishXml() {
 }
 
 function generateInstallBat() {
-  return (
+  return toCRLF(
     '@echo off\n' +
-    'rem ============================================================\n' +
-    'rem  This bat file is saved in GBK encoding (matches Windows zh-CN\n' +
-    'rem  default codepage 936). With GBK encoding, cmd.exe correctly\n' +
-    'rem  decodes the Chinese dir name "kaiwu_1.0.0" used in the legacy\n' +
-    'rem  detection below, and the if exist check matches the actual\n' +
-    'rem  UTF-16 directory name on disk.\n' +
-    'rem ============================================================\n' +
-    'setlocal EnableExtensions EnableDelayedExpansion\n' +
-    'title Kaiwu WPS Addon - Installer\n' +
-    'echo.\n' +
-    'echo  ============================================\n' +
-    'echo    Kaiwu WPS Addon - Installer\n' +
-    'echo    Version: ' +
-    VERSION +
-    '\n' +
-    'echo  ============================================\n' +
-    'echo.\n' +
-    '\n' +
-    'set "SRC_DIR=%~dp0' +
-    PACKAGE_DIR_ASCII +
-    '"\n' +
-    'set "DEST_DIR=%APPDATA%\\kingsoft\\wps\\jsaddons"\n' +
-    'set "PLUGIN_DIR=%DEST_DIR%\\' +
-    PACKAGE_DIR_ASCII +
-    '"\n' +
-    '\n' +
-    'echo  Source: %SRC_DIR%\n' +
-    'echo  Target: %PLUGIN_DIR%\n' +
-    'echo.\n' +
-    '\n' +
-    'if not exist "%SRC_DIR%" (\n' +
-    '    echo  [ERROR] Source directory not found: %SRC_DIR%\n' +
-    '    echo  Please extract the full archive before running installer.\n' +
-    '    pause\n' +
-    '    exit /b 1\n' +
-    ')\n' +
-    '\n' +
-    'rem ============================================================\n' +
-    'rem  [0/4] Detect existing Kaiwu installation; uninstall old.\n' +
-    'rem  - kaiwu_<v>:  current naming scheme (ASCII prefix), via for /d glob.\n' +
-    'rem  - kaiwu_<v>:  legacy scheme (开悟 prefix), via direct if exist\n' +
-    'rem            (only known version: 开悟_1.0.0).\n' +
-    'rem  - kaiwu_<v>:  same-version check (will be xcopy-overwritten).\n' +
-    'rem ============================================================\n' +
-    'echo  [0/4] Checking for existing Kaiwu installation ...\n' +
-    'set "FOUND_OLD=0"\n' +
-    'if not exist "%DEST_DIR%" (\n' +
-    '    echo         [INFO] No previous install detected.\n' +
-    '    goto :install_step_1\n' +
-    ')\n' +
-    '\n' +
-    'rem --- Check current-scheme installs (kaiwu_<v>) ---\n' +
-    'for /d %%D in ("%DEST_DIR%\\kaiwu_*") do (\n' +
-    '    if /i not "%%~nxD"=="' +
-    PACKAGE_DIR_ASCII +
-    '" (\n' +
-    '        echo         [FOUND] Old Kaiwu install: %%~nxD\n' +
-    '        echo                Removing: %%D\n' +
-    '        rmdir /S /Q "%%D"\n' +
-    '        set "FOUND_OLD=1"\n' +
-    '    )\n' +
-    ')\n' +
-    '\n' +
-    'rem --- Check legacy Chinese-prefixed install (kaiwu_1.0.0) ---\n' +
-    'rem With chcp 65001 active, the literal kaiwu_1.0.0 in this file is correctly\n' +
-    'rem decoded by cmd, and the OS-level existence check works against the\n' +
-    'rem UTF-16 directory name. We do not enumerate all "kaiwu_*" versions\n' +
-    'rem via for /d here, because cmd glob expansion is fragile with Chinese\n' +
-    'rem patterns even under UTF-8 codepage (depends on filesystem driver).\n' +
-    'if exist "%DEST_DIR%\\开悟_1.0.0" (\n' +
-    '    echo         [FOUND] Legacy Kaiwu install: 开悟_1.0.0\n' +
-    '    echo                Removing: %DEST_DIR%\\开悟_1.0.0\n' +
-    '    rmdir /S /Q "%DEST_DIR%\\开悟_1.0.0"\n' +
-    '    set "FOUND_OLD=1"\n' +
-    ')\n' +
-    '\n' +
-    'rem --- Check same-version install (will be xcopy-overwritten) ---\n' +
-    'if exist "%PLUGIN_DIR%" (\n' +
-    '    echo         [FOUND] Same version: ' +
-    PACKAGE_DIR_ASCII +
-    '\n' +
-    '    echo                Will be overwritten by xcopy.\n' +
-    '    set "FOUND_OLD=1"\n' +
-    ')\n' +
-    '\n' +
-    'if "!FOUND_OLD!"=="1" (\n' +
-    '    echo         [OK] Old installations cleared.\n' +
-    ') else (\n' +
-    '    echo         [INFO] No previous install detected.\n' +
-    ')\n' +
-    'echo.\n' +
-    '\n' +
-    ':install_step_1\n' +
-    'echo  [1/4] Creating destination directories ...\n' +
-    'if not exist "%DEST_DIR%" mkdir "%DEST_DIR%"\n' +
-    'if not exist "%PLUGIN_DIR%" mkdir "%PLUGIN_DIR%"\n' +
-    '\n' +
-    'echo  [2/4] Copying plugin files ...\n' +
-    'xcopy /E /I /Y /Q "%SRC_DIR%\\*" "%PLUGIN_DIR%\\"\n' +
-    'if errorlevel 1 (\n' +
-    '    echo  [ERROR] Failed to copy plugin files. Check permissions or disk space.\n' +
-    '    pause\n' +
-    '    exit /b 1\n' +
-    ')\n' +
-    '\n' +
-    'echo  [3/4] Registering plugin manifest ...\n' +
-    'copy /Y "%~dp0publish.xml" "%DEST_DIR%\\"\n' +
-    'if errorlevel 1 (\n' +
-    '    echo  [ERROR] Failed to write publish.xml. Check permissions.\n' +
-    '    pause\n' +
-    '    exit /b 1\n' +
-    ')\n' +
-    '\n' +
-    'echo  [4/4] Clearing WPS plugin cache ...\n' +
-    'if exist "%DEST_DIR%\\authaddin.json" (\n' +
-    '    echo        Removing stale authaddin.json so WPS re-reads publish.xml\n' +
-    '    del /F /Q "%DEST_DIR%\\authaddin.json" >nul 2>nul\n' +
-    ')\n' +
-    '\n' +
-    'echo.\n' +
-    'echo  ============================================\n' +
-    'echo    Installation completed successfully!\n' +
-    'echo.\n' +
-    'echo    CRITICAL: Fully exit WPS before reopening!\n' +
-    'echo      1. Close all WPS documents\n' +
-    'echo      2. Right-click WPS system tray icon -^> Exit\n' +
-    'echo      3. Open Task Manager -^> kill any wps.exe\n' +
-    'echo      4. Reopen WPS Writer\n' +
-    'echo      5. Look for the "Kaiwu" tab in the ribbon\n' +
-    'echo  ============================================\n' +
-    'echo.\n' +
-    'pause\n'
+      'rem ============================================================\n' +
+      'rem  This bat file is saved in GBK encoding (matches Windows zh-CN\n' +
+      'rem  default codepage 936). With GBK encoding, cmd.exe correctly\n' +
+      'rem  decodes the Chinese dir name "kaiwu_1.0.0" used in the legacy\n' +
+      'rem  detection below, and the if exist check matches the actual\n' +
+      'rem  UTF-16 directory name on disk.\n' +
+      'rem ============================================================\n' +
+      'setlocal EnableExtensions EnableDelayedExpansion\n' +
+      'title Kaiwu WPS Addon - Installer\n' +
+      'echo.\n' +
+      'echo  ============================================\n' +
+      'echo    Kaiwu WPS Addon - Installer\n' +
+      'echo    Version: ' +
+      VERSION +
+      '\n' +
+      'echo  ============================================\n' +
+      'echo.\n' +
+      '\n' +
+      'set "SRC_DIR=%~dp0' +
+      PACKAGE_DIR_ASCII +
+      '"\n' +
+      'set "DEST_DIR=%APPDATA%\\kingsoft\\wps\\jsaddons"\n' +
+      'set "PLUGIN_DIR=%DEST_DIR%\\' +
+      PACKAGE_DIR_ASCII +
+      '"\n' +
+      '\n' +
+      'echo  Source: %SRC_DIR%\n' +
+      'echo  Target: %PLUGIN_DIR%\n' +
+      'echo.\n' +
+      '\n' +
+      'if not exist "%SRC_DIR%" (\n' +
+      '    echo  [ERROR] Source directory not found: %SRC_DIR%\n' +
+      '    echo  Please extract the full archive before running installer.\n' +
+      '    pause\n' +
+      '    exit /b 1\n' +
+      ')\n' +
+      '\n' +
+      'rem ============================================================\n' +
+      'rem  [0/4] Detect existing Kaiwu installation; uninstall old.\n' +
+      'rem  - kaiwu_<v>:  current naming scheme (ASCII prefix), via for /d glob.\n' +
+      'rem  - kaiwu_<v>:  legacy scheme (开悟 prefix), via direct if exist\n' +
+      'rem            (only known version: 开悟_1.0.0).\n' +
+      'rem  - kaiwu_<v>:  same-version check (will be xcopy-overwritten).\n' +
+      'rem ============================================================\n' +
+      'echo  [0/4] Checking for existing Kaiwu installation ...\n' +
+      'set "FOUND_OLD=0"\n' +
+      'if not exist "%DEST_DIR%" (\n' +
+      '    echo         [INFO] No previous install detected.\n' +
+      '    goto :install_step_1\n' +
+      ')\n' +
+      '\n' +
+      'rem --- Check current-scheme installs (kaiwu_<v>) ---\n' +
+      'for /d %%D in ("%DEST_DIR%\\kaiwu_*") do (\n' +
+      '    if /i not "%%~nxD"=="' +
+      PACKAGE_DIR_ASCII +
+      '" (\n' +
+      '        echo         [FOUND] Old Kaiwu install: %%~nxD\n' +
+      '        echo                Removing: %%D\n' +
+      '        rmdir /S /Q "%%D"\n' +
+      '        set "FOUND_OLD=1"\n' +
+      '    )\n' +
+      ')\n' +
+      '\n' +
+      'rem --- Check legacy Chinese-prefixed install (kaiwu_1.0.0) ---\n' +
+      'rem With chcp 65001 active, the literal kaiwu_1.0.0 in this file is correctly\n' +
+      'rem decoded by cmd, toCRLF(and the OS-level) existence check works against the\n' +
+      'rem UTF-16 directory name. We do not enumerate all "kaiwu_*" versions\n' +
+      'rem via for /d here, because cmd glob expansion is fragile with Chinese\n' +
+      'rem patterns even under UTF-8 codepage (depends on filesystem driver).\n' +
+      'if exist "%DEST_DIR%\\开悟_1.0.0" (\n' +
+      '    echo         [FOUND] Legacy Kaiwu install: 开悟_1.0.0\n' +
+      '    echo                Removing: %DEST_DIR%\\开悟_1.0.0\n' +
+      '    rmdir /S /Q "%DEST_DIR%\\开悟_1.0.0"\n' +
+      '    set "FOUND_OLD=1"\n' +
+      ')\n' +
+      '\n' +
+      'rem --- Check same-version install (will be xcopy-overwritten) ---\n' +
+      'if exist "%PLUGIN_DIR%" (\n' +
+      '    echo         [FOUND] Same version: ' +
+      PACKAGE_DIR_ASCII +
+      '\n' +
+      '    echo                Will be overwritten by xcopy.\n' +
+      '    set "FOUND_OLD=1"\n' +
+      ')\n' +
+      '\n' +
+      'if "!FOUND_OLD!"=="1" (\n' +
+      '    echo         [OK] Old installations cleared.\n' +
+      ') else (\n' +
+      '    echo         [INFO] No previous install detected.\n' +
+      ')\n' +
+      'echo.\n' +
+      '\n' +
+      ':install_step_1\n' +
+      'echo  [1/4] Creating destination directories ...\n' +
+      'if not exist "%DEST_DIR%" mkdir "%DEST_DIR%"\n' +
+      'if not exist "%PLUGIN_DIR%" mkdir "%PLUGIN_DIR%"\n' +
+      '\n' +
+      'echo  [2/4] Copying plugin files ...\n' +
+      'xcopy /E /I /Y /Q "%SRC_DIR%\\*" "%PLUGIN_DIR%\\"\n' +
+      'if errorlevel 1 (\n' +
+      '    echo  [ERROR] Failed to copy plugin files. Check permissions or disk space.\n' +
+      '    pause\n' +
+      '    exit /b 1\n' +
+      ')\n' +
+      '\n' +
+      'echo  [3/4] Registering plugin manifest ...\n' +
+      'copy /Y "%~dp0publish.xml" "%DEST_DIR%\\"\n' +
+      'if errorlevel 1 (\n' +
+      '    echo  [ERROR] Failed to write publish.xml. Check permissions.\n' +
+      '    pause\n' +
+      '    exit /b 1\n' +
+      ')\n' +
+      '\n' +
+      'echo  [4/4] Clearing WPS plugin cache ...\n' +
+      'if exist "%DEST_DIR%\\authaddin.json" (\n' +
+      '    echo        Removing stale authaddin.json so WPS re-reads publish.xml\n' +
+      '    del /F /Q "%DEST_DIR%\\authaddin.json" >nul 2>nul\n' +
+      ')\n' +
+      '\n' +
+      'echo.\n' +
+      'echo  ============================================\n' +
+      'echo    Installation completed successfully!\n' +
+      'echo.\n' +
+      'echo    CRITICAL: Fully exit WPS before reopening!\n' +
+      'echo      1. Close all WPS documents\n' +
+      'echo      2. Right-click WPS system tray icon -^> Exit\n' +
+      'echo      3. Open Task Manager -^> kill any wps.exe\n' +
+      'echo      4. Reopen WPS Writer\n' +
+      'echo      5. Look for the "Kaiwu" tab in the ribbon\n' +
+      'echo  ============================================\n' +
+      'echo.\n' +
+      'pause\n'
   );
 }
 
@@ -656,77 +656,77 @@ function generateVerifyBat() {
   lines.push('    )');
   lines.push(')');
   lines.push('goto :eof');
-  return lines.join('\n');
+  return toCRLF(lines.join('\n'));
 }
 
 function generateUninstallBat() {
-  return (
+  return toCRLF(
     '@echo off\n' +
-    'rem  Saved in GBK encoding (see install.bat for rationale).\n' +
-    'setlocal EnableExtensions EnableDelayedExpansion\n' +
-    'title Kaiwu WPS Addon - Uninstaller\n' +
-    'echo.\n' +
-    'echo  ============================================\n' +
-    'echo    Kaiwu WPS Addon - Uninstaller\n' +
-    'echo  ============================================\n' +
-    'echo.\n' +
-    '\n' +
-    'set "DEST_DIR=%APPDATA%\\kingsoft\\wps\\jsaddons"\n' +
-    'set "PLUGIN_DIR=%DEST_DIR%\\' +
-    PACKAGE_DIR_ASCII +
-    '"\n' +
-    '\n' +
-    'echo  Will scan for: %DEST_DIR%\\kaiwu_*  and  %DEST_DIR%\\开悟_*\n' +
-    'echo.\n' +
-    'set /p CONFIRM=Confirm uninstall? (Y/N): \n' +
-    'if /i not "%CONFIRM%"=="Y" (\n' +
-    '    echo  Cancelled.\n' +
-    '    pause\n' +
-    '    exit /b 0\n' +
-    ')\n' +
-    '\n' +
-    'set "REMOVED=0"\n' +
-    'if not exist "%DEST_DIR%" (\n' +
-    '    echo  [INFO] Destination folder not found, nothing to do.\n' +
-    '    goto :cache_clear\n' +
-    ')\n' +
-    'rem --- Scan current-scheme installs (kaiwu_<v>) ---\n' +
-    'for /d %%D in ("%DEST_DIR%\\kaiwu_*") do (\n' +
-    '    echo         [FOUND] %%~nxD  -  removing ...\n' +
-    '    rmdir /S /Q "%%D"\n' +
-    '    set "REMOVED=1"\n' +
-    ')\n' +
-    'rem --- Scan legacy Chinese-prefixed install (开悟_1.0.0) ---\n' +
-    'rem Direct if exist (cmd glob with Chinese patterns is unreliable).\n' +
-    'if exist "%DEST_DIR%\\开悟_1.0.0" (\n' +
-    '    echo         [FOUND] 开悟_1.0.0  -  removing ...\n' +
-    '    rmdir /S /Q "%DEST_DIR%\\开悟_1.0.0"\n' +
-    '    set "REMOVED=1"\n' +
-    ')\n' +
-    'if "!REMOVED!"=="0" (\n' +
-    '    echo         [INFO] No Kaiwu install found.\n' +
-    ') else (\n' +
-    '    echo         [OK] All Kaiwu directories removed.\n' +
-    ')\n' +
-    '\n' +
-    ':cache_clear\n' +
-    'if exist "%DEST_DIR%\\authaddin.json" (\n' +
-    '    del /F /Q "%DEST_DIR%\\authaddin.json" >nul 2>nul\n' +
-    '    echo  [OK] Cleared WPS plugin cache (authaddin.json)\n' +
-    ')\n' +
-    'if exist "%DEST_DIR%\\publish.xml" (\n' +
-    '    findstr /I /C:"' +
-    ADDON_NAME_ASCII +
-    '" "%DEST_DIR%\\publish.xml" >nul 2>nul && (\n' +
-    '        echo  [WARN] publish.xml still references Kaiwu; remove it manually if needed.\n' +
-    '    )\n' +
-    ')\n' +
-    '\n' +
-    'echo.\n' +
-    'echo  IMPORTANT: Fully exit WPS (close all docs, system tray)\n' +
-    'echo  before reopening, otherwise the plugin may still appear.\n' +
-    'echo.\n' +
-    'pause\n'
+      'rem  Saved in GBK encoding (see install.bat for rationale).\n' +
+      'setlocal EnableExtensions EnableDelayedExpansion\n' +
+      'title Kaiwu WPS Addon - Uninstaller\n' +
+      'echo.\n' +
+      'echo  ============================================\n' +
+      'echo    Kaiwu WPS Addon - Uninstaller\n' +
+      'echo  ============================================\n' +
+      'echo.\n' +
+      '\n' +
+      'set "DEST_DIR=%APPDATA%\\kingsoft\\wps\\jsaddons"\n' +
+      'set "PLUGIN_DIR=%DEST_DIR%\\' +
+      PACKAGE_DIR_ASCII +
+      '"\n' +
+      '\n' +
+      'echo  Will scan for: %DEST_DIR%\\kaiwu_*  and  %DEST_DIR%\\开悟_*\n' +
+      'echo.\n' +
+      'set /p CONFIRM=Confirm uninstall? (Y/N): \n' +
+      'if /i not "%CONFIRM%"=="Y" (\n' +
+      '    echo  Cancelled.\n' +
+      '    pause\n' +
+      '    exit /b 0\n' +
+      ')\n' +
+      '\n' +
+      'set "REMOVED=0"\n' +
+      'if not exist "%DEST_DIR%" (\n' +
+      '    echo  [INFO] Destination folder not found, nothing to do.\n' +
+      '    goto :cache_clear\n' +
+      ')\n' +
+      'rem --- Scan current-scheme installs (kaiwu_<v>) ---\n' +
+      'for /d %%D in ("%DEST_DIR%\\kaiwu_*") do (\n' +
+      '    echo         [FOUND] %%~nxD  -  removing ...\n' +
+      '    rmdir /S /Q "%%D"\n' +
+      '    set "REMOVED=1"\n' +
+      ')\n' +
+      'rem --- Scan legacy Chinese-prefixed install (开悟_1.0.0) ---\n' +
+      'rem Direct if exist (cmd glob with Chinese patterns is unreliable).\n' +
+      'if exist "%DEST_DIR%\\开悟_1.0.0" (\n' +
+      '    echo         [FOUND] 开悟_1.0.0  -  removing ...\n' +
+      '    rmdir /S /Q "%DEST_DIR%\\开悟_1.0.0"\n' +
+      '    set "REMOVED=1"\n' +
+      ')\n' +
+      'if "!REMOVED!"=="0" (\n' +
+      '    echo         [INFO] No Kaiwu install found.\n' +
+      ') else (\n' +
+      '    echo         [OK] All Kaiwu directories removed.\n' +
+      ')\n' +
+      '\n' +
+      ':cache_clear\n' +
+      'if exist "%DEST_DIR%\\authaddin.json" (\n' +
+      '    del /F /Q "%DEST_DIR%\\authaddin.json" >nul 2>nul\n' +
+      '    echo  [OK] Cleared WPS plugin cache (authaddin.json)\n' +
+      ')\n' +
+      'if exist "%DEST_DIR%\\publish.xml" (\n' +
+      '    findstr /I /C:"' +
+      ADDON_NAME_ASCII +
+      '" "%DEST_DIR%\\publish.xml" >nul 2>nul && (\n' +
+      '        echo  [WARN] publish.xml still references Kaiwu; remove it manually if needed.\n' +
+      '    )\n' +
+      ')\n' +
+      '\n' +
+      'echo.\n' +
+      'echo  IMPORTANT: Fully exit WPS (close all docs, system tray)\n' +
+      'echo  before reopening, otherwise the plugin may still appear.\n' +
+      'echo.\n' +
+      'pause\n'
   );
 }
 
@@ -982,7 +982,7 @@ function generateDisableNativeAiBat() {
   lines.push('    set /a FILES_FAILED+=1');
   lines.push(')');
   lines.push('goto :eof');
-  return lines.join('\n');
+  return toCRLF(lines.join('\n'));
 }
 
 function generateEnableNativeAiBat() {
@@ -1178,7 +1178,7 @@ function generateEnableNativeAiBat() {
   lines.push('    set /a FILES_FAILED+=1');
   lines.push(')');
   lines.push('goto :eof');
-  return lines.join('\n');
+  return toCRLF(lines.join('\n'));
 }
 
 function generateReadme(envVars) {
@@ -1394,17 +1394,11 @@ function build() {
   //  2. UTF-8 with BOM 编码 (兼容中文/英文 Windows, 自动识别)
   //     UTF-8 BOM 让 Windows 正确识别文件编码, 避免乱码
   //     备用: GBK (仅在 UTF-8 BOM 写入失败时 fallback)
-  writeBatFile(path.join(PUBLISH_DIR, 'install.bat'), toCRLF(generateInstallBat()));
-  writeBatFile(path.join(PUBLISH_DIR, 'uninstall.bat'), toCRLF(generateUninstallBat()));
-  writeBatFile(path.join(PUBLISH_DIR, 'verify.bat'), toCRLF(generateVerifyBat()));
-  writeBatFile(
-    path.join(PUBLISH_DIR, 'disable-wps-native-ai.bat'),
-    toCRLF(generateDisableNativeAiBat())
-  );
-  writeBatFile(
-    path.join(PUBLISH_DIR, 'enable-wps-native-ai.bat'),
-    toCRLF(generateEnableNativeAiBat())
-  );
+  writeBatFile(path.join(PUBLISH_DIR, 'install.bat'), generateInstallBat());
+  writeBatFile(path.join(PUBLISH_DIR, 'uninstall.bat'), generateUninstallBat());
+  writeBatFile(path.join(PUBLISH_DIR, 'verify.bat'), generateVerifyBat());
+  writeBatFile(path.join(PUBLISH_DIR, 'disable-wps-native-ai.bat'), generateDisableNativeAiBat());
+  writeBatFile(path.join(PUBLISH_DIR, 'enable-wps-native-ai.bat'), generateEnableNativeAiBat());
 
   console.log('[package] 生成 README 安装说明...');
   fs.writeFileSync(path.join(PUBLISH_DIR, 'README-安装说明.md'), generateReadme(envVars), 'utf8');

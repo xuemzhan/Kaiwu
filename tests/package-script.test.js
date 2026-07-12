@@ -89,6 +89,40 @@ test('package-script: install.bat mentions the current addon version', () => {
   );
 });
 
+test('package-script: all 5 bat generators return CRLF (regression for Bug 5.1)', () => {
+  // Bug 5.1 history: the bat generators originally returned LF-only output.
+  // Only the writeBatFile() helper applied toCRLF() at write time, so
+  // anyone calling the generator directly (including tests) got LF.
+  // The fix wraps each generator in toCRLF() so the returned string is
+  // already CRLF-terminated. This test guards against future regressions.
+  const batGens = [
+    ['install', pkg.generateInstallBat],
+    ['uninstall', pkg.generateUninstallBat],
+    ['verify', pkg.generateVerifyBat],
+    ['disable', pkg.generateDisableNativeAiBat],
+    ['enable', pkg.generateEnableNativeAiBat],
+  ];
+  for (const [name, gen] of batGens) {
+    const s = gen();
+    assert.ok(s.length > 50, name + ' generator should be non-trivial');
+    // Walk through; every \n (0x0A) must be preceded by \r (0x0D).
+    // Skip this check if string is empty (no LFs possible).
+    let foundLf = false;
+    for (let i = 0; i < s.length; i++) {
+      if (s.charCodeAt(i) === 0x0a) {
+        foundLf = true;
+        assert.ok(
+          i > 0 && s.charCodeAt(i - 1) === 0x0d,
+          `${name} generator has bare LF at offset ${i} (regression of Bug 5.1)`
+        );
+      }
+    }
+    // It's OK if a generator has no LFs at all (single-line output),
+    // but these bat generators are multi-line, so we expect at least one LF.
+    assert.ok(foundLf, `${name} generator should contain at least one line ending`);
+  }
+});
+
 test('package-script: disable/enable bat markers are present', () => {
   assert.ok(
     pkg.generateDisableNativeAiBat().indexOf('DISABLED_BY_KAIWU') !== -1,
