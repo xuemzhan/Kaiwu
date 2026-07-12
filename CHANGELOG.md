@@ -4,6 +4,12 @@ All notable changes to **Kaiwu (开悟)** are documented here.
 
 ## [Unreleased]
 
+### ⚠️ Version bumped to 0.4.1 (bugfix release)
+
+This release is a **bugfix** that addresses a real user-visible crash and a synchronous-contract regression. The 0.4.0 → 0.4.1 bump follows semver: the public API did not break, but the shipped artifact's behavior did.
+
+If you previously installed `kaiwu_0.4.0.7z`, please re-download from [Releases](https://github.com/xuemzhan/Kaiwu/releases) and re-run `install.bat`.
+
 ### Changed
 - **AIServiceFactory** now exposes two entry points:
   - `create(config)` — synchronous, returns the service object immediately. Matches the contract documented in `docs/opencode-integration.md`. Does **not** perform any network check; the caller is expected to handle errors from the underlying service.
@@ -12,8 +18,8 @@ All notable changes to **Kaiwu (开悟)** are documented here.
 - **`opencode-ai._request`** gained a `settled` guard and `fireSuccess`/`fireError` helpers. When `Promise.race` resolves with the losing branch's microtask after the race already settled (e.g. a slow fetch whose body parse rejects after the timeout fires), the previous version could double-fire `onError`. The new version guarantees onError-or-onSuccess but never both.
   - `_logAuthInfo` is now silent by default; pass `options.verbose` to enable it (reduces per-request console noise).
   - JSON parse errors on a 2xx response are now classified as a distinct `JSON parse error` (non-retryable) instead of being lumped into the generic `Network error` (retryable) bucket.
+- `response.text()` rejection in `_request`'s !ok branch now has an explicit `.catch` that fires `onError` (instead of silently producing an unhandled rejection). Classified as `retryable: true` since stream read failures are typically transient.
 - **Disable-WPS-native-AI bat scripts**: the optional DLL placeholder is now a short ASCII marker (`DISABLED_BY_KAIWU`) instead of a 0-byte file. WPS was attempting to PE-load the placeholder as a DLL and crashing on `not a valid Win32 application`; the marker has the wrong magic bytes so PE-load fails cleanly and the process keeps running. `enable-wps-native-ai.bat` behavior is unchanged (still restores from `.kaiwu-backup`).
-- v1 disable scripts (registry-only) were insufficient for current WPS versions. v2 adds 3-layer defense: (1) HKCU CloudService EnableAI=0 + AutoStart=0 for all installed WPS versions, (2) wpscloudsvr.exe taskkill + sc config disabled, (3) file placeholder with `.kaiwu-backup` to survive WPS upgrades overwriting config.dat. UAC self-elevation added at bat top.
 
 ### Fixed
 - `AIServiceFactory.create` no longer returns `undefined` when the opencode branch fires (was introduced by an earlier attempt at async reachability testing; restored to the documented synchronous contract).
@@ -21,8 +27,23 @@ All notable changes to **Kaiwu (开悟)** are documented here.
 
 ### Added
 - `npm run validate` — single command that runs `lint && format:check && test`. Use in pre-commit / pre-push hooks.
-- 3 new tests in `tests/opencode-ai.test.js` and 2 new tests in `tests/opencode-integration.test.js` covering the `create` / `selectAsync` split and the `create-must-not-invoke-fetch` contract.
-- `.gitattributes` locking line endings (`*.bat text eol=crlf`, `*.js text eol=lf`).
+- `npm run test:serial` — serial test runner (`--test-concurrency=1`) for CI / debugging flake issues that surface under parallel CPU contention.
+- `ResultCard.whenRendered()` — public API for tests to await the next debounced render. Installed via `_installWhenRendered` (test-only, non-enumerable); never auto-runs in production.
+- 16 new tests in `tests/ai-factory.test.js` covering the `create` / `selectAsync` split, default-config fallbacks, `isOpencodeMode`, and `isOpencodeAvailable`.
+- 11 new tests in `tests/wps-config.test.js` validating cross-file config consistency (package.json / wpsjs.config.js versions, gitignore patterns, install.bat BOM, README version mention).
+- 10 new tests in `tests/7z-marker.test.js` extracting the published `.7z` and asserting key refactor markers are present (regression guard against stale builds).
+- 1 new test in `tests/opencode-ai.test.js` for `response.text()` rejection path (regression guard for unhandled rejection when reading an HTTP error body fails).
+- 4 new tests in `tests/opencode-ai.test.js` for the new `_request` behaviors (JSON parse error classification, slow body parse race, timer leak, auth verbose).
+- `.gitattributes` locking line endings (`*.bat text eol=crlf`, `*.js text eol=lf`, etc.) so future contributors don't accidentally re-introduce the LF/CRLF churn.
+- `kaiwu_0.4.1.7z` repackaged with the refactored code. End users downloading from GitHub Releases now get the fix for the WPS PE-load 0-byte DLL crash and the synchronous `AIServiceFactory.create` contract.
+
+### Security
+- `_installWhenRendered` is installed with `enumerable: false`, preventing accidental discovery via `for..in` / `Object.keys()`. Production code cannot trigger an unnecessary full re-render by calling `ResultCard.whenRendered()` (the property simply does not exist on the production object).
+- The `kaiwu_0.4.1` artifact does not include any user-specific `.env` or `taskpane/env.js` content; the build pipeline uses `.env.example` only.
+
+### Removed
+- The "v1 disable scripts" paragraph (which actually described the v0.4.0 behavior, not a delta) was moved out of `[Unreleased]` — it now lives only under the [0.4.0] section.
+- Duplicate AIServiceFactory tests removed from `tests/opencode-ai.test.js` and `tests/opencode-integration.test.js` (the canonical source is `tests/ai-factory.test.js`).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).

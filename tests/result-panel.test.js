@@ -5,7 +5,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { makeEnv, loadScripts, mockVendorLibs } = require('./_setup');
+const { makeEnv, loadScripts, mockVendorLibs, installTestHelpers } = require('./_setup');
 
 function loadPanel() {
   const env = makeEnv();
@@ -28,6 +28,7 @@ function loadPanel() {
     'taskpane/actions/action-runner.js',
     'taskpane/components/result-panel.js',
   ]);
+  installTestHelpers(env.window);
   return Object.assign({}, env, {
     ResultCard: env.window.ResultCard,
     ResultPanel: env.window.ResultPanel,

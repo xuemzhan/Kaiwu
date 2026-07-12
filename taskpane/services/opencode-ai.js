@@ -154,10 +154,24 @@ var OpenCodeAIService = {
       function (response) {
         if (settled) return null;
         if (!response.ok) {
-          return response.text().then(function (body) {
-            fireError(self._classifyError(response.status, body));
-            return null;
-          });
+          // response.text() can reject (stream interrupted, body
+          // decoder failure). The .then chain only handles fulfillment;
+          // without an explicit .catch, a rejection here becomes an
+          // unhandled rejection and the caller never sees the error.
+          return response.text().then(
+            function (body) {
+              fireError(self._classifyError(response.status, body));
+              return null;
+            },
+            function (err) {
+              fireError({
+                message: 'Failed to read error response: ' + (err && err.message),
+                retryable: true,
+                status: response.status,
+              });
+              return null;
+            }
+          );
         }
         return response.json().then(
           function (data) {

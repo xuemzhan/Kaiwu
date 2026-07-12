@@ -169,6 +169,46 @@ test('OpenCodeAIService: _request handles HTTP error', () => {
   });
 });
 
+test('OpenCodeAIService: _request reports error when response.text() rejects', () => {
+  // Edge case: !response.ok but reading the body fails (stream interrupted,
+  // body decoder error). Without the explicit .catch handler, the rejection
+  // becomes an unhandled rejection and onError is never called. The fix
+  // added a .catch that fires onError with a 'Failed to read error response'
+  // message and retryable=true.
+  const fetchMock = async () => ({
+    ok: false,
+    status: 503,
+    json: async () => {
+      throw new Error('should not be called for !response.ok');
+    },
+    text: async () => {
+      throw new Error('stream interrupted');
+    },
+  });
+  const { OpenCodeAIService, Config } = loadServiceWithMock(fetchMock);
+  Config.init();
+
+  return new Promise((resolve) => {
+    OpenCodeAIService._request(
+      'GET',
+      '/session',
+      null,
+      {},
+      (data) => assert.fail('should not succeed'),
+      (err) => {
+        assert.equal(err.status, 503, 'should preserve response status');
+        assert.equal(err.retryable, true, 'should be retryable');
+        assert.ok(
+          err.message.includes('Failed to read error response') ||
+            err.message.includes('stream interrupted'),
+          'should report text() failure, got: ' + err.message
+        );
+        resolve();
+      }
+    );
+  });
+});
+
 test('OpenCodeAIService: _request handles 500 error as retryable', () => {
   const fetchMock = async () => {
     return {
@@ -848,176 +888,7 @@ test('OpenCodeAIService: mapSpecializedAction handles null input', () => {
   );
 });
 
-test('AIServiceFactory: returns AIService in standard mode', () => {
-  const env = makeEnv();
-  loadScripts(env.window, [
-    'taskpane/services/config.js',
-    'taskpane/services/ai.js',
-    'taskpane/services/ai-factory.js',
-  ]);
-  const factory = env.window.AIServiceFactory;
-  const service = factory.create({ mode: 'standard' });
-  assert.equal(service, env.window.AIService);
-});
-
-test('AIServiceFactory: falls back to AIService when opencode unavailable', () => {
-  const env = makeEnv();
-  env.window.OpenCodeAIService = undefined;
-  loadScripts(env.window, [
-    'taskpane/services/config.js',
-    'taskpane/services/ai.js',
-    'taskpane/services/ai-factory.js',
-  ]);
-  const factory = env.window.AIServiceFactory;
-  const service = factory.create({ mode: 'opencode' });
-  assert.equal(service, env.window.AIService);
-});
-
-test('AIServiceFactory: selectAsync falls back to AIService when OpenCodeAIService.testConnection fails', (t, done) => {
-  const env = makeEnv();
-  let toastCalled = false;
-  env.window.OpenCodeAIService = {
-    testConnection: function (onSuccess, onError) {
-      onError({ message: 'connection failed' });
-    },
-  };
-  loadScripts(env.window, [
-    'taskpane/services/config.js',
-    'taskpane/services/ai.js',
-    'taskpane/services/ai-factory.js',
-  ]);
-  const origShow = env.window.KwToast.show;
-  env.window.KwToast.show = function (msg) {
-    toastCalled = true;
-  };
-  const factory = env.window.AIServiceFactory;
-  factory.selectAsync(
-    { mode: 'opencode' },
-    function (service) {
-      env.window.KwToast.show = origShow;
-      assert.equal(service, env.window.AIService, 'Should return standard AIService');
-      assert.equal(toastCalled, true, 'Should show fallback toast');
-      done();
-    },
-    function (err) {
-      env.window.KwToast.show = origShow;
-      assert.fail(
-        'selectAsync should report downgraded opencode via onSuccess, not onError: ' +
-          JSON.stringify(err)
-      );
-    }
-  );
-});
-
-test('AIServiceFactory: selectAsync returns OpenCodeAIService when reachable', (t, done) => {
-  const env = makeEnv();
-  env.window.OpenCodeAIService = {
-    testConnection: function (onSuccess, onError) {
-      onSuccess({ connected: true });
-    },
-  };
-  loadScripts(env.window, [
-    'taskpane/services/config.js',
-    'taskpane/services/ai.js',
-    'taskpane/services/ai-factory.js',
-  ]);
-  const factory = env.window.AIServiceFactory;
-  factory.selectAsync(
-    { mode: 'opencode' },
-    function (service) {
-      assert.equal(service, env.window.OpenCodeAIService);
-      done();
-    },
-    function (err) {
-      assert.fail('selectAsync should not fail when opencode is reachable: ' + JSON.stringify(err));
-    }
-  );
-});
-
-test('AIServiceFactory: create synchronously returns OpenCodeAIService without calling testConnection', () => {
-  const env = makeEnv();
-  env.window.OpenCodeAIService = {
-    testConnection: function () {
-      assert.fail('create() must not invoke testConnection');
-    },
-  };
-  loadScripts(env.window, [
-    'taskpane/services/config.js',
-    'taskpane/services/ai.js',
-    'taskpane/services/ai-factory.js',
-  ]);
-  const factory = env.window.AIServiceFactory;
-  const service = factory.create({ mode: 'opencode' });
-  assert.equal(service, env.window.OpenCodeAIService);
-});
-
-test('AIServiceFactory: returns OpenCodeAIService when available', () => {
-  const env = makeEnv();
-  env.window.OpenCodeAIService = {
-    testConnection: function (onSuccess, onError) {
-      onSuccess({ connected: true });
-    },
-  };
-  loadScripts(env.window, [
-    'taskpane/services/config.js',
-    'taskpane/services/ai.js',
-    'taskpane/services/ai-factory.js',
-  ]);
-  const factory = env.window.AIServiceFactory;
-  const service = factory.create({ mode: 'opencode' });
-  assert.equal(service, env.window.OpenCodeAIService);
-});
-
-test('AIServiceFactory: isOpencodeMode returns correct value', () => {
-  const env = makeEnv();
-  loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/ai-factory.js']);
-  const factory = env.window.AIServiceFactory;
-  const Config = env.window.Config;
-
-  Config._data = null;
-  env.window.localStorage.setItem('wps_assistant_config', JSON.stringify({ mode: 'opencode' }));
-  assert.equal(factory.isOpencodeMode(), true);
-
-  Config._data = null;
-  env.window.localStorage.setItem('wps_assistant_config', JSON.stringify({ mode: 'standard' }));
-  assert.equal(factory.isOpencodeMode(), false);
-});
-
-test('AIServiceFactory: isOpencodeAvailable checks service availability', () => {
-  const env = makeEnv();
-  let callbackResult = null;
-  env.window.OpenCodeAIService = {
-    testConnection: function (onSuccess, onError) {
-      onSuccess({ connected: true });
-    },
-  };
-  loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/ai-factory.js']);
-  const factory = env.window.AIServiceFactory;
-  factory.isOpencodeAvailable(
-    function (data) {
-      callbackResult = data;
-    },
-    function (err) {
-      callbackResult = err;
-    }
-  );
-  assert.ok(callbackResult !== null);
-});
-
-test('AIServiceFactory: isOpencodeAvailable handles undefined service', () => {
-  const env = makeEnv();
-  let errorCalled = false;
-  env.window.OpenCodeAIService = undefined;
-  loadScripts(env.window, ['taskpane/services/config.js', 'taskpane/services/ai-factory.js']);
-  const factory = env.window.AIServiceFactory;
-  factory.isOpencodeAvailable(
-    function () {},
-    function (err) {
-      errorCalled = true;
-    }
-  );
-  assert.equal(errorCalled, true);
-});
+// AIServiceFactory tests moved to tests/ai-factory.test.js (canonical source of truth).
 
 test('OpenCodeAIService: _reconnect uses exponential backoff', async () => {
   const delays = [];

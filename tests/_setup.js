@@ -382,6 +382,31 @@ function setApplication(window, appOverrides) {
   Object.assign(window.Application, appOverrides);
 }
 
+/**
+ * Install test-only helpers onto the window after loadScripts() has run.
+ * Currently installs ResultCard.whenRendered() (defined as a non-enumerable
+ * property by result-card.js when _installWhenRendered is called).
+ *
+ * Always call this AFTER loadScripts([..., 'taskpane/components/result-card.js'])
+ * — otherwise ResultCard won't be on the window yet.
+ */
+function installTestHelpers(window) {
+  if (window && window.ResultCard) {
+    // Lazy-require to avoid circular import: result-card.js exposes
+    // _installWhenRendered via module.exports.
+    // In jsdom test env we re-require it.
+    var installer;
+    try {
+      installer = require('../taskpane/components/result-card.js');
+    } catch (e) {
+      installer = null;
+    }
+    if (typeof installer === 'function') {
+      installer(window.ResultCard);
+    }
+  }
+}
+
 module.exports = {
   ROOT,
   makeEnv,
@@ -390,4 +415,5 @@ module.exports = {
   mockVendorLibs,
   triggerDOMContentLoaded,
   setApplication,
+  installTestHelpers,
 };

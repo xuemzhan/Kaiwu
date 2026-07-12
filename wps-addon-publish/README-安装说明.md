@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**版本: 0.4.0**
+**版本: 0.4.1**
 
 基于 AI 大模型的 WPS 写作辅助工具
 
@@ -40,7 +40,7 @@
 
 包内已内置默认 API Key (在 `.env` 文件中)。如果需要更换:
 
-- **方法一**: 编辑 `kaiwu_0.4.0\.env`, 填入新的 `VITE_DEFAULT_API_KEY` 等, 然后重启 WPS
+- **方法一**: 编辑 `kaiwu_0.4.1\.env`, 填入新的 `VITE_DEFAULT_API_KEY` 等, 然后重启 WPS
 - **方法二**: 在 WPS 侧边栏点击 ⚙️ 设置, 实时修改并保存 (推荐, 无需重启)
 
 当前默认配置:
@@ -54,7 +54,7 @@ VITE_DEFAULT_API_KEY  = sk-test-...
 ## 目录结构
 
 ```
-kaiwu_0.4.0/
+kaiwu_0.4.1/
 ├── .env                        # API 默认配置 (可改)
 ├── ribbon.xml                  # WPS 功能区定义
 ├── ribbon.js                   # 功能区事件
@@ -101,7 +101,7 @@ kaiwu_0.4.0/
 插件文件被复制到:
 
 ```
-%APPDATA%\kingsoft\wps\jsaddons\kaiwu_0.4.0\
+%APPDATA%\kingsoft\wps\jsaddons\kaiwu_0.4.1\
 %APPDATA%\kingsoft\wps\jsaddons\publish.xml
 ```
 
@@ -129,5 +129,5 @@ A: 先运行 uninstall.bat 卸载旧版 (会自动清除 authaddin.json 缓存),
 ---
 
 <div align="center">
-打包于 2026-06-25 13:48:40
+打包于 2026-07-12 00:14:43
 </div>

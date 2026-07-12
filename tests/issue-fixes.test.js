@@ -14,7 +14,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { makeEnv, loadScripts, mockVendorLibs } = require('./_setup');
+const { makeEnv, loadScripts, mockVendorLibs, installTestHelpers } = require('./_setup');
 
 // =====================================================
 // 问题 1: chip 换行展示
@@ -55,6 +55,7 @@ function loadPanel() {
     'taskpane/actions/action-runner.js',
     'taskpane/components/result-panel.js',
   ]);
+  installTestHelpers(env.window);
   return Object.assign({}, env, {
     ResultCard: env.window.ResultCard,
     ResultPanel: env.window.ResultPanel,

@@ -58,9 +58,9 @@ Kaiwu (开悟) is a community-maintained WPS Office add-in that brings a full-fe
 
 ## Quick Start (End User)
 
-> If you just want to use the plugin and don't care about the source, jump to the [Releases](https://github.com/xuemzhan/Kaiwu/releases) page and download the latest `kaiwu_x.y.z.7z`.
+> If you just want to use the plugin and don't care about the source, jump to the [Releases](https://github.com/xuemzhan/Kaiwu/releases) page and download the latest `kaiwu_x.y.z.7z` (current release: **kaiwu_0.4.1.7z**).
 
-1. Download `kaiwu_x.y.z.7z` from [Releases](https://github.com/xuemzhan/Kaiwu/releases).
+1. Download `kaiwu_0.4.1.7z` from [Releases](https://github.com/xuemzhan/Kaiwu/releases).
 2. Right-click the `.7z` → **Extract to** any folder (e.g. your Desktop).
 3. **Fully exit WPS** (close all documents, right-click the WPS tray icon → Exit, and check Task Manager for any `wps.exe`).
 4. Double-click **`install.bat`** inside the extracted folder.

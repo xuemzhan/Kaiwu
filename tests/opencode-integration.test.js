@@ -127,74 +127,7 @@ test('Integration: create session and verify session data', (t, done) => {
   );
 });
 
-test('Integration: selectAsync falls back to AIService when opencode health check fails', (t, done) => {
-  const env = makeEnv();
-  // /api/health returns 503 — opencode is down
-  env.window.fetch = async () => ({
-    ok: false,
-    status: 503,
-    json: async () => ({ error: 'Service Unavailable' }),
-  });
-  env.window.btoa = (str) => Buffer.from(str).toString('base64');
-  mockVendorLibs(env.window);
-  loadScripts(env.window, [
-    'taskpane/services/config.js',
-    'taskpane/services/ai.js',
-    'taskpane/services/opencode-ai.js',
-    'taskpane/services/session-manager.js',
-    'taskpane/services/ai-factory.js',
-  ]);
-  const AIServiceFactory = env.window.AIServiceFactory;
-  const AIService = env.window.AIService;
-  const Config = env.window.Config;
-
-  Config.set('mode', 'opencode');
-  AIServiceFactory.selectAsync(
-    null,
-    function (service) {
-      try {
-        assert.equal(service, AIService, 'should fallback to AIService');
-        done();
-      } catch (e) {
-        done(e);
-      }
-    },
-    function (err) {
-      done(
-        new Error(
-          'selectAsync should report fallback via onSuccess, not onError: ' + JSON.stringify(err)
-        )
-      );
-    }
-  );
-});
-
-test('Integration: create synchronously returns OpenCodeAIService without health check', () => {
-  const env = makeEnv();
-  // fetch MUST NOT be invoked by create() — it is purely synchronous.
-  let fetchCalled = false;
-  env.window.fetch = async () => {
-    fetchCalled = true;
-    return { ok: true, json: async () => ({}) };
-  };
-  env.window.btoa = (str) => Buffer.from(str).toString('base64');
-  mockVendorLibs(env.window);
-  loadScripts(env.window, [
-    'taskpane/services/config.js',
-    'taskpane/services/ai.js',
-    'taskpane/services/opencode-ai.js',
-    'taskpane/services/session-manager.js',
-    'taskpane/services/ai-factory.js',
-  ]);
-  const AIServiceFactory = env.window.AIServiceFactory;
-  const OpenCodeAIService = env.window.OpenCodeAIService;
-  const Config = env.window.Config;
-
-  Config.set('mode', 'opencode');
-  const service = AIServiceFactory.create();
-  assert.equal(service, OpenCodeAIService);
-  assert.equal(fetchCalled, false, 'create() must not invoke fetch / testConnection');
-});
+// AIServiceFactory integration tests moved to tests/ai-factory.test.js.
 
 test('Integration: factory mode switching', () => {
   const env = makeEnv();

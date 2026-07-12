@@ -227,29 +227,6 @@ var ResultCard = {
     }, 80);
   },
 
-  /**
-   * Returns a Promise that resolves after the next debounced render completes.
-   * Tests use this to deterministically wait for the DOM to update instead of
-   * guessing a setTimeout length (which flakes under parallel test load).
-   * If no render is scheduled, resolves on the next render.
-   */
-  whenRendered: function () {
-    var self = this;
-    if (!self._renderPromise) {
-      self._renderPromise = {};
-      self._renderPromise.promise = new Promise(function (resolve) {
-        self._renderPromise.resolve = resolve;
-      });
-      // If a render is already in flight, the promise resolves when it
-      // completes. If not, schedule a render so the promise has something
-      // to wait for.
-      if (!self._renderTimer) {
-        self._scheduleRender();
-      }
-    }
-    return self._renderPromise.promise;
-  },
-
   get: function (id) {
     return this._cards[id] || null;
   },
@@ -260,3 +237,45 @@ var ResultCard = {
     this._scheduleRender();
   },
 };
+
+/**
+ * Test-only API. Install via:
+ *   require('./_setup.js').installTestHooks(window);
+ * from the test file, which calls this with a non-enumerable descriptor so
+ * the helper is hidden from `for..in` / `Object.keys()` and never appears in
+ * the production ResultCard's public surface.
+ *
+ * Returns a Promise that resolves after the next debounced render completes.
+ * If no render is scheduled, this schedules one — DO NOT call from production
+ * code (it would cause a wasted full re-render).
+ */
+function _installWhenRendered(target) {
+  Object.defineProperty(target, 'whenRendered', {
+    value: function () {
+      var self = this;
+      if (!self._renderPromise) {
+        self._renderPromise = {};
+        self._renderPromise.promise = new Promise(function (resolve) {
+          self._renderPromise.resolve = resolve;
+        });
+        // If a render is already in flight, the promise resolves when it
+        // completes. If not, schedule a render so the promise has something
+        // to wait for.
+        if (!self._renderTimer) {
+          self._scheduleRender();
+        }
+      }
+      return self._renderPromise.promise;
+    },
+    enumerable: false,
+    configurable: true,
+    writable: false,
+  });
+}
+
+// Test-only API installer. Export to the test setup so tests can
+// install whenRendered() on ResultCard under their own control. Production
+// code NEVER touches this; see _setup.js#installTestHelpers().
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = _installWhenRendered;
+}
