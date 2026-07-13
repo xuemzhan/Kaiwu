@@ -1,0 +1,38 @@
+---
+name: Feature request
+about: Suggest a new feature for Kaiwu
+title: '[Feature] '
+labels: enhancement
+assignees: ''
+---
+
+## Problem
+
+A clear description of what problem this feature would solve.
+Examples: "I always have to manually ..., and it takes ... minutes per use".
+
+## Proposed solution
+
+A clear and concise description of what you want to happen.
+
+## Alternatives considered
+
+What other approaches did you consider, and why didn't you prefer them?
+
+## Use cases
+
+1. As a writer, I want to ... so that ...
+2. As a power user, I want to ... so that ...
+
+## Out of scope (optional)
+
+What should this feature explicitly NOT do? Listing constraints upfront avoids
+scope creep.
+
+## Mockups / examples
+
+If applicable, add screenshots, sketches, or example outputs.
+
+## Additional context
+
+Any other context (related issues, references, etc.).

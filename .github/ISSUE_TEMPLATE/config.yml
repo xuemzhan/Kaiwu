@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Kaiwu documentation
+    url: https://github.com/xuemzhan/Kaiwu#readme
+    about: Installation, configuration, architecture overview.
+  - name: WPS Office add-in docs
+    url: https://qn.cache.wpscdn.cn/online/skill-md/index.html
+    about: Reference for WPS JS API used by Kaiwu.

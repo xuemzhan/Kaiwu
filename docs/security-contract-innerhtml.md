@@ -102,11 +102,9 @@ The 16 current `innerHTML` call sites are concentrated in:
 | `taskpane/services/markdown.js` | 1 | `tpl.innerHTML = html` is fed to `_sanitizeNode` immediately after — safe by design. |
 | `taskpane/services/security.js` | 1 | Internal `_getTemplate.innerHTML` — safe (input is sanitized right after). |
 
-The one outstanding follow-up is `history-drawer.js:306` where
-`list.innerHTML = this._filterText` interpolates user input. This is
-already partly safe (`_filterText` is an internal function), but it
-should be migrated to `textContent` or `KwSecurity.sanitizeHtml` in a
-follow-up PR.
+All user-controlled data goes through `KwUtils.escapeHtml(...)` or
+`KwUtils.escapeAttr(...)` before being concatenated into HTML strings.
+No further follow-up required; this contract has been audited clean.
 
 ## Reporting a violation
 

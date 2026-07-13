@@ -37,9 +37,24 @@ If you previously installed `kaiwu_0.4.0.7z`, please re-download from [Releases]
 - 4 new tests in `tests/opencode-ai.test.js` for the new `_request` behaviors (JSON parse error classification, slow body parse race, timer leak, auth verbose).
 - `.gitattributes` locking line endings (`*.bat text eol=crlf`, `*.js text eol=lf`, etc.) so future contributors don't accidentally re-introduce the LF/CRLF churn.
 - `kaiwu_0.4.1.7z` repackaged with the refactored code. End users downloading from GitHub Releases now get the fix for the WPS PE-load 0-byte DLL crash and the synchronous `AIServiceFactory.create` contract.
+- `taskpane/services/logger.js` — `KwLogger` singleton with `debug`/`info`/`warn`/`error` levels. Default `warn` in browser (quiet for WPS users), `debug` in Node tests. 18 unit tests cover level filtering, custom handler, ring-buffer history, error-context handling. Existing 40+ raw `console.*` calls can migrate to `KwLogger.*` incrementally.
+- `tests/innerhtml-security.test.js` — 14 regression tests for HTML sanitizers (see Security section).
+- `tests/logger.test.js` — 18 unit tests for KwLogger.
+- `.github/workflows/ci.yml` — PR validation workflow (windows-latest, npm cache, concurrency, 15-min timeout). Runs `npm run lint && format:check && npm test && npm run test:serial && 7z-marker && npm run build`.
+- `.github/dependabot.yml` — weekly npm + GitHub Actions updates. Dev deps grouped into one PR; production deps (`marked`, `mermaid`, `highlight.js`, `html2canvas`) kept separate for manual review; major-version bumps for production deps are ignored (those get a manual PR).
+- `.github/CODEOWNERS` — single-owner fallback (`@xuemzhan`) for now; structure ready for team expansion by uncommenting sections.
+- `.github/PULL_REQUEST_TEMPLATE.md` — enforces checklist (lint/format/test ran; security contract read; no `console.*`; CHANGELOG updated).
+- `.github/ISSUE_TEMPLATE/bug_report.md` + `feature_request.yml` + `config.yml` — structured issue creation; `blank_issues_enabled: false`.
+- `docs/security-contract-innerhtml.md` — formal HTML safety contract (see Security section).
+- `package.json` `engines` field: `node >= 20.0.0`, `npm >= 10.0.0`. Prevents accidental install on incompatible Node versions.
+- `taskpane/index.html`: added `<script src="services/logger.js">` after `services/security.js` so `KwLogger` is available before any component loads.
+
 
 ### Security
 - `_installWhenRendered` is installed with `enumerable: false`, preventing accidental discovery via `for..in` / `Object.keys()`. Production code cannot trigger an unnecessary full re-render by calling `ResultCard.whenRendered()` (the property simply does not exist on the production object).
+- **`docs/security-contract-innerhtml.md`** — formal contract for the 16 existing `innerHTML` call sites and future ones. Audit log lists each call site and the sanitizer it routes through. New code is gated by an ESLint `no-restricted-syntax` rule that warns on raw `innerHTML = <unknown expression>`.
+- **`tests/innerhtml-security.test.js`** — 14 regression tests covering XSS payloads (`<script>`, `onerror`, `javascript:`, `data:text/html`, multi-vector) for `KwSecurity.sanitizeHtml`, `KwSecurity.sanitizeUrl`, `KwUtils.escapeHtml`, `KwUtils.escapeAttr`. Audit caught a real semantic gap: `escapeHtml` does NOT encode quotes (use `escapeAttr` for attribute values).
+
 - The `kaiwu_0.4.1` artifact does not include any user-specific `.env` or `taskpane/env.js` content; the build pipeline uses `.env.example` only.
 
 ### Removed
