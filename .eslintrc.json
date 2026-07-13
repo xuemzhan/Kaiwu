@@ -69,6 +69,21 @@
             "args": "none",
             "varsIgnorePattern": "^(self|originalCode|originalImage|window_2|self|ActionRegistry|ActionRunner|PromptTemplates|WriterAdapter|HistoryDrawer|ResultCard|ResultPanel|SettingsUI|AIServiceFactory|AIService|OpenCodeAIService|ChatManager|Config|getSelection|C|chat|ChatUI|MessageRenderer|SessionManager|sessionId)$"
           }
+        ],
+        "no-restricted-syntax": [
+          "warn",
+          {
+            "selector": "AssignmentExpression[left.object.property.name='innerHTML'][right.type='CallExpression'][right.callee.object.name!='KwSecurity'][right.callee.object.name!='KwMarkdown'][right.callee.object.name!='KwUtils']",
+            "message": "innerHTML = ... assignments must go through KwSecurity.sanitizeHtml, KwMarkdown.render, or KwUtils.escapeHtml. See docs/security-contract-innerhtml.md."
+          },
+          {
+            "selector": "AssignmentExpression[left.object.property.name='innerHTML'][right.type='Identifier']",
+            "message": "innerHTML = <identifier> is suspicious — the value is unsanitized. Use textContent for plain text, or route through KwSecurity/KwMarkdown/KwUtils. See docs/security-contract-innerhtml.md."
+          },
+          {
+            "selector": "AssignmentExpression[left.object.property.name='outerHTML']",
+            "message": "outerHTML = ... is even more dangerous than innerHTML. Prefer textContent. See docs/security-contract-innerhtml.md."
+          }
         ]
       }
     },

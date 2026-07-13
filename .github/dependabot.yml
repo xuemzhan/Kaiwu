@@ -1,0 +1,61 @@
+version: 2
+
+# Dependabot auto-creates PRs for dependency updates. We group most dev
+# dependencies into a single weekly PR to reduce noise. Production
+# dependencies (marked, mermaid, highlight.js, html2canvas) are kept
+# separate because they're user-facing and require manual review.
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    # Group dev dependencies to reduce PR noise. Production deps
+    # (marked, mermaid, highlight.js, html2canvas) are kept separate.
+    groups:
+      dev-deps:
+        applies-to: version-updates
+        patterns:
+          - "eslint"
+          - "prettier"
+          - "jsdom"
+          - "c8"
+          - "playwright-core"
+          - "wpsjs"
+      production-deps:
+        applies-to: version-updates
+        patterns:
+          - "highlight.js"
+          - "html2canvas"
+          - "marked"
+          - "mermaid"
+    # Don't auto-merge anything; require human review for all.
+    # Dependabot will still auto-label and assign as configured.
+    labels:
+      - "dependencies"
+      - "automated-pr"
+    # Ignore major version bumps for production dependencies; we
+    # want to do those manually because they may have breaking changes.
+    ignore:
+      - dependency-name: "marked"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "mermaid"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "highlight.js"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      actions:
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+      - "automated-pr"
