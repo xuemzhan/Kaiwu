@@ -28,6 +28,10 @@
     "sync": "node scripts/sync-build.js",
     "test": "node --test --test-force-exit tests/*.test.js",
     "test:serial": "node --test --test-force-exit --test-concurrency=1 tests/*.test.js",
+    "test:all": "npm run test && npm run test:serial",
+    "test:7z": "node --test --test-force-exit tests/7z-marker.test.js",
+    "coverage": "c8 --reporter=text --reporter=lcov npm test",
+    "coverage:html": "c8 --reporter=html npm test",
     "debug": "npm run assets && npm run env && wpsjs debug",
     "debug:server": "npm run assets && npm run env && wpsjs debug --server",
     "build": "npm run assets && npm run env && npm run sync && node scripts/package.js 7z",
@@ -38,9 +42,7 @@
     "package:both": "node scripts/package.js both",
     "release": "node scripts/release.js",
     "release:quick": "node scripts/release.js --skip-test",
-    "release:clean": "node scripts/release.js --clean",
-    "coverage": "c8 --reporter=text --reporter=lcov npm test",
-    "coverage:html": "c8 --reporter=html npm test"
+    "release:clean": "node scripts/release.js --clean"
   },
   "dependencies": {
     "highlight.js": "^11.8.0",
