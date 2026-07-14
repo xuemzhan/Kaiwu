@@ -30,7 +30,10 @@ var OpenCodeAIService = {
   _logAuthInfo: function () {
     var creds = this._getAuthCredentials();
     var maskedPassword = creds.hasPassword ? '****' : '(empty)';
-    console.log('[OpenCodeAI] Auth: username=' + creds.username + ', password=' + maskedPassword);
+    KwLogger.log(
+      'OpenCodeAI',
+      '[OpenCodeAI] Auth: username=' + creds.username + ', password=' + maskedPassword
+    );
   },
 
   _classifyError: function (status, body) {

@@ -35,7 +35,7 @@ var KwMarkdown = (function () {
       // marked 5.x+: 使用 marked.Renderer 或 options.renderer
       renderer = window.marked.Renderer ? new window.marked.Renderer() : null;
     } catch (e) {
-      console.warn('[KwMarkdown] Renderer constructor failed:', e);
+      KwLogger.warn('Markdown', '[KwMarkdown] Renderer constructor failed:', e);
       renderer = null;
     }
     if (!renderer) return null;
@@ -153,7 +153,7 @@ var KwMarkdown = (function () {
         html = window.marked.parse(raw);
       }
     } catch (e) {
-      console.error('[KwMarkdown] parse failed:', e);
+      KwLogger.error('Markdown', '[KwMarkdown] parse failed:', e);
       return '<p>' + KwUtils.escapeHtml(raw) + '</p>';
     }
 
@@ -164,7 +164,7 @@ var KwMarkdown = (function () {
         KwSecurity._sanitizeNode(tpl.content);
         html = tpl.innerHTML;
       } catch (e) {
-        console.warn('[KwMarkdown] sanitize failed, returning escaped text:', e);
+        KwLogger.warn('Markdown', '[KwMarkdown] sanitize failed, returning escaped text:', e);
         return '<p>' + KwUtils.escapeHtml(raw) + '</p>';
       }
     }

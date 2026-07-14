@@ -446,7 +446,7 @@ var SettingsUI = {
         try {
           controller.abort();
         } catch (e) {
-          console.debug('[Settings] 中止控制器失败:', e);
+          KwLogger.debug('Settings', '[Settings] 中止控制器失败:', e);
         }
       }
     }, 15000);

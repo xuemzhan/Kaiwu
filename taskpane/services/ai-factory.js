@@ -40,7 +40,11 @@ var AIServiceFactory = {
             onSuccess && onSuccess(OpenCodeAIService);
           },
           function (err) {
-            console.warn('[AIServiceFactory] OpenCode unavailable, falling back to standard:', err);
+            KwLogger.warn(
+              'AIServiceFactory',
+              '[AIServiceFactory] OpenCode unavailable, falling back to standard:',
+              err
+            );
             if (typeof KwToast !== 'undefined' && KwToast.show) {
               KwToast.show('OpenCode 不可用，已切换到标准模式');
             }

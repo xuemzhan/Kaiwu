@@ -236,7 +236,7 @@ var HistoryDrawer = {
       var raw = localStorage.getItem(this._storageKey);
       return raw ? JSON.parse(raw) : [];
     } catch (e) {
-      console.warn('[HistoryDrawer] 加载失败:', e);
+      KwLogger.warn('HistoryDrawer', '[HistoryDrawer] 加载失败:', e);
       return [];
     }
   },
@@ -267,7 +267,7 @@ var HistoryDrawer = {
       localStorage.setItem(this._storageKey, JSON.stringify(this._items));
     } catch (e) {
       if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
-        console.warn('[HistoryDrawer] localStorage 配额已满, 仅保留最近 20 条');
+        KwLogger.warn('HistoryDrawer', '[HistoryDrawer] localStorage 配额已满, 仅保留最近 20 条');
         try {
           localStorage.setItem(this._storageKey, JSON.stringify(this._items.slice(0, 20)));
           KwToast && KwToast.show && KwToast.show('历史记录已满，已自动清理');
@@ -275,7 +275,7 @@ var HistoryDrawer = {
           /* ignore */
         }
       } else {
-        console.error('[HistoryDrawer] 保存失败:', e);
+        KwLogger.error('HistoryDrawer', '[HistoryDrawer] 保存失败:', e);
       }
     }
   },

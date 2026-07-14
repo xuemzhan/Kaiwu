@@ -50,7 +50,7 @@ var WriterAdapter = {
       sel.Text = text;
       return true;
     } catch (e) {
-      console.error('[WriterAdapter] insertAtCursor failed:', e);
+      KwLogger.error('WriterAdapter', '[WriterAdapter] insertAtCursor failed:', e);
       return false;
     }
   },
@@ -71,7 +71,7 @@ var WriterAdapter = {
       sel.Text = text;
       return { ok: true };
     } catch (e) {
-      console.error('[WriterAdapter] replaceSelection failed:', e);
+      KwLogger.error('WriterAdapter', '[WriterAdapter] replaceSelection failed:', e);
       return { ok: false, reason: '替换选区失败' };
     }
   },

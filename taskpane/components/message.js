@@ -148,7 +148,7 @@ var MessageRenderer = {
       var html = marked.parse(text);
       return typeof KwSecurity !== 'undefined' ? KwSecurity.sanitizeHtml(html) : html;
     } catch (e) {
-      console.error('[Message] Markdown 渲染失败:', e);
+      KwLogger.error('Message', '[Message] Markdown 渲染失败:', e);
       return '<p>' + KwUtils.escapeHtml(text) + '</p>';
     }
   },

@@ -14,7 +14,7 @@ var ActionRunner = {
     try {
       this._runInternal(actionId, options);
     } catch (e) {
-      console.error('[Kaiwu] ActionRunner.run error:', actionId, e);
+      KwLogger.error('App', '[Kaiwu] ActionRunner.run error:', actionId, e);
       if (typeof KwToast !== 'undefined') KwToast.show('操作执行异常：' + (e.message || e));
     }
   },

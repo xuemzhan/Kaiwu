@@ -219,7 +219,7 @@ var AIService = {
           try {
             timeoutController.abort();
           } catch (e) {
-            console.debug('[AI] 中止超时控制器失败:', e);
+            KwLogger.debug('AI', '[AI] 中止超时控制器失败:', e);
           }
         };
         if (userSignal.aborted) onUserAbort();

@@ -218,7 +218,7 @@ var Config = {
         return Object.assign({}, this._defaults, parsed);
       }
     } catch (e) {
-      console.warn('[Config] 加载配置失败:', e);
+      KwLogger.warn('Config', '[Config] 加载配置失败:', e);
     }
     return Object.assign({}, this._defaults);
   },
@@ -254,11 +254,11 @@ var Config = {
           e.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
           e.code === 22)
       ) {
-        console.warn('[Config] localStorage 配额已满, 配置仅在本次会话有效');
+        KwLogger.warn('Config', '[Config] localStorage 配额已满, 配置仅在本次会话有效');
       } else if (e && e.name === 'SecurityError') {
-        console.warn('[Config] localStorage 不可用, 配置仅在本次会话有效');
+        KwLogger.warn('Config', '[Config] localStorage 不可用, 配置仅在本次会话有效');
       } else {
-        console.error('[Config] 保存配置失败:', e);
+        KwLogger.error('Config', '[Config] 保存配置失败:', e);
       }
     }
   },

@@ -92,7 +92,7 @@ var PromptTemplates = {
   buildMessages: function (promptKey, context) {
     var tpl = this._templates[promptKey];
     if (!tpl) {
-      console.error('[PromptTemplates] Unknown prompt key:', promptKey);
+      KwLogger.error('PromptTemplates', '[PromptTemplates] Unknown prompt key:', promptKey);
       return [
         { role: 'system', content: '你是一个助手，请根据用户输入回答问题。' },
         { role: 'user', content: context.input || context.question || '请帮我处理这段内容' },

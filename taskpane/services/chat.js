@@ -183,7 +183,7 @@ var ChatManager = {
       this._cache = data ? JSON.parse(data) : {};
       return this._cache;
     } catch (e) {
-      console.warn('[Chat] 加载对话失败:', e);
+      KwLogger.warn('Chat', '[Chat] 加载对话失败:', e);
       this._cache = {};
       return this._cache;
     }
@@ -235,7 +235,7 @@ var ChatManager = {
           e.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
           e.code === 22)
       ) {
-        console.warn('[Chat] localStorage 配额已满, 仅保留当前对话');
+        KwLogger.warn('Chat', '[Chat] localStorage 配额已满, 仅保留当前对话');
         var currentId = this._currentChatId;
         if (currentId && chats[currentId]) {
           try {
@@ -244,7 +244,7 @@ var ChatManager = {
             localStorage.setItem('wps_assistant_chats', JSON.stringify(single));
             this._cache = single;
           } catch (e2) {
-            console.error('[Chat] 强制清理后仍无法保存:', e2);
+            KwLogger.error('Chat', '[Chat] 强制清理后仍无法保存:', e2);
             // 连单条都写不下: 清空缓存, 避免下次 _saveNow 又试图写整张大对象.
             this._cache = {};
           }
@@ -254,7 +254,7 @@ var ChatManager = {
           this._cache = {};
         }
       } else {
-        console.error('[Chat] 保存对话失败:', e);
+        KwLogger.error('Chat', '[Chat] 保存对话失败:', e);
       }
     }
   },
@@ -276,7 +276,7 @@ var ChatManager = {
         2
       );
     } catch (e) {
-      console.error('[Chat] 导出失败:', e);
+      KwLogger.error('Chat', '[Chat] 导出失败:', e);
       return null;
     }
   },
