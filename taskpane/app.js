@@ -49,7 +49,7 @@ window.__WPS_BRIDGE__ = {
     maxLength = maxLength || 10000; // 默认最大 10,000 字符
     try {
       if (typeof text === 'string' && text.length > maxLength) {
-        console.warn('[Bridge] 插入文本超长，已截断: ' + text.length + ' -> ' + maxLength);
+        KwLogger.warn('App', '[Bridge] 插入文本超长，已截断: ' + text.length + ' -> ' + maxLength);
         text = text.substring(0, maxLength);
       }
       if (this.isWPSEnv() && window.Application.ActiveDocument) {
@@ -57,7 +57,7 @@ window.__WPS_BRIDGE__ = {
         return true;
       }
     } catch (e) {
-      console.error('[Bridge] 插入文本失败:', e);
+      KwLogger.error('App', '[Bridge] 插入文本失败:', e);
     }
     return false;
   },
@@ -104,7 +104,7 @@ window.__WPS_BRIDGE__ = {
           return this.insertText(text);
       }
     } catch (e) {
-      console.error('[Bridge] 组件感知插入失败:', e);
+      KwLogger.error('App', '[Bridge] 组件感知插入失败:', e);
     }
     return false;
   },
@@ -184,12 +184,12 @@ window.__WPS_BRIDGE__ = {
 
       // 截断超长文本
       if (text.length > maxLength) {
-        console.warn('[Bridge] 文档内容超长，已截断: ' + text.length + ' -> ' + maxLength);
+        KwLogger.warn('App', '[Bridge] 文档内容超长，已截断: ' + text.length + ' -> ' + maxLength);
         text = text.substring(0, maxLength) + '\n\n[... 文档内容过长，已截断 ...]';
       }
       return text;
     } catch (e) {
-      console.warn('[Bridge] readFullContent失败:', e);
+      KwLogger.warn('App', '[Bridge] readFullContent失败:', e);
     }
     return '';
   },
@@ -200,7 +200,8 @@ window.__WPS_BRIDGE__ = {
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
   window.addEventListener('unhandledrejection', function (e) {
     if (e && e.reason) {
-      console.warn(
+      KwLogger.warn(
+        'App',
         '[开悟] 未捕获的 Promise 拒绝:',
         e.reason && e.reason.message ? e.reason.message : e.reason
       );
@@ -268,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var componentType = typeof ComponentDetector !== 'undefined' ? ComponentDetector.detect() : 'wps';
   var componentLabel =
     typeof ComponentDetector !== 'undefined' ? ComponentDetector.getLabel(componentType) : '文字';
-  console.log('[开悟] TaskPane 已加载 - 组件: ' + componentLabel);
+  KwLogger.log('App', '[开悟] TaskPane 已加载 - 组件: ' + componentLabel);
 
   // 同步组件类型到PluginStorage
   try {
@@ -324,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
     } catch (e) {
-      console.warn('[开悟] 无法注册选择变更监听:', e);
+      KwLogger.warn('App', '[开悟] 无法注册选择变更监听:', e);
     }
     // Auto-reset ComponentDetector when the user opens/creates a new document.
     if (typeof ComponentDetector !== 'undefined' && ComponentDetector.bindAutoReset) {
@@ -362,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   })();
 
-  console.log('[开悟] 初始化完成');
+  KwLogger.log('App', '[开悟] 初始化完成');
 });
 
 // ==================== 应用会话管理器 ====================
@@ -388,7 +389,7 @@ var AppSessionManager = {
         SessionManager.cleanup(documentId);
       }
     } catch (e) {
-      console.warn('[App] Error cleaning up sessions:', e);
+      KwLogger.warn('App', '[App] Error cleaning up sessions:', e);
     }
   },
 

@@ -130,6 +130,11 @@ var KwLogger = (function () {
     debug: function (scope, message, context) {
       log('debug', scope, message, context);
     },
+    log: function (scope, message, context) {
+      // Alias for info. console.log habits are sticky; many codebases
+      // use KwLogger.log() expecting console.log()-like behavior.
+      log('info', scope, message, context);
+    },
     info: function (scope, message, context) {
       log('info', scope, message, context);
     },

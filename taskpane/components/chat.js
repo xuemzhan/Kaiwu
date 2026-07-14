@@ -226,7 +226,7 @@ var ChatUI = {
         try {
           mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
         } catch (e) {
-          console.debug('[Chat] Mermaid 渲染失败:', e);
+          KwLogger.debug('Chat', '[Chat] Mermaid 渲染失败:', e);
         }
       }
     }
@@ -430,12 +430,12 @@ var ChatUI = {
       ) {
         ActionRunner.run(action);
       } else {
-        console.warn('[ChatUI] Unknown pending action:', action);
+        KwLogger.warn('ChatUI', '[ChatUI] Unknown pending action:', action);
       }
 
       window.Application.PluginStorage.setItem('pending_action', '');
     } catch (e) {
-      console.warn('[ChatUI] 检查待处理操作失败:', e);
+      KwLogger.warn('ChatUI', '[ChatUI] 检查待处理操作失败:', e);
     }
   },
 
@@ -613,7 +613,7 @@ var ChatUI = {
         }
       }
     } catch (e) {
-      console.debug('[ChatUI] 同步宽度失败:', e);
+      KwLogger.debug('ChatUI', '[ChatUI] 同步宽度失败:', e);
     }
 
     var now = Date.now();
@@ -634,7 +634,7 @@ var ChatUI = {
     try {
       model = Config.get('model') || '';
     } catch (e) {
-      console.debug('[ChatUI] 获取模型失败:', e);
+      KwLogger.debug('ChatUI', '[ChatUI] 获取模型失败:', e);
     }
 
     if (!doc.available) {
@@ -653,7 +653,7 @@ var ChatUI = {
         baseUrl = full.length > 32 ? full.slice(0, 28) + '...' : full;
       }
     } catch (e3) {
-      console.debug('[ChatUI] 获取 Base URL 失败:', e3);
+      KwLogger.debug('ChatUI', '[ChatUI] 获取 Base URL 失败:', e3);
     }
 
     el.textContent =

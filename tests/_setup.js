@@ -171,6 +171,8 @@ let lastCtx = null;
 const _PRELOAD_UTILS = [
   'taskpane/services/utils.js',
   'taskpane/services/toast.js',
+  'taskpane/services/security.js',
+  'taskpane/services/logger.js',
   'taskpane/services/markdown.js',
 ];
 

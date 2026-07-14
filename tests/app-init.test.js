@@ -73,6 +73,7 @@ function loadApp(window) {
   loadScripts(window, [
     'component.js',
     'taskpane/services/security.js',
+    'taskpane/services/logger.js',
     'taskpane/services/config.js',
     'taskpane/services/chat.js',
     'taskpane/services/ai.js',
@@ -234,6 +235,7 @@ test('app: error boundary catches initialization errors', () => {
     loadScripts(env.window, [
       'component.js',
       'taskpane/services/security.js',
+      'taskpane/services/logger.js',
       'taskpane/services/config.js',
       'taskpane/services/chat.js',
       'taskpane/services/ai.js',
@@ -259,6 +261,13 @@ test('app: TaskPane lifecycle hooks fire correctly', () => {
   mockVendorLibs(env.window);
   buildFullDOM(env.window);
   loadApp(env.window);
+
+  // KwLogger defaults to 'warn' level which suppresses info; the lifecycle
+  // hook emits info-level logs. Set level to debug so they flow through
+  // the default sink (console.log).
+  if (env.window.KwLogger && typeof env.window.KwLogger.setLevel === 'function') {
+    env.window.KwLogger.setLevel('debug');
+  }
 
   const logs = [];
   const originalLog = env.window.console.log;

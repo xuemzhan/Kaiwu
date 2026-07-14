@@ -106,6 +106,17 @@ test('KwLogger: setEnabled(false) suppresses all log calls', () => {
   assert.equal(captured.length, 1);
 });
 
+test('KwLogger: log() is an alias for info()', () => {
+  resetLogger();
+  KwLogger.setLevel('debug');
+  KwLogger.setHandler(null);
+  KwLogger.log('M', 'via log alias');
+  const history = KwLogger.getHistory();
+  assert.equal(history.length, 1);
+  assert.equal(history[0].level, 'info');
+  assert.equal(history[0].message, 'via log alias');
+});
+
 test('KwLogger: history records all log calls (when enabled)', () => {
   resetLogger();
   KwLogger.setLevel('debug');
