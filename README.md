@@ -34,6 +34,7 @@ Kaiwu (开悟) is a community-maintained WPS Office add-in that brings a full-fe
 | **Mindmap** | Auto-generate a Mermaid mindmap from the document |
 | **AI Layout** | Reformat a paper / official document according to common templates |
 | **Multi-model** | Switch between MiniMax / GPT / DeepSeek / custom endpoints at runtime |
+| **Native AI Control** | 3-layer defense (registry + service + file placeholder) with multi-version detection — disable/enable WPS built-in AI independently |
 
 ## Screenshots
 
@@ -57,9 +58,9 @@ Kaiwu (开悟) is a community-maintained WPS Office add-in that brings a full-fe
 
 ## Quick Start (End User)
 
-> If you just want to use the plugin and don't care about the source, jump to the [Releases](https://github.com/xuemzhan/Kaiwu/releases) page and download the latest `kaiwu_x.y.z.7z`.
+> If you just want to use the plugin and don't care about the source, jump to the [Releases](https://github.com/xuemzhan/Kaiwu/releases) page and download the latest `kaiwu_x.y.z.7z` (current release: **kaiwu_0.4.1.7z**).
 
-1. Download `kaiwu_x.y.z.7z` from [Releases](https://github.com/xuemzhan/Kaiwu/releases).
+1. Download `kaiwu_0.4.1.7z` from [Releases](https://github.com/xuemzhan/Kaiwu/releases).
 2. Right-click the `.7z` → **Extract to** any folder (e.g. your Desktop).
 3. **Fully exit WPS** (close all documents, right-click the WPS tray icon → Exit, and check Task Manager for any `wps.exe`).
 4. Double-click **`install.bat`** inside the extracted folder.
@@ -113,12 +114,12 @@ wps-addon-publish/
 ├── verify.bat               # post-install diagnostic
 ├── publish.xml              # WPS plugin manifest
 ├── README-安装说明.md       # user-facing installation guide
-├── kaiwu_1.0.0/             # plugin source (ASCII dir name, see notes below)
-├── kaiwu_1.0.0.7z           # distributable archive
-└── kaiwu_1.0.0_installer.exe (optional)
+├── kaiwu_0.4.0/             # plugin source (ASCII dir name, see notes below)
+├── kaiwu_0.4.0.7z           # distributable archive
+└── kaiwu_0.4.0_installer.exe (optional)
 ```
 
-## Why is the directory named `kaiwu_1.0.0` and not `开悟_1.0.0`?
+## Why is the directory named `kaiwu_0.4.0` and not `开悟_0.4.0`?
 
 WPS resolves a plugin's install path as `{name}_{version}` where `name` comes from the `name` attribute in `publish.xml`. To keep the install script free of Chinese characters (which break under the GBK/UTF-8 codepage mismatches that `7zsd.sfx` runs under), we use the pinyin **kaiwu** as the registry name.
 
@@ -155,7 +156,7 @@ Kaiwu/
 │   ├── init-env.js            # .env → taskpane/env.js
 │   ├── copy-assets.js         # Dev-mode asset staging
 │   └── sync-build.js          # Stage the wpsjs build output
-└── tests/                     # Node --test suites (279 tests)
+└── tests/                     # Node --test suites (567 tests)
 ```
 
 ## How It Works
@@ -215,7 +216,7 @@ Edit `.env` and run `npm run build` again. The new value is baked into the packa
 npm test
 ```
 
-Runs the Node test runner over `tests/*.test.js` (279 tests covering ribbon, components, services, integration).
+Runs the Node test runner over `tests/*.test.js` (567 tests covering ribbon, components, services, integration).
 
 ## Troubleshooting
 

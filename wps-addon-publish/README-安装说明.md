@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**版本: 0.4.0**
+**版本: 0.4.1**
 
 基于 AI 大模型的 WPS 写作辅助工具
 
@@ -40,7 +40,7 @@
 
 包内已内置默认 API Key (在 `.env` 文件中)。如果需要更换:
 
-- **方法一**: 编辑 `kaiwu_0.4.0\.env`, 填入新的 `VITE_DEFAULT_API_KEY` 等, 然后重启 WPS
+- **方法一**: 编辑 `kaiwu_0.4.1\.env`, 填入新的 `VITE_DEFAULT_API_KEY` 等, 然后重启 WPS
 - **方法二**: 在 WPS 侧边栏点击 ⚙️ 设置, 实时修改并保存 (推荐, 无需重启)
 
 当前默认配置:
@@ -54,7 +54,7 @@ VITE_DEFAULT_API_KEY  = sk-test-...
 ## 目录结构
 
 ```
-kaiwu_0.4.0/
+kaiwu_0.4.1/
 ├── .env                        # API 默认配置 (可改)
 ├── ribbon.xml                  # WPS 功能区定义
 ├── ribbon.js                   # 功能区事件
@@ -77,12 +77,31 @@ kaiwu_0.4.0/
     └── styles/
 ```
 
+## 原生 WPS AI / 稻壳 独立管理 (v2 多版本 3 层防御)
+
+本包附带 v2 升级版脚本, 对每个检测到的 WPS 版本执行 **3 层防御**:
+
+1. **注册表层 (HKCU)**: `CloudService\EnableAI=0` + `AutoStart=0`, 阻止 AI 功能加载
+2. **服务层**: `sc stop` + `sc config start=disabled` 禁用 WPS Cloud Service
+3. **文件占位层**: 将 `wpscloudsvr.exe` 替换为 0 字节占位文件, 破坏 LoadLibraryExW 注入
+
+| 脚本 | 作用 |
+|------|------|
+| `disable-wps-native-ai.bat` | 禁用 WPS AI 助手 (需管理员权限, 自动 UAC 提权) |
+| `enable-wps-native-ai.bat` | 恢复 WPS AI 助手 (从 .kaiwu-backup 还原) |
+| `verify.bat` | 安装验证 (含 3 层状态检查) |
+
+**使用场景**:
+- 双击 `disable-wps-native-ai.bat` 禁用 (支持 WPS 11.x/12.x 多版本并存)
+- 运行后需要**重启 WPS** 才能生效
+- 再次运行 `enable-wps-native-ai.bat` 即可完全恢复
+
 ## 安装位置
 
 插件文件被复制到:
 
 ```
-%APPDATA%\kingsoft\wps\jsaddons\kaiwu_0.4.0\
+%APPDATA%\kingsoft\wps\jsaddons\kaiwu_0.4.1\
 %APPDATA%\kingsoft\wps\jsaddons\publish.xml
 ```
 
@@ -110,5 +129,5 @@ A: 先运行 uninstall.bat 卸载旧版 (会自动清除 authaddin.json 缓存),
 ---
 
 <div align="center">
-打包于 2026-06-19 08:07:01
+打包于 2026-07-12 13:23:54
 </div>

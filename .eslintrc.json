@@ -15,6 +15,8 @@
     "KwUtils": "readonly",
     "KwToast": "readonly",
     "KwMarkdown": "readonly",
+    "KwLogger": "readonly",
+    "KwSecurity": "readonly",
     "KwSecurity": "readonly",
     "Config": "readonly",
     "ChatUI": "readonly",
@@ -46,5 +48,71 @@
     "no-console": "off",
     "prefer-const": "warn",
     "eqeqeq": ["error", "smart"]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["tests/_setup.js"],
+      "rules": {
+        "no-unused-vars": [
+          "warn",
+          {
+            "args": "none",
+            "varsIgnorePattern": "^(mockKwUtils|triggerDOMContentLoaded|setApplication|loadScriptText|mockVendorLibs)$"
+          }
+        ]
+      }
+    },
+    {
+      "files": ["taskpane/**/*.js"],
+      "rules": {
+        "no-unused-vars": [
+          "warn",
+          {
+            "args": "none",
+            "varsIgnorePattern": "^(self|originalCode|originalImage|window_2|self|ActionRegistry|ActionRunner|PromptTemplates|WriterAdapter|HistoryDrawer|ResultCard|ResultPanel|SettingsUI|AIServiceFactory|AIService|OpenCodeAIService|ChatManager|Config|getSelection|C|chat|ChatUI|MessageRenderer|SessionManager|sessionId)$"
+          }
+        ],
+        "no-restricted-syntax": [
+          "warn",
+          {
+            "selector": "AssignmentExpression[left.object.property.name='innerHTML'][right.type='CallExpression'][right.callee.object.name!='KwSecurity'][right.callee.object.name!='KwMarkdown'][right.callee.object.name!='KwUtils']",
+            "message": "innerHTML = ... assignments must go through KwSecurity.sanitizeHtml, KwMarkdown.render, or KwUtils.escapeHtml. See docs/security-contract-innerhtml.md."
+          },
+          {
+            "selector": "AssignmentExpression[left.object.property.name='innerHTML'][right.type='Identifier']",
+            "message": "innerHTML = <identifier> is suspicious — the value is unsanitized. Use textContent for plain text, or route through KwSecurity/KwMarkdown/KwUtils. See docs/security-contract-innerhtml.md."
+          },
+          {
+            "selector": "AssignmentExpression[left.object.property.name='outerHTML']",
+            "message": "outerHTML = ... is even more dangerous than innerHTML. Prefer textContent. See docs/security-contract-innerhtml.md."
+          }
+        ]
+      }
+    },
+    {
+      "files": ["tests/**/*.test.js"],
+      "rules": {
+        "no-unused-vars": [
+          "warn",
+          {
+            "args": "none",
+            "varsIgnorePattern": "^(window|self|_7z|_7zBin|triggerDOMContentLoaded|chunks|errorCaught|originalCode|originalImage|window_2|mockKwUtils|ActionRunner|ActionRegistry|PromptTemplates|WriterAdapter|HistoryDrawer|MessageRenderer|ResultCard|ResultPanel|SettingsUI|AIServiceFactory|AIService|ChatManager|ChatUI|Config|OpenCodeAIService|SessionManager|sessionId|getSelection|KwUtils|KwToast|C|chat|b|DRAWER_DOM|origShow|callCount|makeKeyEvent|taskPaneShown|dialogOpened|orig|pruneCount|pruneMaxAge)$",
+            "caughtErrorsIgnorePattern": "^_"
+          }
+        ]
+      }
+    },
+    {
+      "files": ["scripts/package.js"],
+      "rules": {
+        "no-unused-vars": [
+          "warn",
+          {
+            "args": "none",
+            "varsIgnorePattern": "^(BUILD_DIR|ADDON_NAME|WPS_NATIVE_AI_REGISTRY|_7z|_7zBin)$"
+          }
+        ]
+      }
+    }
+  ]
 }

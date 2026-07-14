@@ -8,7 +8,7 @@ const assets = [
   ['node_modules/marked/marked.min.js', 'marked.min.js'],
   ['node_modules/mermaid/dist/mermaid.min.js', 'mermaid.min.js'],
   ['node_modules/html2canvas/dist/html2canvas.min.js', 'html2canvas.min.js'],
-  ['node_modules/highlight.js/styles/github.min.css', 'highlight-github.min.css']
+  ['node_modules/highlight.js/styles/github.min.css', 'highlight-github.min.css'],
 ];
 
 fs.mkdirSync(vendorDir, { recursive: true });

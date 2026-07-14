@@ -8,16 +8,11 @@ const buildRoot = path.join(root, 'wps-addon-build');
 const mirrorDirs = [
   ['taskpane', 'taskpane'],
   ['floating', 'floating'],
-  ['images', 'images']
+  ['images', 'images'],
 ];
 
 // 单独同步的文件 (根目录)
-const mirrorFiles = [
-  'ribbon.js',
-  'ribbon.xml',
-  'component.js',
-  'index.html'
-];
+const mirrorFiles = ['ribbon.js', 'ribbon.xml', 'component.js', 'index.html'];
 
 // 跳过同步的子目录
 // 注意: 不要把 'vendor' 加到这里! taskpane/vendor/ 由 copy-assets 生成,

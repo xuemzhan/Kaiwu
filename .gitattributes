@@ -1,0 +1,28 @@
+# Line ending policy for Kaiwu
+#
+# This file locks line endings to match the conventions used in the repo
+# at HEAD, so that future contributors don't accidentally introduce the
+# LF/CRLF churn that previously caused diff noise (commit 8c85f9f era
+# warnings about "LF will be replaced by CRLF the next time Git touches it").
+#
+# Rules:
+#   - *.bat          CRLF — required by Windows cmd.exe. Without CRLF, multi-line
+#                    for /d blocks and parenthesis-blocks behave unpredictably
+#                    on zh-CN Windows (GBK codepage 936).
+#   - *.js, *.css, *.html, *.json, *.md  LF — readable in all editors, matches
+#                    what `prettier --write` emits under the .prettierrc.json
+#                    `"endOfLine": "lf"` setting.
+#   - * text=auto    — fallback: Git decides for everything else.
+
+*.bat          text eol=crlf
+*.js           text eol=lf
+*.css          text eol=lf
+*.html         text eol=lf
+*.json         text eol=lf
+*.md           text eol=lf
+*.xml          text eol=lf
+*.yml          text eol=lf
+*.yaml         text eol=lf
+
+# Let Git decide for everything else
+*              text=auto

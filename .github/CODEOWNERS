@@ -1,0 +1,53 @@
+# CODEOWNERS
+#
+# This file defines who is automatically requested for review when someone
+# opens a pull request that modifies certain files.
+#
+# Format: <pattern> <@user-or-team>
+# Patterns are matched in priority order; the last match wins.
+# Use comments to document the rationale.
+#
+# Order matters: more specific patterns should come first, fallback at the bottom.
+
+# Default owners for everything in /, used as a fallback.
+# Individual teams/users can claim subsets below.
+* @xuemzhan
+
+# CI / release pipeline is owned by the maintainer.
+/.github/ @xuemzhan
+/.github/workflows/ @xuemzhan
+/.github/dependabot.yml @xuemzhan
+
+# Core add-in code (TaskPane runtime) needs careful review because
+# it runs inside WPS CEF with full DOM/clipboard access.
+/taskpane/ @xuemzhan
+/taskpane/services/security.js @xuemzhan
+/taskpane/services/auth*.js @xuemzhan
+/ribbon.js @xuemzhan
+/component.js @xuemzhan
+
+# AI service layer (auto-generated docs / contract tests)
+/taskpane/services/ai-factory.js @xuemzhan
+/taskpane/services/opencode-ai.js @xuemzhan
+
+# Build / packaging
+/scripts/package.js @xuemzhan
+/scripts/release.js @xuemzhan
+/wps-addon-publish/ @xuemzhan
+/wpsjs.config.js @xuemzhan
+
+# Tests
+/tests/ @xuemzhan
+
+# Docs
+/CHANGELOG.md @xuemzhan
+/INSTALL.md @xuemzhan
+/README.md @xuemzhan
+/docs/ @xuemzhan
+
+# Configuration that affects the whole project
+/package.json @xuemzhan
+/.eslintrc.json @xuemzhan
+/.prettierrc.json @xuemzhan
+/.gitattributes @xuemzhan
+/.gitignore @xuemzhan

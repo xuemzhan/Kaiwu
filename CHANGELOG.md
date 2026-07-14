@@ -2,6 +2,65 @@
 
 All notable changes to **Kaiwu (开悟)** are documented here.
 
+## [Unreleased]
+
+### ⚠️ Version bumped to 0.4.1 (bugfix release)
+
+This release is a **bugfix** that addresses a real user-visible crash and a synchronous-contract regression. The 0.4.0 → 0.4.1 bump follows semver: the public API did not break, but the shipped artifact's behavior did.
+
+If you previously installed `kaiwu_0.4.0.7z`, please re-download from [Releases](https://github.com/xuemzhan/Kaiwu/releases) and re-run `install.bat`.
+
+### Changed
+- **AIServiceFactory** now exposes two entry points:
+  - `create(config)` — synchronous, returns the service object immediately. Matches the contract documented in `docs/opencode-integration.md`. Does **not** perform any network check; the caller is expected to handle errors from the underlying service.
+  - `selectAsync(config, onSuccess, onError)` — asynchronous with a reachability test. When `config.mode === 'opencode'` and `OpenCodeAIService.testConnection` exists, this performs a `/api/health` GET; on success the callback receives `OpenCodeAIService`, on failure (server down / auth error / network error) it receives `AIService` after showing a toast. Use this from the Settings panel "Test Connection" button. For the normal request path, use `create()`.
+  - Downgrade from `OpenCodeAIService` to `AIService` is reported via `onSuccess(AIService)`, **not** `onError`. `onError` is reserved for the async path itself blowing up.
+- **`opencode-ai._request`** gained a `settled` guard and `fireSuccess`/`fireError` helpers. When `Promise.race` resolves with the losing branch's microtask after the race already settled (e.g. a slow fetch whose body parse rejects after the timeout fires), the previous version could double-fire `onError`. The new version guarantees onError-or-onSuccess but never both.
+  - `_logAuthInfo` is now silent by default; pass `options.verbose` to enable it (reduces per-request console noise).
+  - JSON parse errors on a 2xx response are now classified as a distinct `JSON parse error` (non-retryable) instead of being lumped into the generic `Network error` (retryable) bucket.
+- `response.text()` rejection in `_request`'s !ok branch now has an explicit `.catch` that fires `onError` (instead of silently producing an unhandled rejection). Classified as `retryable: true` since stream read failures are typically transient.
+- **Disable-WPS-native-AI bat scripts**: the optional DLL placeholder is now a short ASCII marker (`DISABLED_BY_KAIWU`) instead of a 0-byte file. WPS was attempting to PE-load the placeholder as a DLL and crashing on `not a valid Win32 application`; the marker has the wrong magic bytes so PE-load fails cleanly and the process keeps running. `enable-wps-native-ai.bat` behavior is unchanged (still restores from `.kaiwu-backup`).
+
+### Fixed
+- `AIServiceFactory.create` no longer returns `undefined` when the opencode branch fires (was introduced by an earlier attempt at async reachability testing; restored to the documented synchronous contract).
+- `opencode-ai._request` no longer leaks a 60s `setTimeout` per call after the response settles. The timer is now cleared in `fireSuccess` / `fireError` / `timeoutPromise.catch`.
+- **bat generators return CRLF directly** (Bug 5.1): The 5 bat generators in `scripts/package.js` (install, uninstall, verify, disable, enable) previously returned strings with LF-only line endings. Only the internal `writeBatFile()` helper applied `toCRLF()` at write time. This meant any code calling the generators directly (e.g. tests, or future production code) would get LF-only output, which is fragile for Windows cmd.exe. The fix wraps each generator's return value in `toCRLF()` so the returned string is already CRLF-terminated. Regression guarded by a new test in `tests/package-script.test.js`.
+
+### Added
+- `npm run validate` — single command that runs `lint && format:check && test`. Use in pre-commit / pre-push hooks.
+- `npm run test:serial` — serial test runner (`--test-concurrency=1`) for CI / debugging flake issues that surface under parallel CPU contention.
+- `ResultCard.whenRendered()` — public API for tests to await the next debounced render. Installed via `_installWhenRendered` (test-only, non-enumerable); never auto-runs in production.
+- 16 new tests in `tests/ai-factory.test.js` covering the `create` / `selectAsync` split, default-config fallbacks, `isOpencodeMode`, and `isOpencodeAvailable`.
+- 11 new tests in `tests/wps-config.test.js` validating cross-file config consistency (package.json / wpsjs.config.js versions, gitignore patterns, install.bat BOM, README version mention).
+- 10 new tests in `tests/7z-marker.test.js` extracting the published `.7z` and asserting key refactor markers are present (regression guard against stale builds).
+- 1 new test in `tests/opencode-ai.test.js` for `response.text()` rejection path (regression guard for unhandled rejection when reading an HTTP error body fails).
+- 4 new tests in `tests/opencode-ai.test.js` for the new `_request` behaviors (JSON parse error classification, slow body parse race, timer leak, auth verbose).
+- `.gitattributes` locking line endings (`*.bat text eol=crlf`, `*.js text eol=lf`, etc.) so future contributors don't accidentally re-introduce the LF/CRLF churn.
+- `kaiwu_0.4.1.7z` repackaged with the refactored code. End users downloading from GitHub Releases now get the fix for the WPS PE-load 0-byte DLL crash and the synchronous `AIServiceFactory.create` contract.
+- `taskpane/services/logger.js` — `KwLogger` singleton with `debug`/`info`/`warn`/`error` levels. Default `warn` in browser (quiet for WPS users), `debug` in Node tests. 18 unit tests cover level filtering, custom handler, ring-buffer history, error-context handling. Existing 40+ raw `console.*` calls can migrate to `KwLogger.*` incrementally.
+- `tests/innerhtml-security.test.js` — 14 regression tests for HTML sanitizers (see Security section).
+- `tests/logger.test.js` — 18 unit tests for KwLogger.
+- `.github/workflows/ci.yml` — PR validation workflow (windows-latest, npm cache, concurrency, 15-min timeout). Runs `npm run lint && format:check && npm test && npm run test:serial && 7z-marker && npm run build`.
+- `.github/dependabot.yml` — weekly npm + GitHub Actions updates. Dev deps grouped into one PR; production deps (`marked`, `mermaid`, `highlight.js`, `html2canvas`) kept separate for manual review; major-version bumps for production deps are ignored (those get a manual PR).
+- `.github/CODEOWNERS` — single-owner fallback (`@xuemzhan`) for now; structure ready for team expansion by uncommenting sections.
+- `.github/PULL_REQUEST_TEMPLATE.md` — enforces checklist (lint/format/test ran; security contract read; no `console.*`; CHANGELOG updated).
+- `.github/ISSUE_TEMPLATE/bug_report.md` + `feature_request.yml` + `config.yml` — structured issue creation; `blank_issues_enabled: false`.
+- `docs/security-contract-innerhtml.md` — formal HTML safety contract (see Security section).
+- `package.json` `engines` field: `node >= 20.0.0`, `npm >= 10.0.0`. Prevents accidental install on incompatible Node versions.
+- `taskpane/index.html`: added `<script src="services/logger.js">` after `services/security.js` so `KwLogger` is available before any component loads.
+
+
+### Security
+- `_installWhenRendered` is installed with `enumerable: false`, preventing accidental discovery via `for..in` / `Object.keys()`. Production code cannot trigger an unnecessary full re-render by calling `ResultCard.whenRendered()` (the property simply does not exist on the production object).
+- **`docs/security-contract-innerhtml.md`** — formal contract for the 16 existing `innerHTML` call sites and future ones. Audit log lists each call site and the sanitizer it routes through. New code is gated by an ESLint `no-restricted-syntax` rule that warns on raw `innerHTML = <unknown expression>`.
+- **`tests/innerhtml-security.test.js`** — 14 regression tests covering XSS payloads (`<script>`, `onerror`, `javascript:`, `data:text/html`, multi-vector) for `KwSecurity.sanitizeHtml`, `KwSecurity.sanitizeUrl`, `KwUtils.escapeHtml`, `KwUtils.escapeAttr`. Audit caught a real semantic gap: `escapeHtml` does NOT encode quotes (use `escapeAttr` for attribute values).
+
+- The `kaiwu_0.4.1` artifact does not include any user-specific `.env` or `taskpane/env.js` content; the build pipeline uses `.env.example` only.
+
+### Removed
+- The "v1 disable scripts" paragraph (which actually described the v0.4.0 behavior, not a delta) was moved out of `[Unreleased]` — it now lives only under the [0.4.0] section.
+- Duplicate AIServiceFactory tests removed from `tests/opencode-ai.test.js` and `tests/opencode-integration.test.js` (the canonical source is `tests/ai-factory.test.js`).
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 

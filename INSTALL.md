@@ -10,9 +10,9 @@
 
 | 文件 | 大小 | 用途 |
 |------|------|------|
-| `开悟_1.0.0.7z` | ~850 KB | **7z 压缩包**：适合 IT 批量分发、网盘/U 盘传递 |
-| `开悟_1.0.0_安装程序.exe` | ~980 KB | **自解压 EXE**：适合普通用户双击安装 |
-| `开悟_1.0.0/` | ~3.7 MB | 解包后的源码目录（已被 install.bat 使用） |
+| `开悟_0.4.0.7z` | ~895 KB | **7z 压缩包**：适合 IT 批量分发、网盘/U 盘传递 |
+| `开悟_0.4.0_安装程序.exe` | ~1.0 MB | **自解压 EXE**：适合普通用户双击安装 |
+| `开悟_0.4.0/` | ~4.0 MB | 解包后的源码目录（已被 install.bat 使用） |
 | `install.bat` | 1.3 KB | 中文一键安装脚本（带管理员权限提示） |
 | `uninstall.bat` | 0.8 KB | 中文一键卸载脚本 |
 | `publish.xml` | 0.2 KB | WPS 插件清单（被 install.bat 写入指定目录） |
@@ -102,7 +102,7 @@ npm run package:exe     # exe
 npm run package:both    # 7z + exe
 ```
 
-**输出**：`wps-addon-publish/开悟_1.0.0.7z` 和 `wps-addon-publish/开悟_1.0.0_安装程序.exe`
+**输出**：`wps-addon-publish/开悟_0.4.0.7z` 和 `wps-addon-publish/开悟_0.4.0_安装程序.exe`
 
 ### 1.4 校验产物
 
@@ -110,7 +110,7 @@ npm run package:both    # 7z + exe
 # 检查 7z 完整性 (PowerShell 需先安装 7-Zip; 也可用 7zip-bin 的 CLI)
 node -e "
   const _7z = require('node-7z');
-  const list = _7z.list('wps-addon-publish/开悟_1.0.0.7z', { \$bin: require('7zip-bin').path7za });
+  const list = _7z.list('wps-addon-publish/开悟_0.4.0.7z', { \$bin: require('7zip-bin').path7za });
   list.on('data', d => console.log(d.file));
 "
 
@@ -121,8 +121,8 @@ node -e "
 
 | 渠道 | 文件 |
 |------|------|
-| 内测 | `开悟_1.0.0-beta.7z` |
-| 正式 | `开悟_1.0.0.7z` + `开悟_1.0.0_安装程序.exe` |
+| 内测 | `开悟_0.4.0-beta.7z` |
+| 正式 | `开悟_0.4.0.7z` + `开悟_0.4.0_安装程序.exe` |
 
 每次发布时同步升级 `wpsjs.config.js` 中的 `version`，避免被 WPS 识别为"已是最新"而跳过更新。
 
@@ -145,16 +145,16 @@ node -e "
 
 1. **将分发包拷到目标电脑**（U 盘、网盘、邮件、共享盘皆可）
 2. **完全退出 WPS**（包括右下角托盘图标，必要时用任务管理器结束 `WPS.exe`）
-3. **双击 `开悟_1.0.0_安装程序.exe`**
+3. **双击 `开悟_0.4.0_安装程序.exe`**
 4. 弹出 7z 自解压窗口，**确认安装目录**（默认 `%TEMP%`），点「**安装**」
-5. 自解压完成后，**进入解压目录**（如 `%TEMP%\开悟_1.0.0`），**右键 `install.bat` → 以管理员身份运行**
+5. 自解压完成后，**进入解压目录**（如 `%TEMP%\开悟_0.4.0`），**右键 `install.bat` → 以管理员身份运行**
 6. 看到 "**安装成功!**" 后，按任意键退出
 7. **重新打开 WPS Writer**
 8. 在顶部功能区找到「**开悟**」标签页 → 点击「打开助手」
 
 ### 2.3 安装步骤（**手动解压 7z 方式**，IT 批量分发）
 
-1. 用 7-Zip 或 Windows 自带解压工具解压 `开悟_1.0.0.7z`
+1. 用 7-Zip 或 Windows 自带解压工具解压 `开悟_0.4.0.7z`
 2. 进入解压后的目录
 3. **完全退出 WPS**
 4. **右键 `install.bat` → 以管理员身份运行**
@@ -164,7 +164,7 @@ node -e "
 
 | 检查项 | 通过标志 |
 |--------|---------|
-| 目录存在 | `%APPDATA%\kingsoft\wps\jsaddons\开悟_1.0.0\` 存在 |
+| 目录存在 | `%APPDATA%\kingsoft\wps\jsaddons\开悟_0.4.0\` 存在 |
 | 清单已注册 | `%APPDATA%\kingsoft\wps\jsaddons\publish.xml` 含 `<jsplugin name="开悟" ...>` |
 | WPS 标签 | 重新打开 WPS Writer → 顶部功能区有「开悟」标签 |
 | 助手面板 | 点击「打开助手」→ 右侧弹出 TaskPane 侧边栏 |
@@ -175,7 +175,44 @@ node -e "
 包内已内置默认 API Key。**用户首次打开后若需更换**：
 
 - **方法 1（推荐）**：在 WPS 侧边栏 → 右上角 ⚙️ → 修改 API Key / API 地址 / 模型 → 保存（立即生效）
-- **方法 2（全局）**：编辑 `%APPDATA%\kingsoft\wps\jsaddons\开悟_1.0.0\.env` → 关闭并重新打开 WPS
+- **方法 2（全局）**：编辑 `%APPDATA%\kingsoft\wps\jsaddons\开悟_0.4.0\.env` → 关闭并重新打开 WPS
+
+### 2.6 管理 WPS 原生 AI / 稻壳
+
+本包附带 v4 安全版多层防御脚本，可独立控制 WPS 原生 AI 功能：
+
+| 脚本 | 作用 |
+|------|------|
+| `disable-wps-native-ai.bat` | 禁用 WPS AI 助手（可选多层防御） |
+| `enable-wps-native-ai.bat` | 恢复 WPS AI 助手 |
+| `verify.bat` | 验证当前状态（含详细检查报告） |
+
+**禁用 WPS 原生 AI 的影响：**
+
+| 功能 | 影响 | 说明 |
+|------|------|------|
+| WPS 基本文档编辑 | ❌ 无影响 | 正常使用 |
+| 开悟加载项 AI | ❌ 无影响 | 使用您自己的 API Key |
+| 本地文档保存 | ❌ 无影响 | 正常保存 |
+| WPS 云同步 | ⚠️ 可能受影响 | 依赖 wpscloudsvr 服务 |
+| 文档自动恢复 | ⚠️ 可能受影响 | 依赖 wpscloudlaunch.exe |
+| 稻壳模板/插件 | ⚠️ 可能受影响 | 部分功能依赖 AI 服务 |
+
+**安全特性 (v4)：**
+
+1. **用户确认**: 每个危险操作前都有确认提示
+2. **进程保护**: 终止 WPS 前提示用户保存工作
+3. **备份机制**: 文件替换前自动创建 `.kaiwu-backup` 备份
+4. **可选步骤**: DLL 文件替换是可选的，用户可以选择只修改注册表和服务
+5. **错误恢复**: 备份失败时自动中止，防止数据丢失
+
+**使用方法：**
+- 双击 `disable-wps-native-ai.bat`（需管理员权限，会自动 UAC 提权）
+- 按照提示操作，可选择是否替换 DLL 文件
+- 重启 WPS 生效
+- 运行 `enable-wps-native-ai.bat` 可完全恢复
+
+**注意：** 脚本会自动检测机器上所有已安装的 WPS 版本（支持 11.x 和 12.x 并存），对每个版本分别执行操作。
 
 ---
 
@@ -189,12 +226,12 @@ node -e "
 # deploy-kaiwu.ps1 — 域推送示例
 $ErrorActionPreference = 'Stop'
 
-$source = '\\your-share\kaiwu\kaiwu_1.0.0'
+$source = '\\your-share\kaiwu\kaiwu_0.4.0'
 
 # GPO 启动脚本以 SYSTEM 身份运行
 # %APPDATA% 在 SYSTEM 下指向 C:\Windows\System32\config\systemprofile\AppData\Roaming (错误路径)
 # 使用 USERPROFILE 指向 C:\Users\Default 或遍历 HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList 获取所有用户
-$dest = "$env:USERPROFILE\AppData\Roaming\kingsoft\wps\jsaddons\kaiwu_1.0.0"
+$dest = "$env:USERPROFILE\AppData\Roaming\kingsoft\wps\jsaddons\kaiwu_0.4.0"
 
 # 1. 创建目录
 New-Item -ItemType Directory -Force -Path $dest
@@ -226,7 +263,7 @@ Write-Host "[deploy] 已部署 $dest"
 
 ### 3.3 用户自取（最小 IT 介入）
 
-把 `开悟_1.0.0_安装程序.exe` 放到公司共享盘 / 企业微信群，发通知让用户自取自装。
+把 `开悟_0.4.0_安装程序.exe` 放到公司共享盘 / 企业微信群，发通知让用户自取自装。
 
 ---
 

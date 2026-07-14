@@ -8,199 +8,235 @@
  *   - Toast 通知委托给 KwToast
  */
 var MessageRenderer = {
-    // 渲染单条消息 HTML
-    render: function (msg, isStreaming) {
-        var role = msg.role;
-        var content = msg.content || '';
-        var timestamp = msg.timestamp ? KwUtils.formatTimeShort(msg.timestamp) : '';
+  // 渲染单条消息 HTML
+  render: function (msg, isStreaming) {
+    var role = msg.role;
+    var content = msg.content || '';
+    var timestamp = msg.timestamp ? KwUtils.formatTimeShort(msg.timestamp) : '';
 
-        if (role === 'user') {
-            return this._renderUserMessage(content, timestamp);
-        } else {
-            return this._renderAssistantMessage(content, timestamp, isStreaming);
-        }
-    },
-
-    _renderUserMessage: function (content, timestamp) {
-        var escaped = KwUtils.escapeHtml(content);
-        var formatted = escaped.replace(/\n/g, '<br>');
-        return '' +
-            '<div class="message message-user" data-mid="' + this._idFor(content) + '">' +
-            '  <div class="message-label">你</div>' +
-            '  <div class="message-bubble user-bubble">' +
-            '    <div class="message-text">' + formatted + '</div>' +
-            '  </div>' +
-            '  <div class="message-time">' + timestamp + '</div>' +
-            '</div>';
-    },
-
-    _renderAssistantMessage: function (content, timestamp, isStreaming) {
-        var mainContent = KwUtils.cleanResult(content);
-        var streamingClass = isStreaming ? ' streaming' : '';
-        var caretClass = isStreaming ? ' kw-streaming-caret' : '';
-        var renderedContent = this._renderMarkdown(mainContent);
-
-        return '' +
-            '<div class="message message-assistant' + streamingClass + '" data-mid="' + this._idFor(content) + '">' +
-            '  <div class="assistant-meta">' +
-            '    <div class="assistant-avatar">' +
-            '      <svg width="28" height="28" viewBox="0 0 36 36" fill="none" aria-label="开悟"><circle cx="18" cy="18" r="16" fill="#EAF3FF" stroke="#1F7CFF" stroke-width="1.5"/><rect x="9" y="11" width="18" height="15" rx="5" fill="#1F2937"/><rect x="13" y="16" width="4" height="4" rx="2" fill="#1F7CFF"/><rect x="19" y="16" width="4" height="4" rx="2" fill="#1F7CFF"/><line x1="13" y1="27" x2="23" y2="27" stroke="#1F7CFF" stroke-width="1.4" stroke-linecap="round"/></svg>' +
-            '    </div>' +
-            '    <span class="assistant-name">开悟</span>' +
-            '    <span class="ai-badge small">AI</span>' +
-            '  </div>' +
-            '  <div class="message-bubble assistant-bubble markdown-body' + caretClass + '" data-content="' + KwUtils.escapeAttr(mainContent) + '">' +
-            '    <div class="message-body-content">' + renderedContent + '</div>' +
-            '    <div class="message-actions">' +
-            '      <button class="msg-action-btn" data-kw-action="copy-message" title="复制">📋</button>' +
-            '      <button class="msg-action-btn" data-kw-action="insert-message" title="插入文档">📄</button>' +
-            '    </div>' +
-            '  </div>' +
-            '  <div class="message-time">' + timestamp + '</div>' +
-            '</div>';
-    },
-
-    /**
-     * 仅更新已存在的助手消息节点, 不重建整条对话.
-     * 流式阶段走这里; 配合 ChatUI 流式节流, 避免每帧重建 DOM.
-     *
-     * 依赖 _renderAssistantMessage 已经输出标准结构:
-     *   .message-bubble > .message-body-content + .message-actions
-     * 没有正则切 DOM 的手术, 直接覆盖 body 子节点即可.
-     */
-    updateStreamingMessage: function (container, msg) {
-        if (!container) return null;
-        var nodes = container.querySelectorAll('.message-assistant.streaming');
-        var node = nodes.length > 0 ? nodes[nodes.length - 1] : null;
-        if (!node) return null;
-        var bubble = node.querySelector('.message-bubble');
-        if (!bubble) return null;
-        var body = bubble.querySelector('.message-body-content');
-        if (!body) return null;
-        var mainContent = KwUtils.cleanResult(msg.content || '');
-        bubble.setAttribute('data-content', mainContent);
-        body.innerHTML = MessageRenderer._renderMarkdown(mainContent);
-        // 代码高亮 (幂等)
-        if (typeof KwMarkdown !== 'undefined') {
-            KwMarkdown.highlightCodeOnly(body);
-        }
-        return node;
-    },
-
-    /** 兼容旧的 _renderMarkdown (KwMarkdown 不可用时的回退). */
-    _legacyRenderMarkdown: function (text) {
-        if (!text) return '';
-        try {
-            if (typeof marked === 'undefined') return '<p>' + KwUtils.escapeHtml(text) + '</p>';
-            var renderer = new marked.Renderer();
-            renderer.code = function (code, language) {
-                if (language === 'mermaid') {
-                    return '<div class="mermaid">' + KwUtils.escapeHtml(code) + '</div>';
-                }
-                var highlighted = code;
-                try {
-                    if (language && hljs.getLanguage(language)) {
-                        highlighted = hljs.highlight(code, { language: language }).value;
-                    } else {
-                        highlighted = hljs.highlightAuto(code).value;
-                    }
-                } catch (e) {
-                    highlighted = KwUtils.escapeHtml(code);
-                }
-                var safeLanguage = KwUtils.escapeAttr(language || 'text');
-                return '<div class="code-block-wrapper">' +
-                    '<div class="code-block-header"><span class="code-lang">' + safeLanguage + '</span>' +
-                    '<button class="copy-code-btn" data-kw-action="copy-code">复制</button></div>' +
-                    '<pre><code class="hljs ' + safeLanguage + '">' + highlighted + '</code></pre>' +
-                    '</div>';
-            };
-            marked.setOptions({ renderer: renderer });
-            var html = marked.parse(text);
-            return (typeof KwSecurity !== 'undefined') ? KwSecurity.sanitizeHtml(html) : html;
-        } catch (e) {
-            console.error('[Message] Markdown 渲染失败:', e);
-            return '<p>' + KwUtils.escapeHtml(text) + '</p>';
-        }
-    },
-
-    /**
-     * 公共 Markdown 渲染入口. 优先 KwMarkdown; 回退到 _legacyRenderMarkdown.
-     * 保留此名以兼容历史测试 / 调用方.
-     */
-    _renderMarkdown: function (text) {
-        if (typeof KwMarkdown !== 'undefined') {
-            return KwMarkdown.render(text);
-        }
-        return this._legacyRenderMarkdown(text);
-    },
-
-    /**
-     * 把消息渲染为完整的 HTML 字符串 (用于全量渲染场景, 比如首次加载).
-     * ChatUI 渲染历史消息时使用, 流式阶段改用 updateStreamingMessage.
-     */
-    renderMessage: function (msg, isStreaming) {
-        return this.render(msg, isStreaming);
-    },
-
-    // 复制消息内容 (供全局事件代理调用)
-    copyMessage: function (btn) {
-        var bubble = btn.closest('.message-bubble');
-        if (!bubble) return;
-        var content = bubble.getAttribute('data-content') || bubble.textContent;
-        KwUtils.copyToClipboard(content).then(function () {
-            KwToast.show('已复制');
-        }, function () {
-            KwToast.error('复制失败');
-        });
-    },
-
-    // 插入消息到文档
-    insertMessage: function (btn) {
-        var bubble = btn.closest('.message-bubble');
-        if (!bubble) return;
-        var content = bubble.getAttribute('data-content') || bubble.textContent;
-
-        if (window.__WPS_BRIDGE__ && window.__WPS_BRIDGE__.insertContent) {
-            var ok = window.__WPS_BRIDGE__.insertContent(content);
-            var componentType = window.__WPS_BRIDGE__.getComponentType();
-            var componentLabel = (typeof ComponentDetector !== 'undefined')
-                ? ComponentDetector.getLabel(componentType)
-                : '文档';
-            KwToast.show(ok ? ('已插入' + componentLabel) : '插入失败，请手动复制');
-        } else {
-            KwToast.error('无法插入文档：WPS 连接未就绪');
-        }
-    },
-
-    // 复制代码块
-    copyCode: function (btn) {
-        var codeBlock = btn.closest('.code-block-wrapper');
-        if (!codeBlock) return;
-        var code = codeBlock.querySelector('code');
-        if (!code) return;
-        KwUtils.copyToClipboard(code.textContent).then(function () {
-            btn.textContent = '✅ 已复制';
-            setTimeout(function () { btn.textContent = '复制'; }, 2000);
-        });
-    },
-
-    _showToast: function (msg) {
-        KwToast.show(msg);
-    },
-
-    _copyToClipboard: function (text) {
-        return KwUtils.copyToClipboard(text);
-    },
-
-    _idFor: function (content) {
-        // 给消息一个稳定但简短的 id, 用于 DOM diff 时定位节点.
-        // 用 length + 简单 hash, 避免把原始内容嵌入 DOM (可能含隐私 / 控制字符).
-        var s = String(content || '');
-        var hash = 0;
-        for (var i = 0; i < s.length; i++) {
-            hash = ((hash << 5) - hash) + s.charCodeAt(i);
-            hash |= 0;
-        }
-        return 'm' + s.length + '_' + (hash >>> 0).toString(36);
+    if (role === 'user') {
+      return this._renderUserMessage(content, timestamp);
+    } else {
+      return this._renderAssistantMessage(content, timestamp, isStreaming);
     }
+  },
+
+  _renderUserMessage: function (content, timestamp) {
+    var escaped = KwUtils.escapeHtml(content);
+    var formatted = escaped.replace(/\n/g, '<br>');
+    return (
+      '' +
+      '<div class="message message-user" data-mid="' +
+      this._idFor(content) +
+      '">' +
+      '  <div class="message-label">你</div>' +
+      '  <div class="message-bubble user-bubble">' +
+      '    <div class="message-text">' +
+      formatted +
+      '</div>' +
+      '  </div>' +
+      '  <div class="message-time">' +
+      timestamp +
+      '</div>' +
+      '</div>'
+    );
+  },
+
+  _renderAssistantMessage: function (content, timestamp, isStreaming) {
+    var mainContent = KwUtils.cleanResult(content);
+    var streamingClass = isStreaming ? ' streaming' : '';
+    var caretClass = isStreaming ? ' kw-streaming-caret' : '';
+    var renderedContent = this._renderMarkdown(mainContent);
+
+    return (
+      '' +
+      '<div class="message message-assistant' +
+      streamingClass +
+      '" data-mid="' +
+      this._idFor(content) +
+      '">' +
+      '  <div class="assistant-meta">' +
+      '    <div class="assistant-avatar">' +
+      '      <svg width="28" height="28" viewBox="0 0 36 36" fill="none" aria-label="开悟"><circle cx="18" cy="18" r="16" fill="#EAF3FF" stroke="#1F7CFF" stroke-width="1.5"/><rect x="9" y="11" width="18" height="15" rx="5" fill="#1F2937"/><rect x="13" y="16" width="4" height="4" rx="2" fill="#1F7CFF"/><rect x="19" y="16" width="4" height="4" rx="2" fill="#1F7CFF"/><line x1="13" y1="27" x2="23" y2="27" stroke="#1F7CFF" stroke-width="1.4" stroke-linecap="round"/></svg>' +
+      '    </div>' +
+      '    <span class="assistant-name">开悟</span>' +
+      '    <span class="ai-badge small">AI</span>' +
+      '  </div>' +
+      '  <div class="message-bubble assistant-bubble markdown-body' +
+      caretClass +
+      '" data-content="' +
+      KwUtils.escapeAttr(mainContent) +
+      '">' +
+      '    <div class="message-body-content">' +
+      renderedContent +
+      '</div>' +
+      '    <div class="message-actions">' +
+      '      <button class="msg-action-btn" data-kw-action="copy-message" title="复制">📋</button>' +
+      '      <button class="msg-action-btn" data-kw-action="insert-message" title="插入文档">📄</button>' +
+      '    </div>' +
+      '  </div>' +
+      '  <div class="message-time">' +
+      timestamp +
+      '</div>' +
+      '</div>'
+    );
+  },
+
+  /**
+   * 仅更新已存在的助手消息节点, 不重建整条对话.
+   * 流式阶段走这里; 配合 ChatUI 流式节流, 避免每帧重建 DOM.
+   *
+   * 依赖 _renderAssistantMessage 已经输出标准结构:
+   *   .message-bubble > .message-body-content + .message-actions
+   * 没有正则切 DOM 的手术, 直接覆盖 body 子节点即可.
+   */
+  updateStreamingMessage: function (container, msg) {
+    if (!container) return null;
+    var nodes = container.querySelectorAll('.message-assistant.streaming');
+    var node = nodes.length > 0 ? nodes[nodes.length - 1] : null;
+    if (!node) return null;
+    var bubble = node.querySelector('.message-bubble');
+    if (!bubble) return null;
+    var body = bubble.querySelector('.message-body-content');
+    if (!body) return null;
+    var mainContent = KwUtils.cleanResult(msg.content || '');
+    bubble.setAttribute('data-content', mainContent);
+    body.innerHTML = MessageRenderer._renderMarkdown(mainContent);
+    // 代码高亮 (幂等)
+    if (typeof KwMarkdown !== 'undefined') {
+      KwMarkdown.highlightCodeOnly(body);
+    }
+    return node;
+  },
+
+  /** 兼容旧的 _renderMarkdown (KwMarkdown 不可用时的回退). */
+  _legacyRenderMarkdown: function (text) {
+    if (!text) return '';
+    try {
+      if (typeof marked === 'undefined') return '<p>' + KwUtils.escapeHtml(text) + '</p>';
+      var renderer = new marked.Renderer();
+      renderer.code = function (code, language) {
+        if (language === 'mermaid') {
+          return '<div class="mermaid">' + KwUtils.escapeHtml(code) + '</div>';
+        }
+        var highlighted = code;
+        try {
+          if (language && hljs.getLanguage(language)) {
+            highlighted = hljs.highlight(code, { language: language }).value;
+          } else {
+            highlighted = hljs.highlightAuto(code).value;
+          }
+        } catch (e) {
+          highlighted = KwUtils.escapeHtml(code);
+        }
+        var safeLanguage = KwUtils.escapeAttr(language || 'text');
+        return (
+          '<div class="code-block-wrapper">' +
+          '<div class="code-block-header"><span class="code-lang">' +
+          safeLanguage +
+          '</span>' +
+          '<button class="copy-code-btn" data-kw-action="copy-code">复制</button></div>' +
+          '<pre><code class="hljs ' +
+          safeLanguage +
+          '">' +
+          highlighted +
+          '</code></pre>' +
+          '</div>'
+        );
+      };
+      marked.setOptions({ renderer: renderer });
+      var html = marked.parse(text);
+      return typeof KwSecurity !== 'undefined' ? KwSecurity.sanitizeHtml(html) : html;
+    } catch (e) {
+      KwLogger.error('Message', '[Message] Markdown 渲染失败:', e);
+      return '<p>' + KwUtils.escapeHtml(text) + '</p>';
+    }
+  },
+
+  /**
+   * 公共 Markdown 渲染入口. 优先 KwMarkdown; 回退到 _legacyRenderMarkdown.
+   * 保留此名以兼容历史测试 / 调用方.
+   */
+  _renderMarkdown: function (text) {
+    if (typeof KwMarkdown !== 'undefined') {
+      return KwMarkdown.render(text);
+    }
+    return this._legacyRenderMarkdown(text);
+  },
+
+  /**
+   * 把消息渲染为完整的 HTML 字符串 (用于全量渲染场景, 比如首次加载).
+   * ChatUI 渲染历史消息时使用, 流式阶段改用 updateStreamingMessage.
+   */
+  renderMessage: function (msg, isStreaming) {
+    return this.render(msg, isStreaming);
+  },
+
+  // 复制消息内容 (供全局事件代理调用)
+  copyMessage: function (btn) {
+    var bubble = btn.closest('.message-bubble');
+    if (!bubble) return;
+    var content = bubble.getAttribute('data-content') || bubble.textContent;
+    KwUtils.copyToClipboard(content).then(
+      function () {
+        KwToast.show('已复制');
+      },
+      function () {
+        KwToast.error('复制失败');
+      }
+    );
+  },
+
+  // 插入消息到文档
+  insertMessage: function (btn) {
+    var bubble = btn.closest('.message-bubble');
+    if (!bubble) return;
+    var content = bubble.getAttribute('data-content') || bubble.textContent;
+
+    if (window.__WPS_BRIDGE__ && window.__WPS_BRIDGE__.insertContent) {
+      var ok = window.__WPS_BRIDGE__.insertContent(content);
+      var componentType = window.__WPS_BRIDGE__.getComponentType();
+      var componentLabel =
+        typeof ComponentDetector !== 'undefined'
+          ? ComponentDetector.getLabel(componentType)
+          : '文档';
+      KwToast.show(ok ? '已插入' + componentLabel : '插入失败，请手动复制');
+    } else {
+      KwToast.error('无法插入文档：WPS 连接未就绪');
+    }
+  },
+
+  // 复制代码块
+  copyCode: function (btn) {
+    var codeBlock = btn.closest('.code-block-wrapper');
+    if (!codeBlock) return;
+    var code = codeBlock.querySelector('code');
+    if (!code) return;
+    KwUtils.copyToClipboard(code.textContent).then(function () {
+      btn.textContent = '✅ 已复制';
+      setTimeout(function () {
+        btn.textContent = '复制';
+      }, 2000);
+    });
+  },
+
+  _showToast: function (msg) {
+    KwToast.show(msg);
+  },
+
+  _copyToClipboard: function (text) {
+    return KwUtils.copyToClipboard(text);
+  },
+
+  _idFor: function (content) {
+    // 给消息一个稳定但简短的 id, 用于 DOM diff 时定位节点.
+    // 用 length + 简单 hash, 避免把原始内容嵌入 DOM (可能含隐私 / 控制字符).
+    var s = String(content || '');
+    var hash = 0;
+    for (var i = 0; i < s.length; i++) {
+      hash = (hash << 5) - hash + s.charCodeAt(i);
+      hash |= 0;
+    }
+    return 'm' + s.length + '_' + (hash >>> 0).toString(36);
+  },
 };
