@@ -51,11 +51,11 @@
     "mermaid": "^10.6.1"
   },
   "devDependencies": {
-    "c8": "^9.1.0",
-    "eslint": "^8.57.1",
-    "jsdom": "^29.1.1",
-    "playwright-core": "^1.60.0",
-    "prettier": "^3.8.4",
+    "c8": "^12.0.0",
+    "eslint": "^10.8.0",
+    "jsdom": "^30.0.1",
+    "playwright-core": "^1.62.1",
+    "prettier": "^3.9.6",
     "wpsjs": "^2.2.0"
   }
 }
