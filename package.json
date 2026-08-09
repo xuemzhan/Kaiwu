@@ -48,7 +48,7 @@
     "highlight.js": "^11.8.0",
     "html2canvas": "^1.4.1",
     "marked": "~4.3.0",
-    "mermaid": "^10.6.1"
+    "mermaid": "^10.9.8"
   },
   "devDependencies": {
     "c8": "^9.1.0",
